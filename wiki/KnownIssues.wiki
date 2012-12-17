@@ -1,0 +1,18 @@
+#summary Bugs or oddities with the current release of the randomizer.
+
+= Generation One Games =
+  * (oddity) The people who give you Magikarp and Lapras still say Magikarp/Lapras even if you randomize them.
+  * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
+
+= Generation Two Games =
+  * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
+
+= Generation Three Games =
+  * (bug) You can't advance into the Elite Four first round properly in FR/LG if you apply the National Dex patch.
+
+= Generation Four Games =
+None for now...
+
+= Generation Five Games =
+  * One of the B2W2 rival battles doesn't have the right starter.
+  * A battle with Zinzolin isn't consistent with his other battles.
