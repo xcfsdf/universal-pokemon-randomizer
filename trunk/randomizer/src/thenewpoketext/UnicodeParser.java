@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import com.dabomstew.pkrandom.FileFunctions;
+
 public class UnicodeParser {
 
 	public static String[] tb = new String[65536];
@@ -19,7 +21,8 @@ public class UnicodeParser {
 
 	static {
 		try {
-			Scanner sc = new Scanner(new File("config/Generation4.tbl"), "UTF-8");
+			Scanner sc = new Scanner(
+					FileFunctions.openConfig("Generation4.tbls"), "UTF-8");
 			while (sc.hasNextLine()) {
 				String q = sc.nextLine();
 				if (!q.trim().isEmpty()) {

@@ -1627,4 +1627,9 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		return true;
 	}
 
+	@Override
+	public String getDefaultExtension() {
+		return "gbc";
+	}
+
 }

@@ -1381,4 +1381,9 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	public boolean fixedTrainerClassNamesLength() {
 		return false;
 	}
+
+	@Override
+	public String getDefaultExtension() {
+		return "nds";
+	}
 }

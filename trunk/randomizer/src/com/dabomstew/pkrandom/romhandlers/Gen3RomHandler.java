@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.dabomstew.pkrandom.FileFunctions;
 import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
@@ -168,8 +169,8 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		roms = new ArrayList<RomEntry>();
 		RomEntry current = null;
 		try {
-			Scanner sc = new Scanner(new File("config/gen3_offsets.ini"),
-					"UTF-8");
+			Scanner sc = new Scanner(
+					FileFunctions.openConfig("gen3_offsets.ini"), "UTF-8");
 			while (sc.hasNextLine()) {
 				String q = sc.nextLine().trim();
 				if (q.contains("//")) {
@@ -266,7 +267,8 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 	private static void loadTextTable() {
 		try {
-			Scanner sc = new Scanner(new File("config/Advance.tbl"), "UTF-8");
+			Scanner sc = new Scanner(FileFunctions.openConfig("Advance.tbl"),
+					"UTF-8");
 			while (sc.hasNextLine()) {
 				String q = sc.nextLine();
 				if (!q.trim().isEmpty()) {
@@ -1614,6 +1616,19 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		}
 	}
 
+	private List<Integer> findMultiple(String hexString) {
+		if (hexString.length() % 2 != 0) {
+			return new ArrayList<Integer>(); // error
+		}
+		byte[] searchFor = new byte[hexString.length() / 2];
+		for (int i = 0; i < searchFor.length; i++) {
+			searchFor[i] = (byte) Integer.parseInt(
+					hexString.substring(i * 2, i * 2 + 2), 16);
+		}
+		List<Integer> found = RomFunctions.search(rom, searchFor);
+		return found;
+	}
+
 	private void writeHexString(String hexString, int offset) {
 		if (hexString.length() % 2 != 0) {
 			return; // error
@@ -1686,6 +1701,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 			writeHexString(
 					"32662901082B00801102006B02021103016B020211DABE4E020211675A6A02022A008003",
 					writeSpace + 8);
+
 		} else if (romEntry.romType == RomType_FRLG) {
 			// Find the original pokedex script
 			int pkDexOffset = find("292908258101");
@@ -1707,6 +1723,28 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 			// Now write our new routine
 			writeHexString("292908258101256F0103", writeSpace);
+
+			// Fix people using the national dex flag
+			List<Integer> ndexChecks = findMultiple("260D809301210D800100");
+			for (int ndexCheckOffset : ndexChecks) {
+				// change to a flag-check
+				// 82C = "beaten e4/gary once"
+				writeHexString("2B2C0800000000000000", ndexCheckOffset);
+			}
+
+			// Fix oak in his lab
+			int oakLabCheckOffs = find("257D011604800000260D80D400");
+			if (oakLabCheckOffs > 0) {
+				// replace it
+				writeHexString("257D011604800100", oakLabCheckOffs);
+			}
+
+			// Fix oak outside your house
+			int oakHouseCheckOffs = find("1604800000260D80D4001908800580190980068083000880830109802109803C");
+			if (oakHouseCheckOffs > 0) {
+				// fix him to use ndex count
+				writeHexString("1604800100", oakHouseCheckOffs);
+			}
 		} else {
 			// Find the original pokedex script
 			int pkDexOffset = find("3229610825F00129E40816CD40010003");
@@ -1897,6 +1935,11 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 	@Override
 	public boolean canChangeStaticPokemon() {
 		return (romEntry.getValue("StaticPokemonSupport") > 0);
+	}
+
+	@Override
+	public String getDefaultExtension() {
+		return "gba";
 	}
 
 }
