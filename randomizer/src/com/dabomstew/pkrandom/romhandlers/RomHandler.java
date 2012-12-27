@@ -239,4 +239,6 @@ public interface RomHandler {
 
 	public void patchForNationalDex();
 
+	public String getDefaultExtension();
+
 }

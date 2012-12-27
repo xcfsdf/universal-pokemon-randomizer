@@ -1627,4 +1627,13 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	public boolean fixedTrainerClassNamesLength() {
 		return true;
 	}
+
+	@Override
+	public String getDefaultExtension() {
+		if (isYellow) {
+			return "gbc";
+		} else {
+			return "gb";
+		}
+	}
 }

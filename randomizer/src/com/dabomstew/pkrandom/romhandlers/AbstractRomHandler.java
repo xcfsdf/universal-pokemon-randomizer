@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.dabomstew.pkrandom.FileFunctions;
 import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.gui.RandomizerGUI;
@@ -690,11 +691,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public void randomizeTrainerNames() {
 		if (!trainerNamesInited) {
 			trainerNamesInited = true;
-			File trainerNames = new File("config/trainernames.txt");
+			String tnamesFile = "trainernames.txt";
 			// Check for the file
-			if (trainerNames.exists() && trainerNames.canRead()) {
+			if (FileFunctions.configExists(tnamesFile)) {
 				try {
-					Scanner sc = new Scanner(trainerNames, "UTF-8");
+					Scanner sc = new Scanner(
+							FileFunctions.openConfig(tnamesFile), "UTF-8");
 					while (sc.hasNextLine()) {
 						String trainername = sc.nextLine().trim();
 						if (trainername.isEmpty()) {
@@ -784,11 +786,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public void randomizeTrainerClassNames() {
 		if (!trainerClassesInited) {
 			trainerClassesInited = true;
-			File trainerClassNames = new File("config/trainerclasses.txt");
+			String tclassesFile = "trainerclasses.txt";
 			// Check for the file
-			if (trainerClassNames.exists() && trainerClassNames.canRead()) {
+			if (FileFunctions.configExists(tclassesFile)) {
 				try {
-					Scanner sc = new Scanner(trainerClassNames, "UTF-8");
+					Scanner sc = new Scanner(
+							FileFunctions.openConfig(tclassesFile), "UTF-8");
 					while (sc.hasNextLine()) {
 						String trainerClassName = sc.nextLine().trim();
 						if (trainerClassName.isEmpty()) {

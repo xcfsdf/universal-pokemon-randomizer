@@ -121,7 +121,7 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 			"a/0/1/1" };
 	private static String[] pokeStatsNARC = new String[] {
 			"poketool/personal_pearl/personal.narc",
-			"poketool/personal/personal.narc", "/a/0/0/2" };
+			"poketool/personal/pl_personal.narc", "/a/0/0/2" };
 	private static String[] movesetsNARC = new String[] {
 			"poketool/personal/wotbl.narc", "poketool/personal/wotbl.narc",
 			"a/0/3/3" };
@@ -324,7 +324,7 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 			namesList2
 					.set(i, namesList2.get(i).replace(oldName, pokes[i].name));
 		}
-		setStrings(pokeNamesFile[type], namesList, true);
+		setStrings(pokeNamesFile[type], namesList, false);
 		setStrings(pokeNamesFile[type] + 1, namesList2, false);
 		try {
 			String pstatsnarc = lastNDScode.startsWith("ADA") ? "poketool/personal/personal.narc"
@@ -1958,6 +1958,11 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	@Override
 	public boolean fixedTrainerClassNamesLength() {
 		return false;
+	}
+	
+	@Override
+	public String getDefaultExtension() {
+		return "nds";
 	}
 
 }

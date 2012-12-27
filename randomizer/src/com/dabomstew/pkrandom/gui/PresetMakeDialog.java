@@ -37,6 +37,8 @@ import java.io.IOException;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+import com.dabomstew.pkrandom.FileFunctions;
+
 /**
  * 
  * @author Stewart
@@ -209,6 +211,8 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 		int returnVal = presetFileChooser.showSaveDialog(this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File fh = presetFileChooser.getSelectedFile();
+			// Fix extension?
+			fh = FileFunctions.fixFilename(fh, "rndp");
 			try {
 				DataOutputStream dos = new DataOutputStream(
 						new FileOutputStream(fh));
