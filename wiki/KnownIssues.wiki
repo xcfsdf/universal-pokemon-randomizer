@@ -8,7 +8,7 @@
   * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
 
 = Generation Three Games =
-  * (bug) You can't advance into the Elite Four first round properly in FR/LG if you apply the National Dex patch.
+None for now...
 
 = Generation Four Games =
 None for now...
