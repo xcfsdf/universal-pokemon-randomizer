@@ -78,7 +78,7 @@ public class TextToPoke {
 					i++;
 				}
 				if (i == 6) {
-					System.out.printf("Char not found %s(%i)",
+					System.out.printf("Char not found %s(%d)",
 							text.substring(0, 1), text.charAt(0));
 					text = text.substring(1);
 				} else {
