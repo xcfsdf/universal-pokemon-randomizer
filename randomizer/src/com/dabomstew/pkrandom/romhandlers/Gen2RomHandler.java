@@ -389,6 +389,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		if (pkmn.secondaryType == pkmn.primaryType) {
 			pkmn.secondaryType = null;
 		}
+		pkmn.catchRate = rom[offset + 9] & 0xFF;
 	}
 
 	private void saveBasicPokeStats(Pokemon pkmn, int offset) {
@@ -404,6 +405,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		} else {
 			rom[offset + 8] = typeToByte(pkmn.secondaryType);
 		}
+		rom[offset + 9] = (byte) pkmn.catchRate;
 	}
 
 	private String[] readPokemonNames() {
@@ -1630,6 +1632,16 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	@Override
 	public String getDefaultExtension() {
 		return "gbc";
+	}
+	
+	@Override
+	public int abilitiesPerPokemon() {
+		return 0;
+	}
+	
+	@Override
+	public int highestAbilityIndex() {
+		return 0;
 	}
 
 }

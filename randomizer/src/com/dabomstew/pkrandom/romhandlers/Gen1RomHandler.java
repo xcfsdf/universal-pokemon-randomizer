@@ -405,6 +405,8 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		if (pkmn.secondaryType == pkmn.primaryType) {
 			pkmn.secondaryType = null;
 		}
+
+		pkmn.catchRate = rom[offset + 8] & 0xFF;
 	}
 
 	private void saveBasicPokeStats(Pokemon pkmn, int offset) {
@@ -419,6 +421,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		} else {
 			rom[offset + 7] = typeToByte(pkmn.secondaryType);
 		}
+		rom[offset + 8] = (byte) pkmn.catchRate;
 	}
 
 	private String[] readPokemonNames() {
@@ -582,9 +585,9 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		} else {
 			// Read starters
 			// order 3a1eb, 3a1e5, 3a1e8
-			Pokemon start1 = pokes[pokeRBYToNumTable[rom[0x3a1eb] & 0xFF]];
-			Pokemon start2 = pokes[pokeRBYToNumTable[rom[0x3a1e5] & 0xFF]];
-			Pokemon start3 = pokes[pokeRBYToNumTable[rom[0x3a1e8] & 0xFF]];
+			Pokemon start1 = pokes[pokeRBYToNumTable[rom[0x1d126] & 0xFF]];
+			Pokemon start2 = pokes[pokeRBYToNumTable[rom[0x1d104] & 0xFF]];
+			Pokemon start3 = pokes[pokeRBYToNumTable[rom[0x1d115] & 0xFF]];
 			return Arrays.asList(start1, start2, start3);
 		}
 	}
@@ -670,9 +673,67 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 						readVariableLengthScriptString(
 								starterTextOffsets.get(i)).length() + 1);
 			}
+
+			// Starter pokedex
+			// Branch to our new routine(s)
+			writeHexString("C300600000", 0x5C0DC);
+			writeHexString("C3206000", 0x5C0E6);
+			// RAM offset => value
+			// Allows for multiple starters in the same RAM byte
+			Map<Integer, Integer> onValues = new TreeMap<Integer, Integer>();
+			for (int i = 0; i < 3; i++) {
+				int pkDexNum = newStarters.get(i).number;
+				int ramOffset = (pkDexNum - 1) / 8 + 0xD2F7;
+				int bitShift = (pkDexNum - 1) % 8;
+				int writeValue = 1 << bitShift;
+				if (onValues.containsKey(ramOffset)) {
+					onValues.put(ramOffset, onValues.get(ramOffset)
+							| writeValue);
+				} else {
+					onValues.put(ramOffset, writeValue);
+				}
+			}
+
+			// Put together the two scripts
+			rom[0x5E020] = (byte) 0xAF;
+			int turnOnOffset = 0x5E000;
+			int turnOffOffset = 0x5E021;
+			for (int ramOffset : onValues.keySet()) {
+				int onValue = onValues.get(ramOffset);
+				// Turn on code
+				rom[turnOnOffset++] = 0x3E;
+				rom[turnOnOffset++] = (byte) onValue;
+				// Turn on code for ram writing
+				rom[turnOnOffset++] = (byte) 0xEA;
+				rom[turnOnOffset++] = (byte) (ramOffset % 0x100);
+				rom[turnOnOffset++] = (byte) (ramOffset / 0x100);
+				// Turn off code for ram writing
+				rom[turnOffOffset++] = (byte) 0xEA;
+				rom[turnOffOffset++] = (byte) (ramOffset % 0x100);
+				rom[turnOffOffset++] = (byte) (ramOffset / 0x100);
+			}
+			// Jump back
+			rom[turnOnOffset++] = (byte) 0xC3;
+			rom[turnOnOffset++] = (byte) 0xE1;
+			rom[turnOnOffset++] = 0x40;
+
+			rom[turnOffOffset++] = (byte) 0xC3;
+			rom[turnOffOffset++] = (byte) 0xEA;
+			rom[turnOffOffset++] = 0x40;
+
 			return true;
 		}
 
+	}
+
+	private void writeHexString(String hexString, int offset) {
+		if (hexString.length() % 2 != 0) {
+			return; // error
+		}
+		for (int i = 0; i < hexString.length() / 2; i++) {
+			rom[offset + i] = (byte) Integer.parseInt(
+					hexString.substring(i * 2, i * 2 + 2), 16);
+		}
 	}
 
 	@Override
@@ -1635,5 +1696,15 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		} else {
 			return "gb";
 		}
+	}
+
+	@Override
+	public int abilitiesPerPokemon() {
+		return 0;
+	}
+
+	@Override
+	public int highestAbilityIndex() {
+		return 0;
 	}
 }
