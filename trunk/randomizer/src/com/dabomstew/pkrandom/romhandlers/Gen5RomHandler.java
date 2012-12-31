@@ -245,6 +245,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		if (pkmn.secondaryType == pkmn.primaryType) {
 			pkmn.secondaryType = null;
 		}
+		pkmn.catchRate = stats[8] & 0xFF;
 		// Abilities for debugging later
 		pkmn.ability1 = stats[24] & 0xFF;
 		pkmn.ability2 = stats[25] & 0xFF;
@@ -329,7 +330,11 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		} else {
 			stats[7] = typeToByte(pkmn.secondaryType);
 		}
+		stats[8] = (byte) pkmn.catchRate;
 
+		stats[24] = (byte) pkmn.ability1;
+		stats[25] = (byte) pkmn.ability2;
+		stats[26] = (byte) pkmn.ability3;
 	}
 
 	@Override
@@ -1385,5 +1390,15 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	@Override
 	public String getDefaultExtension() {
 		return "nds";
+	}
+
+	@Override
+	public int abilitiesPerPokemon() {
+		return 3;
+	}
+
+	@Override
+	public int highestAbilityIndex() {
+		return 164;
 	}
 }

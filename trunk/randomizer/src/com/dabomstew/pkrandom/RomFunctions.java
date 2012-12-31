@@ -158,7 +158,7 @@ public class RomFunctions {
 			"Ice Burn", "Snarl", "Icicle Crash", "V-create", "Fusion Flare",
 			"Fusion Bolt" };
 
-	public static final String[] abilityNames = new String[] { "", "Stench",
+	public static final String[] abilityNames = new String[] { "N/A", "Stench",
 			"Drizzle", "Speed Boost", "Battle Armor", "Sturdy", "Damp",
 			"Limber", "Sand Veil", "Static", "Volt Absorb", "Water Absorb",
 			"Oblivious", "Cloud Nine", "Compoundeyes", "Insomnia",

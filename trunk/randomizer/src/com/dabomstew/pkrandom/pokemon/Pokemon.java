@@ -40,6 +40,8 @@ public class Pokemon implements Comparable<Pokemon> {
 	public int hp, attack, defense, spatk, spdef, speed, special;
 
 	public int ability1, ability2, ability3;
+	
+	public int catchRate;
 
 	public Pokemon() {
 	}

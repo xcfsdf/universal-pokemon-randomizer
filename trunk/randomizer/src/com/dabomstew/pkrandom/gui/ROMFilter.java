@@ -32,7 +32,6 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
-
 public class ROMFilter extends FileFilter {
 
 	@Override
@@ -46,13 +45,14 @@ public class ROMFilter extends FileFilter {
 		}
 		String extension = arg0.getName()
 				.substring(arg0.getName().lastIndexOf('.') + 1).toLowerCase();
-		return extension.equals("gb") || extension.equals("gbc")
-				|| extension.equals("gba") || extension.equals("nds");
+		return extension.equals("gb") || extension.equals("sgb")
+				|| extension.equals("gbc") || extension.equals("gba")
+				|| extension.equals("nds");
 	}
 
 	@Override
 	public String getDescription() {
-		return "Nintendo GB(C/A)/DS ROM File (*.gb,*.gbc,*.gba,*.nds)";
+		return "Nintendo GB(C/A)/DS ROM File (*.gb,*.sgb,*.gbc,*.gba,*.nds)";
 	}
 
 }

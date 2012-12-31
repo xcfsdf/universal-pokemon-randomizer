@@ -221,6 +221,15 @@ public interface RomHandler {
 
 	public void randomizeTrainerClassNames();
 
+	// Randomizer: pokemon abilities
+	public int abilitiesPerPokemon();
+
+	public int highestAbilityIndex();
+
+	public String abilityName(int number);
+
+	public void randomizeAbilities(boolean allowWonderGuard);
+
 	// Misc
 
 	public void applyCamelCaseNames();
@@ -228,6 +237,8 @@ public interface RomHandler {
 	public void removeTradeEvolutions();
 
 	public boolean isYellow();
+
+	public void minimumCatchRate(int rate);
 
 	public String getROMName();
 

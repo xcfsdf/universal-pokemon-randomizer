@@ -565,6 +565,10 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		if (pkmn.secondaryType == pkmn.primaryType) {
 			pkmn.secondaryType = null;
 		}
+		pkmn.catchRate = rom[offset + 8] & 0xFF;
+		// Abilities
+		pkmn.ability1 = rom[offset + 22] & 0xFF;
+		pkmn.ability2 = rom[offset + 23] & 0xFF;
 	}
 
 	private void saveBasicPokeStats(Pokemon pkmn, int offset) {
@@ -580,6 +584,10 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		} else {
 			rom[offset + 7] = typeToByte(pkmn.secondaryType);
 		}
+		rom[offset + 8] = (byte) pkmn.catchRate;
+
+		rom[offset + 22] = (byte) pkmn.ability1;
+		rom[offset + 23] = (byte) pkmn.ability2;
 	}
 
 	private String[] readPokemonNames() {
@@ -1940,6 +1948,26 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 	@Override
 	public String getDefaultExtension() {
 		return "gba";
+	}
+
+	@Override
+	public int abilitiesPerPokemon() {
+		return 2;
+	}
+
+	@Override
+	public int highestAbilityIndex() {
+		return 77;
+	}
+
+	@Override
+	public String abilityName(int number) {
+		if (number == 76) {
+			return "Cacophony";
+		} else if (number == 77) {
+			return "Air Lock";
+		}
+		return RomFunctions.abilityNames[number];
 	}
 
 }

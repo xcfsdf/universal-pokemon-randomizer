@@ -108,6 +108,18 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
+	public void minimumCatchRate(int rate) {
+		List<Pokemon> pokes = getPokemon();
+		for (Pokemon pkmn : pokes) {
+			if (pkmn == null || pkmn.catchRate >= rate) {
+				continue;
+			}
+			pkmn.catchRate = rate;
+		}
+
+	}
+
+	@Override
 	public Type randomType() {
 		return Type.randomType();
 	}
@@ -199,6 +211,92 @@ public abstract class AbstractRomHandler implements RomHandler {
 				}
 			}
 		}
+	}
+
+	private static final int WONDER_GUARD_INDEX = 25;
+
+	@Override
+	public void randomizeAbilities(boolean allowWonderGuard) {
+		// Abilities don't exist in some games...
+		if (this.abilitiesPerPokemon() == 0) {
+			return;
+		}
+
+		// Deal with "natural" abilities first regardless
+		List<Pokemon> allPokes = this.getPokemon();
+		int maxAbility = this.highestAbilityIndex();
+		for (Pokemon pk : allPokes) {
+			if (pk == null) {
+				continue;
+			}
+
+			// Pick first ability
+			pk.ability1 = RandomSource.nextInt(maxAbility) + 1;
+			// Wonder guard block
+			if (!allowWonderGuard) {
+				while (pk.ability1 == WONDER_GUARD_INDEX) {
+					pk.ability1 = RandomSource.nextInt(maxAbility) + 1;
+				}
+			}
+
+			// Second ability?
+			if (RandomSource.nextDouble() < 0.5) {
+				// Yes, second ability
+				pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+				// Wonder guard? Also block first ability from reappearing
+				if (allowWonderGuard) {
+					while (pk.ability2 == pk.ability1) {
+						pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+					}
+				} else {
+					while (pk.ability2 == WONDER_GUARD_INDEX
+							|| pk.ability2 == pk.ability1) {
+						pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+					}
+				}
+			} else {
+				// Nope
+				pk.ability2 = 0;
+			}
+		}
+
+		// DW Abilities?
+		if (this.abilitiesPerPokemon() == 3) {
+			// Give a random DW ability to every Pokemon
+			for (Pokemon pk : allPokes) {
+				if (pk == null) {
+					continue;
+				}
+				pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+				// Wonder guard? Also block other abilities from reappearing
+				if (allowWonderGuard) {
+					while (pk.ability3 == pk.ability1
+							|| pk.ability3 == pk.ability2) {
+						pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+					}
+				} else {
+					while (pk.ability3 == WONDER_GUARD_INDEX
+							|| pk.ability3 == pk.ability1
+							|| pk.ability3 == pk.ability2) {
+						pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+					}
+				}
+			}
+		}
+
+		// Shedinja
+		// He's useless without Wonder Guard...
+		// + he exists in every game with abilities.
+		// Go fix him up.
+		Pokemon shedinja = allPokes.get(292);
+		shedinja.ability1 = 25;
+		shedinja.ability2 = 0;
+		shedinja.ability3 = 0;
+	}
+
+	@Override
+	public String abilityName(int number) {
+		return RomFunctions.abilityNames[number];
 	}
 
 	@Override
