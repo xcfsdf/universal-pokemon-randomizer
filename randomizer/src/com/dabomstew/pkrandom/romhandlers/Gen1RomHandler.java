@@ -647,7 +647,11 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 			rom[0x51caf] = starter2;
 			rom[0x6060e] = starter2;
 			rom[0x61450] = starter2;
-			rom[0x75f9e] = starter2;
+			if (romSig(rom, "POKEMON BLUE")) {
+				rom[0x75f9f] = starter2;
+			} else {
+				rom[0x75f9e] = starter2;
+			}
 
 			byte starter3 = (byte) pokeNumToRBYTable[newStarters.get(2).number];
 
@@ -661,7 +665,11 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 			rom[0x51cb7] = starter3;
 			rom[0x60616] = starter3;
 			rom[0x61458] = starter3;
-			rom[0x75fa6] = starter3;
+			if (romSig(rom, "POKEMON BLUE")) {
+				rom[0x75fa7] = starter3;
+			} else {
+				rom[0x75fa6] = starter3;
+			}
 
 			// Starter text
 			List<Integer> starterTextOffsets = RomFunctions.search(rom,
@@ -1367,52 +1375,58 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	}
 
 	/* @formatter:off */
-	private static int[] staticOffsetsRB = new int[] { 
-		// Pokeballs
-		0x1DD49, // Eevee in Celadon Mansion
-		0x5CF5F, 0x5CF17, // Hitmonchan/Hitmonlee in Fighting Dojo
-		// Overworld Battles
-		0x1e3d5, 0x1e3dd, 0x1e3e5, 0x1e3ed, 0x1e3f5, 0x1e3fd, 0x1e405, 0x1e40d, // Voltorb/Electrode in The Power Plant
-		0x1e415, // Zapdos in the Power Plant
-		0x468e8, // Articuno in the Seafoams
-		0x51963, // Moltres in Victory Road
-		0x45f44, // Mewtwo in Unk. Dungeon
-		0x59630, 0x59970, // Sleeping Snorlaxes
-		// Fossils
-		0x61064, // Old Amber
-		0x61068, 0x6106C, // Helix & Dome Fossils
-		// Given by Person
-		0x51DAD, // Lapras in Silph. Co
-		0x49320, // Magikarp in Mt.Moon Center
-		// Game Corner
-		0x52859, 0x5285A, 0x5285B, // Abra/Clefairy/Nidorin(a/o) Counter
-		0x52864, 0x52865, 0x52866, // (Dratini/Pinsir)/(Scyther/Dratini)/Porygon Counter
+	private static int[] staticOffsetsRB = new int[] {
+			// Pokeballs
+			0x1DD49, // Eevee in Celadon Mansion
+			0x5CF5F,
+			0x5CF17, // Hitmonchan/Hitmonlee in Fighting Dojo
+			// Overworld Battles
+			0x1e3d5, 0x1e3dd, 0x1e3e5, 0x1e3ed, 0x1e3f5, 0x1e3fd, 0x1e405,
+			0x1e40d, // Voltorb/Electrode in The Power Plant
+			0x1e415, // Zapdos in the Power Plant
+			0x468e8, // Articuno in the Seafoams
+			0x51963, // Moltres in Victory Road
+			0x45f44, // Mewtwo in Unk. Dungeon
+			0x59630, 0x59970, // Sleeping Snorlaxes
+			// Fossils
+			0x61064, // Old Amber
+			0x61068, 0x6106C, // Helix & Dome Fossils
+			// Given by Person
+			0x51DAD, // Lapras in Silph. Co
+			0x49320, // Magikarp in Mt.Moon Center
+			// Game Corner
+			0x52859, 0x5285A, 0x5285B, // Abra/Clefairy/Nidorin(a/o) Counter
+			0x52864, 0x52865, 0x52866, // (Dratini/Pinsir)/(Scyther/Dratini)/Porygon
+										// Counter
 	};
 	// Yellow item ball sprite is 0x47 not 0x3D
 	private static int[] staticOffsetsY = new int[] {
-		// Pokeballs
-		0x1D652, // Eevee in Celadon Mansion
-		0x5CE55, 0x5CE0D, // Hitmonchan/Hitmonlee in Fighting Dojo
-		// Overworld Battles
-		0x1DCDF, 0x1DCE7, 0x1DCEF, 0x1DCF7, 0x1DCFF, 0x1DD07, 0x1DD0F, 0x1DD17, // Voltorb/Electrode in The Power Plant
-		0x1DD1F, // Zapdos in the Power Plant
-		0x46B5A, // Articuno in the Seafoams
-		0x519A5, // Moltres in Victory Road
-		0x461A5, // Mewtwo in Unk. Dungeon
-		0x594CC, 0x5980C, // Sleeping Snorlaxes
-		// Fossils
-		0x61050, // Old Amber
-		0x61054, 0x61058, // Helix & Dome Fossils
-		// Given By Person
-		0x51DD6, // Lapras in Silph. Co
-		0xF21C0, // Magikarp in Mt.Moon Center
-		0x1CF8C, // Bulbasaur in Cerulean
-		0x515AF, // Charmander in Route 24/25
-		0xF1A45, // Squirtle in Vermillion
-		// Game Corner
-		0x527BA, 0x527BB, 0x527BC, // Abra/Vulpix/Wigglytuff Counter
-		0x527C5, 0x527C6, 0x527C7, // Scyther/Pinsir/Porygon Counter
+			// Pokeballs
+			0x1D652, // Eevee in Celadon Mansion
+			0x5CE55,
+			0x5CE0D, // Hitmonchan/Hitmonlee in Fighting Dojo
+			// Overworld Battles
+			0x1DCDF, 0x1DCE7, 0x1DCEF, 0x1DCF7, 0x1DCFF, 0x1DD07, 0x1DD0F,
+			0x1DD17, // Voltorb/Electrode in The Power Plant
+			0x1DD1F, // Zapdos in the Power Plant
+			0x46B5A, // Articuno in the Seafoams
+			0x519A5, // Moltres in Victory Road
+			0x461A5, // Mewtwo in Unk. Dungeon
+			0x594CC, 0x5980C, // Sleeping Snorlaxes
+			// Fossils
+			0x61050, // Old Amber
+			0x61054, 0x61058, // Helix & Dome Fossils
+			// Given By Person
+			0x51DD6, // Lapras in Silph. Co
+			0xF21C0, // Magikarp in Mt.Moon Center
+			0x1CF8C, // Bulbasaur in Cerulean
+			0x515AF, // Charmander in Route 24/25
+			0xF1A45, // Squirtle in Vermillion
+			// Game Corner
+			0x527BA, 0x527BB, 0x527BC, // Abra/Vulpix/Wigglytuff Counter
+			0x527C5, 0x527C6, 0x527C7, // Scyther/Pinsir/Porygon Counter
 	};
+
 	/* @formatter:on */
 
 	@Override

@@ -27,7 +27,6 @@ package com.dabomstew.pkrandom.romhandlers;
 /*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
 /*----------------------------------------------------------------------------*/
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -303,10 +302,18 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public void randomEncounters(boolean useTimeOfDay, boolean catchEmAll,
 			boolean typeThemed, boolean noLegendaries) {
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
+		boolean isThirdGen = (this instanceof Gen3RomHandler);
+		Pokemon unown = null;
+		if (isThirdGen) {
+			unown = this.getPokemon().get(201);
+		}
 		// Assume EITHER catch em all OR type themed for now
 		if (catchEmAll) {
 			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
 					: allPokemonWithoutNull();
+			if (isThirdGen) {
+				allPokes.remove(unown);
+			}
 			for (EncounterSet area : currentEncounters) {
 				for (Encounter enc : area.encounters) {
 					// Pick a random pokemon
@@ -317,6 +324,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 						// Start again
 						allPokes = noLegendaries ? allNonLegendaries()
 								: allPokemonWithoutNull();
+						if (isThirdGen) {
+							allPokes.remove(unown);
+						}
 					}
 				}
 			}
@@ -333,6 +343,10 @@ public abstract class AbstractRomHandler implements RomHandler {
 					// Pick a random themed pokemon
 					enc.pokemon = possiblePokemon.get(RandomSource
 							.nextInt(possiblePokemon.size()));
+					while (isThirdGen && enc.pokemon == unown) {
+						enc.pokemon = possiblePokemon.get(RandomSource
+								.nextInt(possiblePokemon.size()));
+					}
 				}
 			}
 		} else {
@@ -341,6 +355,10 @@ public abstract class AbstractRomHandler implements RomHandler {
 				for (Encounter enc : area.encounters) {
 					enc.pokemon = noLegendaries ? randomNonLegendaryPokemon()
 							: randomPokemon();
+					while (isThirdGen && enc.pokemon == unown) {
+						enc.pokemon = noLegendaries ? randomNonLegendaryPokemon()
+								: randomPokemon();
+					}
 				}
 			}
 		}
@@ -398,10 +416,18 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public void area1to1Encounters(boolean useTimeOfDay, boolean catchEmAll,
 			boolean typeThemed, boolean noLegendaries) {
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
+		boolean isThirdGen = (this instanceof Gen3RomHandler);
+		Pokemon unown = null;
+		if (isThirdGen) {
+			unown = this.getPokemon().get(201);
+		}
 		// Assume EITHER catch em all OR type themed for now
 		if (catchEmAll) {
 			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
 					: allPokemonWithoutNull();
+			if (isThirdGen) {
+				allPokes.remove(unown);
+			}
 			for (EncounterSet area : currentEncounters) {
 				// Poke-set
 				Set<Pokemon> inArea = pokemonInArea(area);
@@ -415,6 +441,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 						// Start again
 						allPokes = noLegendaries ? allNonLegendaries()
 								: allPokemonWithoutNull();
+						if (isThirdGen) {
+							allPokes.remove(unown);
+						}
 					}
 				}
 				for (Encounter enc : area.encounters) {
@@ -432,6 +461,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 				}
 				List<Pokemon> possiblePokemon = new ArrayList<Pokemon>(
 						cachedPokeLists.get(areaTheme));
+				if (isThirdGen) {
+					possiblePokemon.remove(unown);
+				}
 				// Poke-set
 				Set<Pokemon> inArea = pokemonInArea(area);
 				// Build area map using type theme, reset the list if needed
@@ -443,6 +475,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 					if (possiblePokemon.size() == 0) {
 						// Start again
 						possiblePokemon.addAll(cachedPokeLists.get(areaTheme));
+						if (isThirdGen) {
+							possiblePokemon.remove(unown);
+						}
 					}
 				}
 				for (Encounter enc : area.encounters) {
@@ -460,7 +495,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 				for (Pokemon areaPk : inArea) {
 					Pokemon picked = noLegendaries ? randomNonLegendaryPokemon()
 							: randomPokemon();
-					while (areaMap.containsValue(picked)) {
+					while (areaMap.containsValue(picked)
+							|| (isThirdGen && picked == unown)) {
 						picked = noLegendaries ? randomNonLegendaryPokemon()
 								: randomPokemon();
 					}
@@ -485,6 +521,15 @@ public abstract class AbstractRomHandler implements RomHandler {
 				: allPokemonWithoutNull();
 		List<Pokemon> remainingRight = noLegendaries ? allNonLegendaries()
 				: allPokemonWithoutNull();
+		boolean isThirdGen = (this instanceof Gen3RomHandler);
+		if (isThirdGen) {
+			// TEMP: Map unown to unown
+			Pokemon unown = this.getPokemon().get(201);
+			translateMap.put(unown, unown);
+			remainingLeft.remove(unown);
+			remainingRight.remove(unown);
+			System.out.println("TEMP: mapping unown to unown for 3rd gen");
+		}
 		while (remainingLeft.isEmpty() == false) {
 			int pickedLeft = RandomSource.nextInt(remainingLeft.size());
 			int pickedRight = RandomSource.nextInt(remainingRight.size());
@@ -498,6 +543,11 @@ public abstract class AbstractRomHandler implements RomHandler {
 			}
 			remainingRight.remove(pickedRight);
 			translateMap.put(pickedLeftP, pickedRightP);
+		}
+
+		for (Map.Entry<Pokemon, Pokemon> entry : translateMap.entrySet()) {
+			System.out.println(entry.getKey().name + " => "
+					+ entry.getValue().name);
 		}
 
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
