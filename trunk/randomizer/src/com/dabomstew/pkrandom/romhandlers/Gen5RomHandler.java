@@ -24,16 +24,21 @@ package com.dabomstew.pkrandom.romhandlers;
 /*----------------------------------------------------------------------------*/
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TreeMap;
 
 import pptxt.PPTxtHandler;
 
+import com.dabomstew.pkrandom.FileFunctions;
 import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
@@ -45,6 +50,7 @@ import com.dabomstew.pkrandom.pokemon.Trainer;
 import com.dabomstew.pkrandom.pokemon.TrainerPokemon;
 import com.dabomstew.pkrandom.pokemon.Type;
 
+import cuecompressors.BLZCoder;
 import dsdecmp.HexInputStream;
 import dsdecmp.JavaDSDecmp;
 
@@ -118,33 +124,187 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		return 0; // normal by default
 	}
 
-	private static final String[] pokeStatsNARC = new String[] { "a/0/1/6",
-			"a/0/1/6" };
-	private static final String[] movesNARC = new String[] { "a/0/2/1",
-			"a/0/2/1" };
-	private static final String[] encountersNARC = new String[] { "a/1/2/6",
-			"a/1/2/7" };
-	private static final String[] movesetsNARC = new String[] { "a/0/1/8",
-			"a/0/1/8" };
-	private static final String[] trainersNARC = new String[] { "a/0/9/2",
-			"a/0/9/1" };
-	private static final String[] trpokesNARC = new String[] { "a/0/9/3",
-			"a/0/9/2" };
-	private static String[] evolutionsNARC = new String[] { "a/0/1/9",
-			"a/0/1/9" };
+	private static class OffsetWithinEntry {
+		private int entry;
+		private int offset;
+	}
 
-	// Strings
-	private static final int[] trainerNamesFile = new int[] { 190, 382 };
-	private static final int[] trainerClassesFile = new int[] { 191, 383 };
-	private static final int[] mugshotsFile = new int[] { 176, 368 };
-	private static final int[] moveDescriptionsFile = new int[] { 202, 402 };
-	private static final int[] itemDescriptionsFile = new int[] { 53, 63 };
-	private static int[] pokeNamesFile = new int[] { 70, 90 };
+	private static class RomEntry {
+		private String name;
+		private String romCode;
+		private int romType;
+		private boolean staticPokemonSupport = false,
+				copyStaticPokemon = false;
+		private Map<String, String> strings = new HashMap<String, String>();
+		private Map<String, Integer> numbers = new HashMap<String, Integer>();
+		private Map<String, int[]> arrayEntries = new HashMap<String, int[]>();
+		private Map<String, OffsetWithinEntry[]> offsetArrayEntries = new HashMap<String, OffsetWithinEntry[]>();
+		private List<StaticPokemon> staticPokemon = new ArrayList<StaticPokemon>();
+
+		private int getInt(String key) {
+			if (!numbers.containsKey(key)) {
+				numbers.put(key, 0);
+			}
+			return numbers.get(key);
+		}
+
+		private String getString(String key) {
+			if (!strings.containsKey(key)) {
+				strings.put(key, "");
+			}
+			return strings.get(key);
+		}
+	}
+
+	private static List<RomEntry> roms;
+
+	static {
+		loadROMInfo();
+	}
+
+	private static void loadROMInfo() {
+		roms = new ArrayList<RomEntry>();
+		RomEntry current = null;
+		try {
+			Scanner sc = new Scanner(
+					FileFunctions.openConfig("gen5_offsets.ini"), "UTF-8");
+			while (sc.hasNextLine()) {
+				String q = sc.nextLine().trim();
+				if (q.contains("//")) {
+					q = q.substring(0, q.indexOf("//")).trim();
+				}
+				if (!q.isEmpty()) {
+					if (q.startsWith("[") && q.endsWith("]")) {
+						// New rom
+						current = new RomEntry();
+						current.name = q.substring(1, q.length() - 1);
+						roms.add(current);
+					} else {
+						String[] r = q.split("=", 2);
+						if (r.length == 1) {
+							System.err.println("invalid entry " + q);
+							continue;
+						}
+						if (r[1].endsWith("\r\n")) {
+							r[1] = r[1].substring(0, r[1].length() - 2);
+						}
+						r[1] = r[1].trim();
+						if (r[0].equals("Game")) {
+							current.romCode = r[1];
+						} else if (r[0].equals("Type")) {
+							if (r[1].equalsIgnoreCase("BW2")) {
+								current.romType = Type_BW2;
+							} else {
+								current.romType = Type_BW;
+							}
+						} else if (r[0].equals("CopyFrom")) {
+							for (RomEntry otherEntry : roms) {
+								if (r[1].equalsIgnoreCase(otherEntry.romCode)) {
+									// copy from here
+									current.arrayEntries
+											.putAll(otherEntry.arrayEntries);
+									current.numbers.putAll(otherEntry.numbers);
+									current.strings.putAll(otherEntry.strings);
+									current.offsetArrayEntries
+											.putAll(otherEntry.offsetArrayEntries);
+									if (current.copyStaticPokemon) {
+										current.staticPokemon
+												.addAll(otherEntry.staticPokemon);
+										current.staticPokemonSupport = true;
+									} else {
+										current.staticPokemonSupport = false;
+									}
+								}
+							}
+						} else if (r[0].equals("StaticPokemon[]")) {
+							if (r[1].startsWith("[") && r[1].endsWith("]")) {
+								String[] offsets = r[1].substring(1,
+										r[1].length() - 1).split(",");
+								int[] offs = new int[offsets.length];
+								int[] files = new int[offsets.length];
+								int c = 0;
+								for (String off : offsets) {
+									String[] parts = off.split("\\:");
+									files[c] = parseRIInt(parts[0]);
+									offs[c++] = parseRIInt(parts[1]);
+								}
+								StaticPokemon sp = new StaticPokemon();
+								sp.files = files;
+								sp.offsets = offs;
+								current.staticPokemon.add(sp);
+							} else {
+								String[] parts = r[1].split("\\:");
+								int files = parseRIInt(parts[0]);
+								int offs = parseRIInt(parts[1]);
+								StaticPokemon sp = new StaticPokemon();
+								sp.files = new int[] { files };
+								sp.offsets = new int[] { offs };
+							}
+						} else if (r[0].equals("StaticPokemonSupport")) {
+							int spsupport = parseRIInt(r[1]);
+							current.staticPokemonSupport = (spsupport > 0);
+						} else if (r[0].equals("CopyStaticPokemon")) {
+							int csp = parseRIInt(r[1]);
+							current.copyStaticPokemon = (csp > 0);
+						} else if (r[0].startsWith("StarterOffsets")) {
+							String[] offsets = r[1].substring(1,
+									r[1].length() - 1).split(",");
+							OffsetWithinEntry[] offs = new OffsetWithinEntry[offsets.length];
+							int c = 0;
+							for (String off : offsets) {
+								String[] parts = off.split("\\:");
+								OffsetWithinEntry owe = new OffsetWithinEntry();
+								owe.entry = parseRIInt(parts[0]);
+								owe.offset = parseRIInt(parts[1]);
+								offs[c++] = owe;
+							}
+							current.offsetArrayEntries.put(r[0], offs);
+						} else {
+							if (r[1].startsWith("[") && r[1].endsWith("]")) {
+								String[] offsets = r[1].substring(1,
+										r[1].length() - 1).split(",");
+								int[] offs = new int[offsets.length];
+								int c = 0;
+								for (String off : offsets) {
+									offs[c++] = parseRIInt(off);
+								}
+								current.arrayEntries.put(r[0], offs);
+							} else if (r[0].endsWith("Offset")
+									|| r[0].endsWith("Count")) {
+								int offs = parseRIInt(r[1]);
+								current.numbers.put(r[0], offs);
+							} else {
+								current.strings.put(r[0], r[1]);
+							}
+						}
+					}
+				}
+			}
+			sc.close();
+		} catch (FileNotFoundException e) {
+		}
+
+	}
+
+	private static int parseRIInt(String off) {
+		int radix = 10;
+		off = off.trim().toLowerCase();
+		if (off.startsWith("0x") || off.startsWith("&h")) {
+			radix = 16;
+			off = off.substring(2);
+		}
+		try {
+			return Integer.parseInt(off, radix);
+		} catch (NumberFormatException ex) {
+			System.err.println("invalid base " + radix + "number " + off);
+			return 0;
+		}
+	}
 
 	// This ROM
 	private Pokemon[] pokes;
 	private Move[] moves;
-	private int type;
+	private RomEntry romEntry;
 	private String ndsCode;
 	private byte[] arm9;
 
@@ -155,45 +315,41 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	protected boolean detectNDSRom(String ndsCode) {
-		this.ndsCode = ndsCode;
-		List<Character> validBWgames = Arrays.asList('A', 'B', 'D', 'E');
-		return ndsCode.charAt(0) == 'I' && ndsCode.charAt(1) == 'R'
-				&& validBWgames.contains(ndsCode.charAt(2));
+		for (RomEntry re : roms) {
+			if (ndsCode.equals(re.romCode)) {
+				this.romEntry = re;
+				return true; // match
+			}
+		}
+		return false;
 	}
 
 	@Override
 	protected void loadedROM() {
-		if (ndsCode.charAt(2) == 'A' || ndsCode.charAt(2) == 'B') {
-			type = Type_BW;
-		} else {
-			type = Type_BW2;
-		}
 		try {
 			arm9 = readFile("arm9.bin");
 		} catch (IOException e) {
 			arm9 = new byte[0];
 		}
 		try {
-			stringsNarc = readNARC("a/0/0/2");
-			storyTextNarc = readNARC("a/0/0/3");
+			stringsNarc = readNARC(romEntry.getString("TextStrings"));
+			storyTextNarc = readNARC(romEntry.getString("TextStory"));
 		} catch (IOException e) {
 			stringsNarc = null;
 			storyTextNarc = null;
 		}
 		loadPokemonStats();
 		loadMoves();
-	}
-
-	// DEBUG
-	public void printPokemonStats() {
-		for (int i = 1; i <= 649; i++) {
-			System.out.println(pokes[i].toString());
+		// BW2? Have to decode the file used for move tutor moves
+		if (romEntry.romType == Type_BW2) {
+			BLZCoder.main(new String[] { "-d",
+					dataFolder + "/" + romEntry.getString("MoveTutorFile") });
 		}
 	}
 
 	private void loadPokemonStats() {
 		try {
-			pokeNarc = this.readNARC(pokeStatsNARC[type]);
+			pokeNarc = this.readNARC(romEntry.getString("PokemonStats"));
 			String[] pokeNames = readPokemonNames();
 			pokes = new Pokemon[650];
 			for (int i = 1; i <= 649; i++) {
@@ -212,7 +368,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	private void loadMoves() {
 		try {
-			moveNarc = this.readNARC(movesNARC[type]);
+			moveNarc = this.readNARC(romEntry.getString("MoveData"));
 			moves = new Move[560];
 			for (int i = 1; i <= 559; i++) {
 				byte[] moveData = moveNarc.files.get(i);
@@ -254,7 +410,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	private String[] readPokemonNames() {
 		String[] pokeNames = new String[650];
-		List<String> nameList = getStrings(false, pokeNamesFile[type]);
+		List<String> nameList = getStrings(false,
+				romEntry.getInt("PokemonNamesTextOffset"));
 		for (int i = 1; i <= 649; i++) {
 			pokeNames[i] = nameList.get(i);
 		}
@@ -270,9 +427,28 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		} catch (IOException e) {
 		}
 		try {
-			writeNARC("a/0/0/2", stringsNarc);
-			writeNARC("a/0/0/3", storyTextNarc);
+			writeNARC(romEntry.getString("TextStrings"), stringsNarc);
+			writeNARC(romEntry.getString("TextStory"), storyTextNarc);
 		} catch (IOException e) {
+		}
+		// BW2? Have to re-encode the file used for move tutor moves
+		if (romEntry.romType == Type_BW2) {
+			BLZCoder.main(new String[] { "-en",
+					dataFolder + "/" + romEntry.getString("MoveTutorFile") });
+			// Fix the y9 entry with offset given
+			int fileSize = (int) new File(dataFolder + "/"
+					+ romEntry.getString("MoveTutorFile")).length();
+			byte[] threebytesize = get3byte(fileSize);
+			byte[] y9table;
+			int y9offset = romEntry.getInt("MoveTutorOverlayTableOffset");
+			try {
+				y9table = readFile("overarm9.bin");
+				y9table[y9offset] = threebytesize[0];
+				y9table[y9offset + 1] = threebytesize[1];
+				y9table[y9offset + 2] = threebytesize[2];
+				writeFile("overarm9.bin", y9table);
+			} catch (IOException e) {
+			}
 		}
 	}
 
@@ -293,7 +469,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		}
 
 		try {
-			this.writeNARC(movesNARC[type], moveNarc);
+			this.writeNARC(romEntry.getString("MoveData"), moveNarc);
 		} catch (IOException e) {
 			// // change this later
 			e.printStackTrace();
@@ -302,14 +478,15 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	}
 
 	private void savePokemonStats() {
-		List<String> nameList = getStrings(false, pokeNamesFile[type]);
+		List<String> nameList = getStrings(false,
+				romEntry.getInt("PokemonNamesTextOffset"));
 		for (int i = 1; i <= 649; i++) {
 			saveBasicPokeStats(pokes[i], pokeNarc.files.get(i));
 			nameList.set(i, pokes[i].name);
 		}
-		setStrings(false, pokeNamesFile[type], nameList);
+		setStrings(false, romEntry.getInt("PokemonNamesTextOffset"), nameList);
 		try {
-			this.writeNARC(pokeStatsNARC[type], pokeNarc);
+			this.writeNARC(romEntry.getString("PokemonStats"), pokeNarc);
 		} catch (IOException e) {
 			// uh-oh?
 			e.printStackTrace();
@@ -354,29 +531,21 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public List<Pokemon> getStarters() {
-		if (type == Type_BW) {
-			try {
-				NARCContents scriptNARC = this.readNARC("a/0/5/7");
-				byte[] starterScripts = scriptNARC.files.get(782);
-				return Arrays.asList(pokes[readWord(starterScripts, 639)],
-						pokes[readWord(starterScripts, 687)],
-						pokes[readWord(starterScripts, 716)]);
-			} catch (IOException e) {
-				return Arrays.asList(pokes[495], pokes[498], pokes[501]);
+		try {
+			NARCContents scriptNARC = this.readNARC(romEntry
+					.getString("Scripts"));
+			List<Pokemon> starters = new ArrayList<Pokemon>();
+			for (int i = 0; i < 3; i++) {
+				OffsetWithinEntry[] thisStarter = romEntry.offsetArrayEntries
+						.get("StarterOffsets" + (i + 1));
+				starters.add(pokes[readWord(
+						scriptNARC.files.get(thisStarter[0].entry),
+						thisStarter[0].offset)]);
 			}
-
-		} else {
-			try {
-				NARCContents scriptNARC = this.readNARC("a/0/5/6");
-				byte[] starterScripts = scriptNARC.files.get(854);
-				return Arrays.asList(pokes[readWord(starterScripts, 1419)],
-						pokes[readWord(starterScripts, 1472)],
-						pokes[readWord(starterScripts, 1506)]);
-			} catch (IOException e) {
-				return Arrays.asList(pokes[495], pokes[498], pokes[501]);
-			}
+			return starters;
+		} catch (IOException e) {
+			return Arrays.asList(pokes[495], pokes[498], pokes[501]);
 		}
-
 	}
 
 	@Override
@@ -389,117 +558,85 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 				return false;
 			}
 		}
-		if (type == Type_BW) {
-			// Try change
-			try {
-				NARCContents scriptNARC = this.readNARC("a/0/5/7");
-				byte[] starterScripts = scriptNARC.files.get(782);
 
-				writeWord(starterScripts, 639, newStarters.get(0).number);
-				writeWord(starterScripts, 644, newStarters.get(0).number);
-
-				writeWord(starterScripts, 687, newStarters.get(1).number);
-				writeWord(starterScripts, 692, newStarters.get(1).number);
-
-				writeWord(starterScripts, 716, newStarters.get(2).number);
-				writeWord(starterScripts, 721, newStarters.get(2).number);
-
-				this.writeNARC("a/0/5/7", scriptNARC);
-
-				// Try replace sprites
-				NARCContents starterNARC = this.readNARC("a/2/0/5");
-				NARCContents pokespritesNARC = this.readNARC("a/0/0/4");
-				replaceStarterFiles(starterNARC, pokespritesNARC, 0,
-						newStarters.get(0).number);
-				replaceStarterFiles(starterNARC, pokespritesNARC, 1,
-						newStarters.get(1).number);
-				replaceStarterFiles(starterNARC, pokespritesNARC, 2,
-						newStarters.get(2).number);
-				writeNARC("a/2/0/5", starterNARC);
-
-				// Text
-				List<String> yourHouseStrings = getStrings(true, 430);
-				for (int i = 0; i < 3; i++) {
-					yourHouseStrings.set(18 - i, "\\xF000\\xBD02\\x0000The "
-							+ newStarters.get(i).primaryType.camelCase()
-							+ "-type Pok\\x00E9mon\\xFFFE\\xF000\\xBD02\\x0000"
-							+ newStarters.get(i).name);
+		// Fix up starter offsets
+		try {
+			NARCContents scriptNARC = this.readNARC(romEntry
+					.getString("Scripts"));
+			for (int i = 0; i < 3; i++) {
+				int starter = newStarters.get(i).number;
+				OffsetWithinEntry[] thisStarter = romEntry.offsetArrayEntries
+						.get("StarterOffsets" + (i + 1));
+				for (OffsetWithinEntry entry : thisStarter) {
+					writeWord(scriptNARC.files.get(entry.entry), entry.offset,
+							starter);
 				}
-				// Update what the friends say
-				yourHouseStrings
-						.set(26,
-								"Cheren: Hey, how come you get to pick\\xFFFEout my Pok\\x00E9mon?"
-										+ "\\xF000\\xBE01\\x0000\\xFFFEOh, never mind. I wanted this one\\xFFFEfrom the start, anyway."
-										+ "\\xF000\\xBE01\\x0000");
-				yourHouseStrings
-						.set(53,
-								"It's decided. You'll be my opponent...\\xFFFEin our first Pok\\x00E9mon battle!"
-										+ "\\xF000\\xBE01\\x0000\\xFFFELet's see what you can do, \\xFFFEmy Pok\\x00E9mon!"
-										+ "\\xF000\\xBE01\\x0000");
-
-				// rewrite
-				setStrings(true, 430, yourHouseStrings);
-			} catch (IOException e) {
-				return false;
-			} catch (InterruptedException e) {
-				return false;
 			}
-			return true;
-		} else {
-			// Try change
-			try {
-				NARCContents scriptNARC = this.readNARC("a/0/5/6");
-				byte[] starterScripts = scriptNARC.files.get(854);
+			this.writeNARC(romEntry.getString("Scripts"), scriptNARC);
 
-				writeWord(starterScripts, 0x58B, newStarters.get(0).number);
-				writeWord(starterScripts, 0x590, newStarters.get(0).number);
-				writeWord(starterScripts, 0x595, newStarters.get(0).number);
-
-				writeWord(starterScripts, 0x5C0, newStarters.get(1).number);
-				writeWord(starterScripts, 0x5C5, newStarters.get(1).number);
-				writeWord(starterScripts, 0x5CA, newStarters.get(1).number);
-
-				writeWord(starterScripts, 0x5E2, newStarters.get(2).number);
-				writeWord(starterScripts, 0x5E7, newStarters.get(2).number);
-				writeWord(starterScripts, 0x5EC, newStarters.get(2).number);
-
-				this.writeNARC("a/0/5/6", scriptNARC);
-
-				// Try replace sprites
-				NARCContents starterNARC = this.readNARC("a/2/0/2");
-				NARCContents pokespritesNARC = this.readNARC("a/0/0/4");
-				replaceStarterFiles(starterNARC, pokespritesNARC, 0,
-						newStarters.get(0).number);
-				replaceStarterFiles(starterNARC, pokespritesNARC, 1,
-						newStarters.get(1).number);
-				replaceStarterFiles(starterNARC, pokespritesNARC, 2,
-						newStarters.get(2).number);
-				writeNARC("a/2/0/2", starterNARC);
-
-				// Text
-				List<String> starterTownStrings = getStrings(true, 169);
-				for (int i = 0; i < 3; i++) {
-					starterTownStrings.set(37 - i, "\\xF000\\xBD02\\x0000The "
-							+ newStarters.get(i).primaryType.camelCase()
-							+ "-type Pok\\x00E9mon\\xFFFE\\xF000\\xBD02\\x0000"
-							+ newStarters.get(i).name);
-				}
-				// Update what the rival says
-				starterTownStrings
-						.set(60,
-								"\\xF000\\x0100\\x0001\\x0001: Let's see how good\\xFFFEa Trainer you are!"
-										+ "\\xF000\\xBE01\\x0000\\xFFFEI'll use my Pok\\x00E9mon"
-										+ "\\xFFFEthat I raised from an Egg!\\xF000\\xBE01\\x0000");
-
-				// rewrite
-				setStrings(true, 169, starterTownStrings);
-			} catch (IOException e) {
-				return false;
-			} catch (InterruptedException e) {
-				return false;
-			}
-			return true;
+			// Starter sprites
+			NARCContents starterNARC = this.readNARC(romEntry
+					.getString("StarterGraphics"));
+			NARCContents pokespritesNARC = this.readNARC(romEntry
+					.getString("PokemonGraphics"));
+			replaceStarterFiles(starterNARC, pokespritesNARC, 0,
+					newStarters.get(0).number);
+			replaceStarterFiles(starterNARC, pokespritesNARC, 1,
+					newStarters.get(1).number);
+			replaceStarterFiles(starterNARC, pokespritesNARC, 2,
+					newStarters.get(2).number);
+			writeNARC(romEntry.getString("StarterGraphics"), starterNARC);
+		} catch (IOException ex) {
+			return false;
+		} catch (InterruptedException e) {
+			return false;
 		}
+		// Fix text depending on version
+		if (romEntry.romType == Type_BW) {
+			List<String> yourHouseStrings = getStrings(true,
+					romEntry.getInt("StarterLocationTextOffset"));
+			for (int i = 0; i < 3; i++) {
+				yourHouseStrings.set(18 - i, "\\xF000\\xBD02\\x0000The "
+						+ newStarters.get(i).primaryType.camelCase()
+						+ "-type Pok\\x00E9mon\\xFFFE\\xF000\\xBD02\\x0000"
+						+ newStarters.get(i).name);
+			}
+			// Update what the friends say
+			yourHouseStrings
+					.set(26,
+							"Cheren: Hey, how come you get to pick\\xFFFEout my Pok\\x00E9mon?"
+									+ "\\xF000\\xBE01\\x0000\\xFFFEOh, never mind. I wanted this one\\xFFFEfrom the start, anyway."
+									+ "\\xF000\\xBE01\\x0000");
+			yourHouseStrings
+					.set(53,
+							"It's decided. You'll be my opponent...\\xFFFEin our first Pok\\x00E9mon battle!"
+									+ "\\xF000\\xBE01\\x0000\\xFFFELet's see what you can do, \\xFFFEmy Pok\\x00E9mon!"
+									+ "\\xF000\\xBE01\\x0000");
+
+			// rewrite
+			setStrings(true, romEntry.getInt("StarterLocationTextOffset"),
+					yourHouseStrings);
+		} else {
+			List<String> starterTownStrings = getStrings(true,
+					romEntry.getInt("StarterLocationTextOffset"));
+			for (int i = 0; i < 3; i++) {
+				starterTownStrings.set(37 - i, "\\xF000\\xBD02\\x0000The "
+						+ newStarters.get(i).primaryType.camelCase()
+						+ "-type Pok\\x00E9mon\\xFFFE\\xF000\\xBD02\\x0000"
+						+ newStarters.get(i).name);
+			}
+			// Update what the rival says
+			starterTownStrings
+					.set(60,
+							"\\xF000\\x0100\\x0001\\x0001: Let's see how good\\xFFFEa Trainer you are!"
+									+ "\\xF000\\xBE01\\x0000\\xFFFEI'll use my Pok\\x00E9mon"
+									+ "\\xFFFEthat I raised from an Egg!\\xF000\\xBE01\\x0000");
+
+			// rewrite
+			setStrings(true, romEntry.getInt("StarterLocationTextOffset"),
+					starterTownStrings);
+		}
+		return true;
 	}
 
 	private void replaceStarterFiles(NARCContents starterNARC,
@@ -550,7 +687,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	@Override
 	public List<EncounterSet> getEncounters(boolean useTimeOfDay) {
 		try {
-			NARCContents encounterNARC = readNARC(encountersNARC[type]);
+			NARCContents encounterNARC = readNARC(romEntry
+					.getString("WildPokemon"));
 			List<EncounterSet> encounters = new ArrayList<EncounterSet>();
 			for (byte[] entry : encounterNARC.files) {
 				if (entry.length > 232 && useTimeOfDay) {
@@ -606,7 +744,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	public void setEncounters(boolean useTimeOfDay,
 			List<EncounterSet> encountersList) {
 		try {
-			NARCContents encounterNARC = readNARC(encountersNARC[type]);
+			NARCContents encounterNARC = readNARC(romEntry
+					.getString("WildPokemon"));
 			Iterator<EncounterSet> encounters = encountersList.iterator();
 			for (byte[] entry : encounterNARC.files) {
 				writeEncounterEntry(encounters, entry, 0);
@@ -625,7 +764,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 			}
 
 			// Save
-			writeNARC(encountersNARC[type], encounterNARC);
+			writeNARC(romEntry.getString("WildPokemon"), encounterNARC);
 		} catch (IOException e) {
 			// whuh-oh
 			e.printStackTrace();
@@ -658,8 +797,10 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	public List<Trainer> getTrainers() {
 		List<Trainer> allTrainers = new ArrayList<Trainer>();
 		try {
-			NARCContents trainers = this.readNARC(trainersNARC[type]);
-			NARCContents trpokes = this.readNARC(trpokesNARC[type]);
+			NARCContents trainers = this.readNARC(romEntry
+					.getString("TrainerData"));
+			NARCContents trpokes = this.readNARC(romEntry
+					.getString("TrainerPokemon"));
 			int trainernum = trainers.files.size();
 			for (int i = 1; i < trainernum; i++) {
 				byte[] trainer = trainers.files.get(i);
@@ -712,7 +853,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 				}
 				allTrainers.add(tr);
 			}
-			if (type == Type_BW) {
+			if (romEntry.romType == Type_BW) {
 				tagTrainersBW(allTrainers);
 			} else {
 				tagTrainersBW2(allTrainers);
@@ -836,7 +977,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 		// Rival - Hugh
 		tagRivalBW(trs, "RIVAL1", 0xa1); // Start
-		tagRivalBW(trs, "RIVAL2", 0xa4); // Floccessy Ranch
+		tagRivalBW(trs, "RIVAL2", 0xa6); // Floccessy Ranch
 		tagRivalBW(trs, "RIVAL3", 0x24c); // Tag Battles in the sewers
 		tagRivalBW(trs, "RIVAL4", 0x170); // Tag Battle on the Plasma Frigate
 		tagRivalBW(trs, "RIVAL5", 0x17a); // Undella Town 1st visit
@@ -905,7 +1046,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	public void setTrainers(List<Trainer> trainerData) {
 		Iterator<Trainer> allTrainers = trainerData.iterator();
 		try {
-			NARCContents trainers = this.readNARC(trainersNARC[type]);
+			NARCContents trainers = this.readNARC(romEntry
+					.getString("TrainerData"));
 			NARCContents trpokes = new NARCContents();
 			// empty entry
 			trpokes.files.add(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 });
@@ -950,8 +1092,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 				}
 				trpokes.files.add(trpoke);
 			}
-			this.writeNARC(trainersNARC[type], trainers);
-			this.writeNARC(trpokesNARC[type], trpokes);
+			this.writeNARC(romEntry.getString("TrainerData"), trainers);
+			this.writeNARC(romEntry.getString("TrainerPokemon"), trpokes);
 		} catch (IOException ex) {
 			// change this later
 			ex.printStackTrace();
@@ -962,7 +1104,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	public Map<Pokemon, List<MoveLearnt>> getMovesLearnt() {
 		Map<Pokemon, List<MoveLearnt>> movesets = new TreeMap<Pokemon, List<MoveLearnt>>();
 		try {
-			NARCContents movesLearnt = this.readNARC(movesetsNARC[type]);
+			NARCContents movesLearnt = this.readNARC(romEntry
+					.getString("PokemonMovesets"));
 			for (int i = 1; i <= 649; i++) {
 				Pokemon pkmn = pokes[i];
 				byte[] movedata = movesLearnt.files.get(i);
@@ -990,7 +1133,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	@Override
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets) {
 		try {
-			NARCContents movesLearnt = readNARC(movesetsNARC[type]);
+			NARCContents movesLearnt = readNARC(romEntry
+					.getString("PokemonMovesets"));
 			for (int i = 1; i <= 649; i++) {
 				Pokemon pkmn = pokes[i];
 				List<MoveLearnt> learnt = movesets.get(pkmn);
@@ -1007,12 +1151,31 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 				movesLearnt.files.set(i, moveset);
 			}
 			// Save
-			this.writeNARC(movesetsNARC[type], movesLearnt);
+			this.writeNARC(romEntry.getString("PokemonMovesets"), movesLearnt);
 		} catch (IOException e) {
 			// change this later
 			e.printStackTrace();
 		}
 
+	}
+
+	private static class StaticPokemon {
+		private int[] files;
+		private int[] offsets;
+
+		public Pokemon getPokemon(Gen5RomHandler parent, NARCContents scriptNARC) {
+			return parent.pokes[parent.readWord(scriptNARC.files.get(files[0]),
+					offsets[0])];
+		}
+
+		public void setPokemon(Gen5RomHandler parent, NARCContents scriptNARC,
+				Pokemon pkmn) {
+			int value = pkmn.number;
+			for (int i = 0; i < offsets.length; i++) {
+				byte[] file = scriptNARC.files.get(files[i]);
+				parent.writeWord(file, offsets[i], value);
+			}
+		}
 	}
 
 	@Override
@@ -1082,9 +1245,9 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 			// Update TM item descriptions
 			List<String> itemDescriptions = getStrings(false,
-					itemDescriptionsFile[type]);
+					romEntry.getInt("ItemDescriptionsTextOffset"));
 			List<String> moveDescriptions = getStrings(false,
-					moveDescriptionsFile[type]);
+					romEntry.getInt("MoveDescriptionsTextOffset"));
 			// TM01 is item 328 and so on
 			for (int i = 0; i < 92; i++) {
 				itemDescriptions.set(i + 328,
@@ -1096,10 +1259,11 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 						moveDescriptions.get(moveIndexes.get(i + 92)));
 			}
 			// Save the new item descriptions
-			setStrings(false, itemDescriptionsFile[type], itemDescriptions);
+			setStrings(false, romEntry.getInt("ItemDescriptionsTextOffset"),
+					itemDescriptions);
 			// Palettes
 			String baseOfPalettes;
-			if (type == Type_BW) {
+			if (romEntry.romType == Type_BW) {
 				baseOfPalettes = "E903EA03020003000400050006000700";
 			} else {
 				baseOfPalettes = "FD03FE03020003000400050006000700";
@@ -1124,7 +1288,6 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private static RomFunctions.StringSizeDeterminer ssd = new RomFunctions.StringSizeDeterminer() {
 
 		@Override
@@ -1176,6 +1339,113 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
+	@Override
+	public boolean hasMoveTutors() {
+		return romEntry.romType == Type_BW2;
+	}
+
+	@Override
+	public List<Integer> getMoveTutorMoves() {
+		if (!hasMoveTutors()) {
+			return new ArrayList<Integer>();
+		}
+		int baseOffset = romEntry.getInt("MoveTutorDataOffset");
+		int amount = 60;
+		int bytesPer = 12;
+		List<Integer> mtMoves = new ArrayList<Integer>();
+		try {
+			byte[] mtFile = readFile(romEntry.getString("MoveTutorFile"));
+			for (int i = 0; i < amount; i++) {
+				mtMoves.add(readWord(mtFile, baseOffset + i * bytesPer));
+			}
+		} catch (IOException e) {
+		}
+		return mtMoves;
+	}
+
+	@Override
+	public void setMoveTutorMoves(List<Integer> moves) {
+		if (!hasMoveTutors()) {
+			return;
+		}
+		int baseOffset = romEntry.getInt("MoveTutorDataOffset");
+		int amount = 60;
+		int bytesPer = 12;
+		if (moves.size() != amount) {
+			return;
+		}
+		try {
+			byte[] mtFile = readFile(romEntry.getString("MoveTutorFile"));
+			for (int i = 0; i < amount; i++) {
+				writeWord(mtFile, baseOffset + i * bytesPer, moves.get(i));
+			}
+			writeFile(romEntry.getString("MoveTutorFile"), mtFile);
+		} catch (IOException e) {
+		}
+	}
+
+	@Override
+	public Map<Pokemon, boolean[]> getMoveTutorCompatibility() {
+		if (!hasMoveTutors()) {
+			return new TreeMap<Pokemon, boolean[]>();
+		}
+		Map<Pokemon, boolean[]> compat = new TreeMap<Pokemon, boolean[]>();
+		int[] countsPersonalOrder = new int[] { 15, 17, 13, 15 };
+		int[] countsMoveOrder = new int[] { 13, 15, 15, 17 };
+		int[] personalToMoveOrder = new int[] { 1, 3, 0, 2 };
+		for (int i = 1; i <= 649; i++) {
+			byte[] data = pokeNarc.files.get(i);
+			Pokemon pkmn = pokes[i];
+			boolean[] flags = new boolean[61];
+			for (int mt = 0; mt < 4; mt++) {
+				boolean[] mtflags = new boolean[countsPersonalOrder[mt] + 1];
+				for (int j = 0; j < 4; j++) {
+					readByteIntoFlags(data, mtflags, j * 8 + 1, 0x3C + mt * 4
+							+ j);
+				}
+				int offsetOfThisData = 0;
+				for (int cmoIndex = 0; cmoIndex < personalToMoveOrder[mt]; cmoIndex++) {
+					offsetOfThisData += countsMoveOrder[cmoIndex];
+				}
+				System.arraycopy(mtflags, 1, flags, offsetOfThisData + 1,
+						countsPersonalOrder[mt]);
+			}
+			compat.put(pkmn, flags);
+		}
+		return compat;
+	}
+
+	@Override
+	public void setMoveTutorCompatibility(Map<Pokemon, boolean[]> compatData) {
+		if (!hasMoveTutors()) {
+			return;
+		}
+		// BW2 move tutor flags aren't using the same order as the move tutor
+		// move data.
+		// We unscramble them from move data order to personal.narc flag order.
+		int[] countsPersonalOrder = new int[] { 15, 17, 13, 15 };
+		int[] countsMoveOrder = new int[] { 13, 15, 15, 17 };
+		int[] personalToMoveOrder = new int[] { 1, 3, 0, 2 };
+		for (Map.Entry<Pokemon, boolean[]> compatEntry : compatData.entrySet()) {
+			Pokemon pkmn = compatEntry.getKey();
+			boolean[] flags = compatEntry.getValue();
+			byte[] data = pokeNarc.files.get(pkmn.number);
+			for (int mt = 0; mt < 4; mt++) {
+				int offsetOfThisData = 0;
+				for (int cmoIndex = 0; cmoIndex < personalToMoveOrder[mt]; cmoIndex++) {
+					offsetOfThisData += countsMoveOrder[cmoIndex];
+				}
+				boolean[] mtflags = new boolean[countsPersonalOrder[mt] + 1];
+				System.arraycopy(flags, offsetOfThisData + 1, mtflags, 1,
+						countsPersonalOrder[mt]);
+				for (int j = 0; j < 4; j++) {
+					data[0x3C + mt * 4 + j] = getByteFromFlags(mtflags,
+							j * 8 + 1);
+				}
+			}
+		}
+	}
+
 	private int find(byte[] data, String hexString) {
 		if (hexString.length() % 2 != 0) {
 			return -3; // error
@@ -1210,22 +1480,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public String getROMName() {
-		switch (type) {
-		case Type_BW:
-			if (ndsCode.charAt(2) == 'B') {
-				return "Pokemon Black";
-			} else {
-				return "Pokemon White";
-			}
-		case Type_BW2:
-			if (ndsCode.charAt(2) == 'E') {
-				return "Pokemon Black 2";
-			} else {
-				return "Pokemon White 2";
-			}
-		default:
-			return "???";
-		}
+		return "Pokemon " + romEntry.name;
 	}
 
 	@Override
@@ -1247,7 +1502,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	public void removeTradeEvolutions() {
 		// Read NARC
 		try {
-			NARCContents evoNARC = readNARC(evolutionsNARC[type]);
+			NARCContents evoNARC = readNARC(romEntry
+					.getString("PokemonEvolutions"));
 			log("--Removing Trade Evolutions--");
 			for (int i = 1; i <= 649; i++) {
 				byte[] evoEntry = evoNARC.files.get(i);
@@ -1308,7 +1564,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 					}
 				}
 			}
-			writeNARC(evolutionsNARC[type], evoNARC);
+			writeNARC(romEntry.getString("PokemonEvolutions"), evoNARC);
 			logBlankLine();
 		} catch (IOException e) {
 			// can't do anything
@@ -1318,10 +1574,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public List<String> getTrainerNames() {
-		List<String> tnames = getStrings(false, trainerNamesFile[type]);
+		List<String> tnames = getStrings(false,
+				romEntry.getInt("TrainerNamesTextOffset"));
 		tnames.remove(0); // blank one
 		// Tack the mugshot names on the end
-		List<String> mnames = getStrings(false, mugshotsFile[type]);
+		List<String> mnames = getStrings(false,
+				romEntry.getInt("TrainerMugshotsTextOffset"));
 		for (String mname : mnames) {
 			if (!mname.isEmpty()
 					&& (mname.charAt(0) >= 'A' && mname.charAt(0) <= 'Z')) {
@@ -1338,10 +1596,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public void setTrainerNames(List<String> trainerNames) {
-		List<String> tnames = getStrings(false, trainerNamesFile[type]);
+		List<String> tnames = getStrings(false,
+				romEntry.getInt("TrainerNamesTextOffset"));
 		// Grab the mugshot names off the back of the list of trainer names
 		// we got back
-		List<String> mnames = getStrings(false, mugshotsFile[type]);
+		List<String> mnames = getStrings(false,
+				romEntry.getInt("TrainerMugshotsTextOffset"));
 		int trNamesSize = trainerNames.size();
 		for (int i = mnames.size() - 1; i >= 0; i--) {
 			String origMName = mnames.get(i);
@@ -1353,12 +1613,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 			}
 		}
 		// Save back mugshot names
-		setStrings(false, mugshotsFile[type], mnames);
+		setStrings(false, romEntry.getInt("TrainerMugshotsTextOffset"), mnames);
 
 		// Now save the rest of trainer names
 		List<String> newTNames = new ArrayList<String>(trainerNames);
 		newTNames.add(0, tnames.get(0)); // the 0-entry, preserve it
-		setStrings(false, trainerNamesFile[type], newTNames);
+		setStrings(false, romEntry.getInt("TrainerNamesTextOffset"), newTNames);
 
 	}
 
@@ -1369,12 +1629,13 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public List<String> getTrainerClassNames() {
-		return getStrings(false, trainerClassesFile[type]);
+		return getStrings(false, romEntry.getInt("TrainerClassesTextOffset"));
 	}
 
 	@Override
 	public void setTrainerClassNames(List<String> trainerClassNames) {
-		setStrings(false, trainerClassesFile[type], trainerClassNames);
+		setStrings(false, romEntry.getInt("TrainerClassesTextOffset"),
+				trainerClassNames);
 	}
 
 	@Override
@@ -1400,5 +1661,10 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	@Override
 	public int highestAbilityIndex() {
 		return 164;
+	}
+
+	@Override
+	public int internalStringLength(String string) {
+		return ssd.lengthFor(string);
 	}
 }

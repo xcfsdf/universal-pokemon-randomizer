@@ -29,6 +29,7 @@ package com.dabomstew.pkrandom.romhandlers;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +57,13 @@ public abstract class AbstractRomHandler implements RomHandler {
 
 	protected List<Evolution> evolutions;
 
+	/* Constructor */
+
 	public AbstractRomHandler() {
 		this.evolutions = EvolutionData.evosFor(this);
 	}
+
+	/* Public Methods, implemented here for all gens */
 
 	@Override
 	public List<Evolution> getEvolutions() {
@@ -116,11 +121,6 @@ public abstract class AbstractRomHandler implements RomHandler {
 			pkmn.catchRate = rate;
 		}
 
-	}
-
-	@Override
-	public Type randomType() {
-		return Type.randomType();
 	}
 
 	@Override
@@ -294,79 +294,6 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public String abilityName(int number) {
-		return RomFunctions.abilityNames[number];
-	}
-
-	@Override
-	public void randomEncounters(boolean useTimeOfDay, boolean catchEmAll,
-			boolean typeThemed, boolean noLegendaries) {
-		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
-		boolean isThirdGen = (this instanceof Gen3RomHandler);
-		Pokemon unown = null;
-		if (isThirdGen) {
-			unown = this.getPokemon().get(201);
-		}
-		// Assume EITHER catch em all OR type themed for now
-		if (catchEmAll) {
-			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
-					: allPokemonWithoutNull();
-			if (isThirdGen) {
-				allPokes.remove(unown);
-			}
-			for (EncounterSet area : currentEncounters) {
-				for (Encounter enc : area.encounters) {
-					// Pick a random pokemon
-					int picked = RandomSource.nextInt(allPokes.size());
-					enc.pokemon = allPokes.get(picked);
-					allPokes.remove(picked);
-					if (allPokes.size() == 0) {
-						// Start again
-						allPokes = noLegendaries ? allNonLegendaries()
-								: allPokemonWithoutNull();
-						if (isThirdGen) {
-							allPokes.remove(unown);
-						}
-					}
-				}
-			}
-		} else if (typeThemed) {
-			Map<Type, List<Pokemon>> cachedPokeLists = new TreeMap<Type, List<Pokemon>>();
-			for (EncounterSet area : currentEncounters) {
-				Type areaTheme = randomType();
-				if (!cachedPokeLists.containsKey(areaTheme)) {
-					cachedPokeLists.put(areaTheme,
-							pokemonOfType(areaTheme, noLegendaries));
-				}
-				List<Pokemon> possiblePokemon = cachedPokeLists.get(areaTheme);
-				for (Encounter enc : area.encounters) {
-					// Pick a random themed pokemon
-					enc.pokemon = possiblePokemon.get(RandomSource
-							.nextInt(possiblePokemon.size()));
-					while (isThirdGen && enc.pokemon == unown) {
-						enc.pokemon = possiblePokemon.get(RandomSource
-								.nextInt(possiblePokemon.size()));
-					}
-				}
-			}
-		} else {
-			// Entirely random
-			for (EncounterSet area : currentEncounters) {
-				for (Encounter enc : area.encounters) {
-					enc.pokemon = noLegendaries ? randomNonLegendaryPokemon()
-							: randomPokemon();
-					while (isThirdGen && enc.pokemon == unown) {
-						enc.pokemon = noLegendaries ? randomNonLegendaryPokemon()
-								: randomPokemon();
-					}
-				}
-			}
-		}
-
-		setEncounters(useTimeOfDay, currentEncounters);
-	}
-
-	@Override
 	public Pokemon randomNonLegendaryPokemon() {
 		Pokemon pkmn;
 		while ((pkmn = randomPokemon()).isLegendary()) {
@@ -413,21 +340,75 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void area1to1Encounters(boolean useTimeOfDay, boolean catchEmAll,
+	public void randomEncounters(boolean useTimeOfDay, boolean catchEmAll,
 			boolean typeThemed, boolean noLegendaries) {
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
-		boolean isThirdGen = (this instanceof Gen3RomHandler);
-		Pokemon unown = null;
-		if (isThirdGen) {
-			unown = this.getPokemon().get(201);
-		}
+		List<Pokemon> banned = this.bannedForWildEncounters();
 		// Assume EITHER catch em all OR type themed for now
 		if (catchEmAll) {
 			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
 					: allPokemonWithoutNull();
-			if (isThirdGen) {
-				allPokes.remove(unown);
+			allPokes.removeAll(banned);
+			for (EncounterSet area : currentEncounters) {
+				for (Encounter enc : area.encounters) {
+					// Pick a random pokemon
+					int picked = RandomSource.nextInt(allPokes.size());
+					enc.pokemon = allPokes.get(picked);
+					allPokes.remove(picked);
+					if (allPokes.size() == 0) {
+						// Start again
+						allPokes = noLegendaries ? allNonLegendaries()
+								: allPokemonWithoutNull();
+						allPokes.removeAll(banned);
+					}
+				}
 			}
+		} else if (typeThemed) {
+			Map<Type, List<Pokemon>> cachedPokeLists = new TreeMap<Type, List<Pokemon>>();
+			for (EncounterSet area : currentEncounters) {
+				Type areaTheme = randomType();
+				if (!cachedPokeLists.containsKey(areaTheme)) {
+					cachedPokeLists.put(areaTheme,
+							pokemonOfType(areaTheme, noLegendaries));
+				}
+				List<Pokemon> possiblePokemon = cachedPokeLists.get(areaTheme);
+				for (Encounter enc : area.encounters) {
+					// Pick a random themed pokemon
+					enc.pokemon = possiblePokemon.get(RandomSource
+							.nextInt(possiblePokemon.size()));
+					while (banned.contains(enc.pokemon)) {
+						enc.pokemon = possiblePokemon.get(RandomSource
+								.nextInt(possiblePokemon.size()));
+					}
+				}
+			}
+		} else {
+			// Entirely random
+			for (EncounterSet area : currentEncounters) {
+				for (Encounter enc : area.encounters) {
+					enc.pokemon = noLegendaries ? randomNonLegendaryPokemon()
+							: randomPokemon();
+					while (banned.contains(enc.pokemon)) {
+						enc.pokemon = noLegendaries ? randomNonLegendaryPokemon()
+								: randomPokemon();
+					}
+				}
+			}
+		}
+
+		setEncounters(useTimeOfDay, currentEncounters);
+	}
+
+	@Override
+	public void area1to1Encounters(boolean useTimeOfDay, boolean catchEmAll,
+			boolean typeThemed, boolean noLegendaries) {
+		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
+		List<Pokemon> banned = this.bannedForWildEncounters();
+		// Assume EITHER catch em all OR type themed for now
+		if (catchEmAll) {
+			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
+					: allPokemonWithoutNull();
+			allPokes.removeAll(banned);
 			for (EncounterSet area : currentEncounters) {
 				// Poke-set
 				Set<Pokemon> inArea = pokemonInArea(area);
@@ -441,9 +422,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 						// Start again
 						allPokes = noLegendaries ? allNonLegendaries()
 								: allPokemonWithoutNull();
-						if (isThirdGen) {
-							allPokes.remove(unown);
-						}
+						allPokes.removeAll(banned);
 					}
 				}
 				for (Encounter enc : area.encounters) {
@@ -461,9 +440,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 				}
 				List<Pokemon> possiblePokemon = new ArrayList<Pokemon>(
 						cachedPokeLists.get(areaTheme));
-				if (isThirdGen) {
-					possiblePokemon.remove(unown);
-				}
+				possiblePokemon.removeAll(banned);
 				// Poke-set
 				Set<Pokemon> inArea = pokemonInArea(area);
 				// Build area map using type theme, reset the list if needed
@@ -475,9 +452,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 					if (possiblePokemon.size() == 0) {
 						// Start again
 						possiblePokemon.addAll(cachedPokeLists.get(areaTheme));
-						if (isThirdGen) {
-							possiblePokemon.remove(unown);
-						}
+						possiblePokemon.removeAll(banned);
 					}
 				}
 				for (Encounter enc : area.encounters) {
@@ -496,7 +471,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 					Pokemon picked = noLegendaries ? randomNonLegendaryPokemon()
 							: randomPokemon();
 					while (areaMap.containsValue(picked)
-							|| (isThirdGen && picked == unown)) {
+							|| banned.contains(picked)) {
 						picked = noLegendaries ? randomNonLegendaryPokemon()
 								: randomPokemon();
 					}
@@ -521,14 +496,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 				: allPokemonWithoutNull();
 		List<Pokemon> remainingRight = noLegendaries ? allNonLegendaries()
 				: allPokemonWithoutNull();
-		boolean isThirdGen = (this instanceof Gen3RomHandler);
-		if (isThirdGen) {
-			// TEMP: Map unown to unown
-			Pokemon unown = this.getPokemon().get(201);
-			translateMap.put(unown, unown);
-			remainingLeft.remove(unown);
-			remainingRight.remove(unown);
-			System.out.println("TEMP: mapping unown to unown for 3rd gen");
+		List<Pokemon> banned = new ArrayList<Pokemon>();
+		// Banned pokemon should be mapped to themselves
+		for (Pokemon bannedPK : banned) {
+			translateMap.put(bannedPK, bannedPK);
+			remainingLeft.remove(bannedPK);
+			remainingRight.remove(bannedPK);
 		}
 		while (remainingLeft.isEmpty() == false) {
 			int pickedLeft = RandomSource.nextInt(remainingLeft.size());
@@ -543,11 +516,6 @@ public abstract class AbstractRomHandler implements RomHandler {
 			}
 			remainingRight.remove(pickedRight);
 			translateMap.put(pickedLeftP, pickedRightP);
-		}
-
-		for (Map.Entry<Pokemon, Pokemon> entry : translateMap.entrySet()) {
-			System.out.println(entry.getKey().name + " => "
-					+ entry.getValue().name);
 		}
 
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
@@ -565,7 +533,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 
 	@Override
 	public void randomizeTrainerPokes(boolean rivalCarriesStarter,
-			boolean usePowerLevels, boolean noLegendaries) {
+			boolean usePowerLevels, boolean noLegendaries,
+			boolean noEarlyShedinja) {
 		List<Trainer> currentTrainers = this.getTrainers();
 		cachedReplacementLists = new TreeMap<Type, List<Pokemon>>();
 		cachedAllList = noLegendaries ? allNonLegendaries()
@@ -578,8 +547,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 				continue; // skip
 			}
 			for (TrainerPokemon tp : t.pokemon) {
+				boolean shedAllowed = (!noEarlyShedinja) || tp.level >= 20;
 				tp.pokemon = pickReplacement(tp.pokemon, usePowerLevels, null,
-						noLegendaries);
+						noLegendaries, shedAllowed);
 			}
 		}
 
@@ -596,7 +566,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void typeThemeTrainerPokes(boolean rivalCarriesStarter,
 			boolean usePowerLevels, boolean weightByFrequency,
-			boolean noLegendaries) {
+			boolean noLegendaries, boolean noEarlyShedinja) {
 		List<Trainer> currentTrainers = this.getTrainers();
 		cachedReplacementLists = new TreeMap<Type, List<Pokemon>>();
 		cachedAllList = noLegendaries ? allNonLegendaries()
@@ -662,8 +632,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 			// Themed groups just have a theme, no special criteria
 			for (Trainer t : trainersInGroup) {
 				for (TrainerPokemon tp : t.pokemon) {
+					boolean shedAllowed = (!noEarlyShedinja) || tp.level >= 20;
 					tp.pokemon = pickReplacement(tp.pokemon, usePowerLevels,
-							typeForGroup, noLegendaries);
+							typeForGroup, noLegendaries, shedAllowed);
 				}
 			}
 		}
@@ -685,8 +656,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 					usedUberTypes.add(typeForTrainer);
 				}
 				for (TrainerPokemon tp : t.pokemon) {
+					boolean shedAllowed = (!noEarlyShedinja) || tp.level >= 20;
 					tp.pokemon = pickReplacement(tp.pokemon, usePowerLevels,
-							typeForTrainer, noLegendaries);
+							typeForTrainer, noLegendaries, shedAllowed);
 				}
 			}
 		}
@@ -699,11 +671,6 @@ public abstract class AbstractRomHandler implements RomHandler {
 
 		// Save it all up
 		this.setTrainers(currentTrainers);
-	}
-
-	@Override
-	public boolean typeInGame(Type type) {
-		return true;
 	}
 
 	@Override
@@ -734,29 +701,18 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void fixTypeEffectiveness() {
-		// DEFAULT: do nothing
-
-	}
-
-	@Override
-	public boolean hasTimeBasedEncounters() {
-		// DEFAULT: no
-		return false;
-	}
-
-	@Override
 	public void randomizeStaticPokemon(boolean legendForLegend) {
 		// Load
 		List<Pokemon> currentStaticPokemon = this.getStaticPokemon();
 		List<Pokemon> replacements = new ArrayList<Pokemon>();
+		List<Pokemon> banned = this.bannedForStaticPokemon();
 
 		if (legendForLegend) {
 			for (int i = 0; i < currentStaticPokemon.size(); i++) {
 				Pokemon old = currentStaticPokemon.get(i);
 				Pokemon newPK = old.isLegendary() ? randomLegendaryPokemon()
 						: randomNonLegendaryPokemon();
-				while (replacements.contains(newPK)) {
+				while (replacements.contains(newPK) || banned.contains(newPK)) {
 					newPK = old.isLegendary() ? randomLegendaryPokemon()
 							: randomNonLegendaryPokemon();
 				}
@@ -765,7 +721,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 		} else {
 			for (int i = 0; i < currentStaticPokemon.size(); i++) {
 				Pokemon newPK = randomPokemon();
-				while (replacements.contains(newPK)) {
+				while (replacements.contains(newPK) || banned.contains(newPK)) {
 					newPK = randomPokemon();
 				}
 				replacements.add(newPK);
@@ -824,6 +780,63 @@ public abstract class AbstractRomHandler implements RomHandler {
 
 		// Set the new compatibility
 		this.setTMHMCompatibility(compat);
+	}
+
+	@Override
+	public void randomizeMoveTutorMoves() {
+		if (!this.hasMoveTutors()) {
+			return;
+		}
+		// Pick some random Move Tutor moves, excluding TMs.
+		int mtCount = this.getMoveTutorMoves().size();
+		List<Move> allMoves = this.getMoves();
+		List<Integer> tms = this.getTMMoves();
+		List<Integer> newMTs = new ArrayList<Integer>();
+		for (int i = 0; i < mtCount; i++) {
+			int chosenMove = RandomSource.nextInt(allMoves.size() - 1) + 1;
+			while (newMTs.contains(chosenMove) || tms.contains(chosenMove)
+					|| RomFunctions.bannedRandomMoves[chosenMove]) {
+				chosenMove = RandomSource.nextInt(allMoves.size() - 1) + 1;
+			}
+			newMTs.add(chosenMove);
+		}
+		this.setMoveTutorMoves(newMTs);
+	}
+
+	@Override
+	public void randomizeMoveTutorCompatibility(boolean preferSameType) {
+		if (!this.hasMoveTutors()) {
+			return;
+		}
+		// Get current compatibility
+		Map<Pokemon, boolean[]> compat = this.getMoveTutorCompatibility();
+		List<Integer> mts = this.getMoveTutorMoves();
+		List<Move> moveData = this.getMoves();
+		for (Map.Entry<Pokemon, boolean[]> compatEntry : compat.entrySet()) {
+			Pokemon pkmn = compatEntry.getKey();
+			boolean[] flags = compatEntry.getValue();
+			for (int i = 1; i <= mts.size(); i++) {
+				int move = mts.get(i - 1);
+				Move mv = moveData.get(move);
+				double probability = 0.5;
+				if (preferSameType) {
+					if (pkmn.primaryType.equals(mv.type)
+							|| (pkmn.secondaryType != null && pkmn.secondaryType
+									.equals(mv.type))) {
+						probability = 0.9;
+					} else if (mv.type != null && mv.type.equals(Type.NORMAL)) {
+						probability = 0.5;
+					} else {
+						probability = 0.25;
+					}
+				}
+				flags[i] = (RandomSource.random() < probability);
+			}
+		}
+
+		// Set the new compatibility
+		this.setMoveTutorCompatibility(compat);
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -892,13 +905,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 			} else {
 				int idx = trainerName.contains("&") ? 1 : 0;
 				List<String> pickFrom = allTrainerNames[idx];
+				int intStrLen = this.internalStringLength(trainerName);
 				if (mustBeSameLength) {
-					pickFrom = trainerNamesByLength[idx].get(trainerName
-							.length());
+					pickFrom = trainerNamesByLength[idx].get(intStrLen);
 				}
 				String changeTo = trainerName;
-				if (pickFrom != null && pickFrom.size() > 0
-						&& trainerName.length() > 1) {
+				if (pickFrom != null && pickFrom.size() > 0 && intStrLen > 1) {
 					changeTo = pickFrom.get(RandomSource.nextInt(pickFrom
 							.size()));
 					while (changeTo.length() > maxLength) {
@@ -995,9 +1007,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 						|| checkName.contains(" & ") || (checkName
 						.endsWith("s") && !checkName.endsWith("ss"))) ? 1 : 0;
 				List<String> pickFrom = allTrainerClasses[idx];
+				int intStrLen = this.internalStringLength(trainerClassName);
 				if (mustBeSameLength) {
-					pickFrom = trainerClassesByLength[idx].get(trainerClassName
-							.length());
+					pickFrom = trainerClassesByLength[idx].get(intStrLen);
 				}
 				String changeTo = trainerClassName;
 				if (pickFrom != null && pickFrom.size() > 0) {
@@ -1360,7 +1372,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 	private List<Pokemon> cachedAllList;
 
 	private Pokemon pickReplacement(Pokemon current, boolean usePowerLevels,
-			Type type, boolean noLegendaries) {
+			Type type, boolean noLegendaries, boolean shedinjaAllowed) {
 		List<Pokemon> pickFrom = cachedAllList;
 		if (type != null) {
 			if (!cachedReplacementLists.containsKey(type)) {
@@ -1380,7 +1392,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 			while (canPick.isEmpty()) {
 				for (Pokemon pk : pickFrom) {
 					if (pk.bstForPowerLevels() >= minTarget
-							&& pk.bstForPowerLevels() <= maxTarget) {
+							&& pk.bstForPowerLevels() <= maxTarget
+							&& (pk.number != 292 || shedinjaAllowed)) {
 						canPick.add(pk);
 					}
 				}
@@ -1389,8 +1402,57 @@ public abstract class AbstractRomHandler implements RomHandler {
 			}
 			return canPick.get(RandomSource.nextInt(canPick.size()));
 		} else {
-			return pickFrom.get(RandomSource.nextInt(pickFrom.size()));
+			if (shedinjaAllowed) {
+				return pickFrom.get(RandomSource.nextInt(pickFrom.size()));
+			} else {
+				Pokemon pk = pickFrom
+						.get(RandomSource.nextInt(pickFrom.size()));
+				while (pk.number == 292) {
+					pk = pickFrom.get(RandomSource.nextInt(pickFrom.size()));
+				}
+				return pk;
+			}
 		}
+	}
+
+	/* Helper methods used by subclasses */
+
+	protected void log(String log) {
+		RandomizerGUI.verboseLog.println(log);
+	}
+
+	protected void logBlankLine() {
+		RandomizerGUI.verboseLog.println();
+	}
+
+	/* Default Implementations */
+	/* Used when a subclass doesn't override */
+
+	@Override
+	public void fixTypeEffectiveness() {
+		// DEFAULT: do nothing
+
+	}
+
+	@Override
+	public boolean hasTimeBasedEncounters() {
+		// DEFAULT: no
+		return false;
+	}
+
+	@Override
+	public boolean typeInGame(Type type) {
+		return true;
+	}
+
+	@Override
+	public String abilityName(int number) {
+		return RomFunctions.abilityNames[number];
+	}
+
+	@Override
+	public Type randomType() {
+		return Type.randomType();
 	}
 
 	@Override
@@ -1409,12 +1471,28 @@ public abstract class AbstractRomHandler implements RomHandler {
 		return true;
 	}
 
-	protected void log(String log) {
-		RandomizerGUI.verboseLog.println(log);
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Pokemon> bannedForWildEncounters() {
+		return (List<Pokemon>) Collections.EMPTY_LIST;
 	}
 
-	protected void logBlankLine() {
-		RandomizerGUI.verboseLog.println();
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Pokemon> bannedForStaticPokemon() {
+		return (List<Pokemon>) Collections.EMPTY_LIST;
+	}
+
+	@Override
+	public boolean hasBWEXPPatch() {
+		// default: no
+		return false;
+	}
+
+	@Override
+	public void applyBWEXPPatch() {
+		// default: do nothing
+
 	}
 
 }

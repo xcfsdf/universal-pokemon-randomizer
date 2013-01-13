@@ -23,7 +23,6 @@ package com.dabomstew.pkrandom.romhandlers;
 /*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
 /*----------------------------------------------------------------------------*/
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -711,15 +710,6 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 				+ (((rom[offset + 3] & 0xFF) - 8) << 24);
 	}
 
-	private int readWord(int offset) {
-		return (rom[offset] & 0xFF) + ((rom[offset + 1] & 0xFF) << 8);
-	}
-
-	private void writeWord(int offset, int value) {
-		rom[offset] = (byte) (value % 0x100);
-		rom[offset + 1] = (byte) ((value / 0x100) % 0x100);
-	}
-
 	private void writePointer(int offset, int pointer) {
 		rom[offset] = (byte) (pointer & 0xFF);
 		rom[offset + 1] = (byte) ((pointer >> 8) & 0xFF);
@@ -958,6 +948,11 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 			offs += 20;
 		}
+	}
+
+	@Override
+	public List<Pokemon> bannedForWildEncounters() {
+		return Arrays.asList(pokes[201]); // Unown banned
 	}
 
 	@Override
@@ -1564,6 +1559,80 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		}
 	}
 
+	@Override
+	public boolean hasMoveTutors() {
+		return (romEntry.romType == RomType_Em || romEntry.romType == RomType_FRLG);
+	}
+
+	@Override
+	public List<Integer> getMoveTutorMoves() {
+		if (!hasMoveTutors()) {
+			return new ArrayList<Integer>();
+		}
+		List<Integer> mts = new ArrayList<Integer>();
+		int moveCount = romEntry.getValue("MoveTutorMoves");
+		int offset = romEntry.getValue("MoveTutorData");
+		for (int i = 0; i < moveCount; i++) {
+			mts.add(readWord(offset + i * 2));
+		}
+		return mts;
+	}
+
+	@Override
+	public void setMoveTutorMoves(List<Integer> moves) {
+		if (!hasMoveTutors()) {
+			return;
+		}
+		int moveCount = romEntry.getValue("MoveTutorMoves");
+		int offset = romEntry.getValue("MoveTutorData");
+		if (moveCount != moves.size()) {
+			return;
+		}
+		for (int i = 0; i < moveCount; i++) {
+			writeWord(offset + i * 2, moves.get(i));
+		}
+	}
+
+	@Override
+	public Map<Pokemon, boolean[]> getMoveTutorCompatibility() {
+		if (!hasMoveTutors()) {
+			return new TreeMap<Pokemon, boolean[]>();
+		}
+		Map<Pokemon, boolean[]> compat = new TreeMap<Pokemon, boolean[]>();
+		int moveCount = romEntry.getValue("MoveTutorMoves");
+		int offset = romEntry.getValue("MoveTutorData") + moveCount * 2;
+		int bytesRequired = ((moveCount + 7) & ~7) / 8;
+		for (int i = 1; i <= 386; i++) {
+			int compatOffset = offset + pokeNumTo3GIndex(i) * moveCount;
+			Pokemon pkmn = pokes[i];
+			boolean[] flags = new boolean[moveCount + 1];
+			for (int j = 0; j < bytesRequired; j++) {
+				readByteIntoFlags(flags, j * 8 + 1, compatOffset + j);
+			}
+			compat.put(pkmn, flags);
+		}
+		return compat;
+	}
+
+	@Override
+	public void setMoveTutorCompatibility(Map<Pokemon, boolean[]> compatData) {
+		if (!hasMoveTutors()) {
+			return;
+		}
+		int moveCount = romEntry.getValue("MoveTutorMoves");
+		int offset = romEntry.getValue("MoveTutorData") + moveCount * 2;
+		int bytesRequired = ((moveCount + 7) & ~7) / 8;
+		for (Map.Entry<Pokemon, boolean[]> compatEntry : compatData.entrySet()) {
+			Pokemon pkmn = compatEntry.getKey();
+			boolean[] flags = compatEntry.getValue();
+			int compatOffset = offset + pokeNumTo3GIndex(pkmn.number)
+					* bytesRequired;
+			for (int j = 0; j < bytesRequired; j++) {
+				rom[compatOffset + j] = getByteFromFlags(flags, j * 8 + 1);
+			}
+		}
+	}
+
 	public void debugMoveData() {
 		int baseOffset = romEntry.getValue("PokemonMovesets");
 		for (int i = 1; i <= 411; i++) {
@@ -1968,6 +2037,11 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 			return "Air Lock";
 		}
 		return RomFunctions.abilityNames[number];
+	}
+
+	@Override
+	public int internalStringLength(String string) {
+		return translateString(string).length;
 	}
 
 }

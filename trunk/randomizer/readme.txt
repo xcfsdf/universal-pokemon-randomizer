@@ -1,4 +1,4 @@
-Universal Pokemon Randomizers 1.0.0
+Universal Pokemon Randomizers 1.1.0
 by Dabomstew, 2012
 
 Homepage: http://pokehacks.dabomstew.com/randomizer/index.php
@@ -58,6 +58,7 @@ of it if you haven't played Pokemon games much before.
   * The Pokemon that Trainers use against you.
   * The base stats which define the potential of each Pokemon
   * The elemental types of each Pokemon
+  * The abilities of each Pokemon, in games where Pokemon have abilities
   * The moves that Pokemon learn by gaining levels
   * The contents of each TM which can be taught to Pokemon to give them
     additional moves 
@@ -66,6 +67,8 @@ of it if you haven't played Pokemon games much before.
   * The "static" Pokemon which you either are given, fight on the overworld,
     or are sold.
   * The names of trainers & the classes they belong in
+  * The moves that Move Tutors teach, in certain games where they are
+    particularly significant.
   
 How To Use
 ----------
@@ -85,11 +88,12 @@ randomized, then save the randomized ROM.
 Games/ROMs supported
 --------------------
 
-Version 1.0.0 supports the following ROMs:
+Version 1.1.0 supports the following ROMs:
 
-  * Pokemon Red (U/E)
-  * Pokemon Blue (U/E)
-  * Pokemon Yellow (U/E)
+  * Pokemon Red (any*)
+  * Pokemon Blue (any*)
+  * Pokemon Green (J)
+  * Pokemon Yellow (any*)
   * Pokemon Gold (U/E)
   * Pokemon Silver (U/E)
   * Pokemon Crystal (U/E)
@@ -98,11 +102,11 @@ Version 1.0.0 supports the following ROMs:
   * Pokemon Emerald (U)
   * Pokemon FireRed (U) (1.0 and 1.1)
   * Pokemon LeafGreen (U) (1.0 and 1.1)
-  * Pokemon Diamond (U)
-  * Pokemon Pearl (U)
-  * Pokemon Platinum (U)
-  * Pokemon HeartGold (U)
-  * Pokemon SoulSilver (U)
+  * Pokemon Diamond (any*)
+  * Pokemon Pearl (any*)
+  * Pokemon Platinum (any*)
+  * Pokemon HeartGold (any*)
+  * Pokemon SoulSilver (any*)
   * Pokemon Black (U)
   * Pokemon White (U)
   * Pokemon Black2 (U)
@@ -111,6 +115,11 @@ Version 1.0.0 supports the following ROMs:
 As you can see, pretty much every US 1.0 game is supported. Future releases
 should improve the compatibility with foreign-language games, though the DS
 games may work right now anyway, albeit with some random English text inserted.
+
+Any game marked as any* can be used with any language ROM to my knowledge,
+though random English text can and will be inserted in some places. Also,
+some features may not be fully available for non-English ROMs, though the core
+functionality will always work.
 
 License
 -------

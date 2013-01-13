@@ -103,5 +103,14 @@ public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 		}
 		return (byte) thisByte;
 	}
+	
+	protected int readWord(int offset) {
+		return (rom[offset] & 0xFF) + ((rom[offset + 1] & 0xFF) << 8);
+	}
+
+	protected void writeWord(int offset, int value) {
+		rom[offset] = (byte) (value % 0x100);
+		rom[offset + 1] = (byte) ((value / 0x100) % 0x100);
+	}
 
 }

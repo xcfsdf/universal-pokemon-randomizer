@@ -135,17 +135,20 @@ public interface RomHandler {
 
 	public boolean hasTimeBasedEncounters();
 
+	public List<Pokemon> bannedForWildEncounters();
+
 	// Randomizer: trainer pokemon
 	public List<Trainer> getTrainers();
 
 	public void setTrainers(List<Trainer> trainerData);
 
 	public void randomizeTrainerPokes(boolean rivalCarriesStarter,
-			boolean usePowerLevels, boolean noLegendaries);
+			boolean usePowerLevels, boolean noLegendaries,
+			boolean noEarlyShedinja);
 
 	public void typeThemeTrainerPokes(boolean rivalCarriesStarter,
 			boolean usePowerLevels, boolean weightByFrequency,
-			boolean noLegendaries);
+			boolean noLegendaries, boolean noEarlyShedinja);
 
 	public boolean typeInGame(Type type);
 
@@ -166,6 +169,8 @@ public interface RomHandler {
 	public void randomizeStaticPokemon(boolean legendForLegend);
 
 	public boolean canChangeStaticPokemon();
+
+	public List<Pokemon> bannedForStaticPokemon();
 
 	// Randomizer: TMs/HMs
 
@@ -196,6 +201,22 @@ public interface RomHandler {
 	public void setTMHMCompatibility(Map<Pokemon, boolean[]> compatData);
 
 	public void randomizeTMHMCompatibility(boolean preferSameType);
+
+	// Randomizer: move tutors
+
+	public boolean hasMoveTutors();
+
+	public List<Integer> getMoveTutorMoves();
+
+	public void setMoveTutorMoves(List<Integer> moves);
+
+	public void randomizeMoveTutorMoves();
+
+	public Map<Pokemon, boolean[]> getMoveTutorCompatibility();
+
+	public void setMoveTutorCompatibility(Map<Pokemon, boolean[]> compatData);
+
+	public void randomizeMoveTutorCompatibility(boolean preferSameType);
 
 	// Randomizer: trainer names
 
@@ -251,5 +272,11 @@ public interface RomHandler {
 	public void patchForNationalDex();
 
 	public String getDefaultExtension();
+
+	public int internalStringLength(String string);
+
+	public boolean hasBWEXPPatch();
+
+	public void applyBWEXPPatch();
 
 }
