@@ -6,12 +6,69 @@ package pptxt;
 /*--  Ported to Java and bugfixed/customized by Dabomstew					--*/
 /*----------------------------------------------------------------------------*/
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.dabomstew.pkrandom.FileFunctions;
 
 public class PPTxtHandler {
+
+	public static Map<String, String> pokeToText = new HashMap<String, String>();
+	public static Map<String, String> textToPoke = new HashMap<String, String>();
+
+	public static Pattern pokeToTextPattern, textToPokePattern;
+
+	static {
+		try {
+			Scanner sc = new Scanner(
+					FileFunctions.openConfig("Generation5.tbl"), "UTF-8");
+			while (sc.hasNextLine()) {
+				String q = sc.nextLine();
+				if (!q.trim().isEmpty()) {
+					String[] r = q.split("=", 2);
+					if (r[1].endsWith("\r\n")) {
+						r[1] = r[1].substring(0, r[1].length() - 2);
+					}
+					pokeToText.put(Character.toString((char) Integer.parseInt(
+							r[0], 16)),
+							r[1].replace("\\", "\\\\").replace("$", "\\$"));
+					textToPoke.put(r[1], "\\\\x" + r[0]);
+				}
+			}
+			sc.close();
+			pokeToTextPattern = makePattern(pokeToText.keySet());
+			textToPokePattern = makePattern(textToPoke.keySet());
+		} catch (FileNotFoundException e) {
+		}
+	}
+
+	public static Pattern makePattern(Iterable<String> tokens) {
+		String patternStr = "("
+				+ implode(tokens, "|").replace("\\", "\\\\")
+						.replace("[", "\\[").replace("]", "\\]")
+						.replace("(", "\\(").replace(")", "\\)") + ")";
+		return Pattern.compile(patternStr);
+	}
+
+	public static String implode(Iterable<String> tokens, String sep) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (String token : tokens) {
+			if (!first) {
+				sb.append(sep);
+			}
+			sb.append(token);
+			first = false;
+		}
+		return sb.toString();
+	}
+
 	/**
 	 * Decompress the words given into chars according to 9bits per char format
 	 * Based off poketext's implementation of the same in gen4, but uses all 16
@@ -153,8 +210,9 @@ public class PPTxtHandler {
 						chars.add("\\xFFFF");
 					} else {
 						if (encText.get(i).get(j).get(k) > 20
-								&& encText.get(i).get(j).get(k) <= 127
-								&& encText.get(i).get(j).get(k) != 0xF000) {
+								&& encText.get(i).get(j).get(k) <= 0xFFF0
+								&& Character.UnicodeBlock.of(encText.get(i)
+										.get(j).get(k)) != null) {
 							chars.add(""
 									+ ((char) encText.get(i).get(j).get(k)
 											.intValue()));
@@ -170,7 +228,26 @@ public class PPTxtHandler {
 				decText.get(i).add(chars);
 			}
 		}
+
+		// Parse strings against the table
+		for (int sn = 0; sn < strings.size(); sn++) {
+			strings.set(sn,
+					bulkReplace(strings.get(sn), pokeToTextPattern, pokeToText));
+		}
 		return strings;
+	}
+
+	private static String bulkReplace(String string, Pattern pattern,
+			Map<String, String> replacements) {
+		Matcher matcher = pattern.matcher(string);
+
+		StringBuffer sb = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(sb, replacements.get(matcher.group(1)));
+		}
+		matcher.appendTail(sb);
+
+		return sb.toString();
 	}
 
 	/**
@@ -186,6 +263,14 @@ public class PPTxtHandler {
 	 * @return The file to write back to the NARC.
 	 */
 	public static byte[] saveEntry(byte[] originalData, List<String> text) {
+
+		// Parse strings against the reverse table
+		for (int sn = 0; sn < text.size(); sn++) {
+			text.set(sn,
+					bulkReplace(text.get(sn), textToPokePattern, textToPoke));
+		}
+
+		// Make sure we have the original unknowns etc
 		readTexts(originalData);
 
 		// Start getting stuff
@@ -283,8 +368,6 @@ public class PPTxtHandler {
 
 	private static List<Integer> parseString(String string, int entry_id) {
 		List<Integer> chars = new ArrayList<Integer>();
-		string = string.replace("♂", "\\x246D");
-		string = string.replace("♀", "\\x246E");
 		for (int i = 0; i < string.length(); i++) {
 			if (string.charAt(i) != '\\') {
 				chars.add((int) string.charAt(i));

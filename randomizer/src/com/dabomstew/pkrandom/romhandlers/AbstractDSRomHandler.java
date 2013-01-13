@@ -86,6 +86,11 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		dataFolder = dataFolder.replaceAll("[^A-Za-z0-9_]+", "");
 		File df = new File("./" + dataFolder);
 		df.mkdir();
+		// Temp code
+//		if (true) {
+//			loadedROM();
+//			return true;
+//		}
 		try {
 			DSFunctions.extract(filename, dataFolder);
 		} catch (Exception e) {
@@ -157,7 +162,7 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 				| ((arm9[offset + 2] & 0xFF) << 16);
 	}
 
-	private byte[] get3byte(int amount) {
+	protected byte[] get3byte(int amount) {
 		byte[] ret = new byte[3];
 		ret[0] = (byte) (amount & 0xFF);
 		ret[1] = (byte) ((amount >> 8) & 0xFF);

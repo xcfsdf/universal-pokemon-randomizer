@@ -63,4 +63,14 @@ public class FileFunctions {
 			return new FileInputStream("./config/" + filename);
 		}
 	}
+
+	public static byte[] getXPPatchFile(String filename) throws IOException {
+		InputStream is = FileFunctions.class
+				.getResourceAsStream("/com/dabomstew/pkrandom/xppatches/"
+						+ filename);
+		byte[] buf = new byte[is.available()];
+		is.read(buf);
+		is.close();
+		return buf;
+	}
 }
