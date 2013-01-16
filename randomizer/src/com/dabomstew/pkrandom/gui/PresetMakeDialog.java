@@ -33,6 +33,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -219,6 +220,14 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 				dos.writeByte(RandomizerGUI.PRESET_FILE_VERSION);
 				dos.writeLong(seed);
 				dos.writeUTF(configString);
+				byte[] trainerclasses = readFile(FileFunctions
+						.openConfig("trainerclasses.txt"));
+				dos.writeInt(trainerclasses.length);
+				dos.write(trainerclasses);
+				byte[] trainernames = readFile(FileFunctions
+						.openConfig("trainernames.txt"));
+				dos.writeInt(trainernames.length);
+				dos.write(trainernames);
 				dos.close();
 				JOptionPane.showMessageDialog(this, "Preset file saved to\n"
 						+ fh.getAbsolutePath());
@@ -228,6 +237,13 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 			}
 		}
 	}// GEN-LAST:event_produceFileButtonActionPerformed
+
+	protected static byte[] readFile(InputStream is) throws IOException {
+		byte[] file = new byte[is.available()];
+		is.read(file);
+		is.close();
+		return file;
+	}
 
 	private void doneButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_doneButtonActionPerformed
 		this.setVisible(false);

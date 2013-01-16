@@ -228,7 +228,7 @@ public interface RomHandler {
 
 	public int maxTrainerNameLength();
 
-	public void randomizeTrainerNames();
+	public void randomizeTrainerNames(byte[] presetNames);
 
 	// Randomizer: trainer class names
 
@@ -240,7 +240,7 @@ public interface RomHandler {
 
 	public int maxTrainerClassNameLength();
 
-	public void randomizeTrainerClassNames();
+	public void randomizeTrainerClassNames(byte[] presetNames);
 
 	// Randomizer: pokemon abilities
 	public int abilitiesPerPokemon();
@@ -250,6 +250,12 @@ public interface RomHandler {
 	public String abilityName(int number);
 
 	public void randomizeAbilities(boolean allowWonderGuard);
+
+	// Hidden hollows (BW2 only)
+
+	public boolean hasHiddenHollowPokemon();
+
+	public void randomizeHiddenHollowPokemon();
 
 	// Misc
 
