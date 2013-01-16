@@ -27,6 +27,7 @@ package com.dabomstew.pkrandom.romhandlers;
 /*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
 /*----------------------------------------------------------------------------*/
 
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -840,45 +841,44 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static List<String>[] allTrainerNames = new List[] {
-			new ArrayList<String>(), new ArrayList<String>() };
-	@SuppressWarnings("unchecked")
-	private static Map<Integer, List<String>> trainerNamesByLength[] = new Map[] {
-			new TreeMap<Integer, List<String>>(),
-			new TreeMap<Integer, List<String>>() };
-	private static boolean trainerNamesInited = false;
-
 	@Override
-	public void randomizeTrainerNames() {
-		if (!trainerNamesInited) {
-			trainerNamesInited = true;
-			String tnamesFile = "trainernames.txt";
-			// Check for the file
-			if (FileFunctions.configExists(tnamesFile)) {
-				try {
-					Scanner sc = new Scanner(
-							FileFunctions.openConfig(tnamesFile), "UTF-8");
-					while (sc.hasNextLine()) {
-						String trainername = sc.nextLine().trim();
-						if (trainername.isEmpty()) {
-							continue;
-						}
-						int idx = trainername.contains("&") ? 1 : 0;
-						allTrainerNames[idx].add(trainername);
-						int len = trainername.length();
-						if (trainerNamesByLength[idx].containsKey(len)) {
-							trainerNamesByLength[idx].get(len).add(trainername);
-						} else {
-							List<String> namesOfThisLength = new ArrayList<String>();
-							namesOfThisLength.add(trainername);
-							trainerNamesByLength[idx].put(len,
-									namesOfThisLength);
-						}
-					}
-					sc.close();
-				} catch (FileNotFoundException e) {
-					// Can't read, just don't load anything
+	public void randomizeTrainerNames(byte[] presetNames) {
+		List<String>[] allTrainerNames = new List[] { new ArrayList<String>(),
+				new ArrayList<String>() };
+		Map<Integer, List<String>> trainerNamesByLength[] = new Map[] {
+				new TreeMap<Integer, List<String>>(),
+				new TreeMap<Integer, List<String>>() };
+		String tnamesFile = "trainernames.txt";
+		// Check for the file
+		if (FileFunctions.configExists(tnamesFile)) {
+			try {
+				Scanner sc = null;
+				if (presetNames == null) {
+					sc = new Scanner(FileFunctions.openConfig(tnamesFile),
+							"UTF-8");
+				} else {
+					sc = new Scanner(new ByteArrayInputStream(presetNames),
+							"UTF-8");
 				}
+				while (sc.hasNextLine()) {
+					String trainername = sc.nextLine().trim();
+					if (trainername.isEmpty()) {
+						continue;
+					}
+					int idx = trainername.contains("&") ? 1 : 0;
+					allTrainerNames[idx].add(trainername);
+					int len = trainername.length();
+					if (trainerNamesByLength[idx].containsKey(len)) {
+						trainerNamesByLength[idx].get(len).add(trainername);
+					} else {
+						List<String> namesOfThisLength = new ArrayList<String>();
+						namesOfThisLength.add(trainername);
+						trainerNamesByLength[idx].put(len, namesOfThisLength);
+					}
+				}
+				sc.close();
+			} catch (FileNotFoundException e) {
+				// Can't read, just don't load anything
 			}
 		}
 
@@ -934,53 +934,52 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static List<String> allTrainerClasses[] = new List[] {
-			new ArrayList<String>(), new ArrayList<String>() };
-	@SuppressWarnings("unchecked")
-	private static Map<Integer, List<String>> trainerClassesByLength[] = new Map[] {
-			new HashMap<Integer, List<String>>(),
-			new HashMap<Integer, List<String>>() };
-	private static boolean trainerClassesInited = false;
-
 	@Override
-	public void randomizeTrainerClassNames() {
-		if (!trainerClassesInited) {
-			trainerClassesInited = true;
-			String tclassesFile = "trainerclasses.txt";
-			// Check for the file
-			if (FileFunctions.configExists(tclassesFile)) {
-				try {
-					Scanner sc = new Scanner(
-							FileFunctions.openConfig(tclassesFile), "UTF-8");
-					while (sc.hasNextLine()) {
-						String trainerClassName = sc.nextLine().trim();
-						if (trainerClassName.isEmpty()) {
-							continue;
-						}
-						String checkName = trainerClassName.toLowerCase();
-						int idx = (checkName.endsWith("couple")
-								|| checkName.contains(" and ")
-								|| checkName.endsWith("kin")
-								|| checkName.endsWith("team")
-								|| checkName.contains(" & ") || (checkName
-								.endsWith("s") && !checkName.endsWith("ss"))) ? 1
-								: 0;
-						allTrainerClasses[idx].add(trainerClassName);
-						int len = trainerClassName.length();
-						if (trainerClassesByLength[idx].containsKey(len)) {
-							trainerClassesByLength[idx].get(len).add(
-									trainerClassName);
-						} else {
-							List<String> namesOfThisLength = new ArrayList<String>();
-							namesOfThisLength.add(trainerClassName);
-							trainerClassesByLength[idx].put(len,
-									namesOfThisLength);
-						}
-					}
-					sc.close();
-				} catch (FileNotFoundException e) {
-					// Can't read, just don't load anything
+	public void randomizeTrainerClassNames(byte[] presetNames) {
+		List<String> allTrainerClasses[] = new List[] {
+				new ArrayList<String>(), new ArrayList<String>() };
+		Map<Integer, List<String>> trainerClassesByLength[] = new Map[] {
+				new HashMap<Integer, List<String>>(),
+				new HashMap<Integer, List<String>>() };
+		String tclassesFile = "trainerclasses.txt";
+		// Check for the file
+		if (FileFunctions.configExists(tclassesFile)) {
+			try {
+				Scanner sc = null;
+				if (presetNames == null) {
+					sc = new Scanner(FileFunctions.openConfig(tclassesFile),
+							"UTF-8");
+				} else {
+					sc = new Scanner(new ByteArrayInputStream(presetNames),
+							"UTF-8");
 				}
+				while (sc.hasNextLine()) {
+					String trainerClassName = sc.nextLine().trim();
+					if (trainerClassName.isEmpty()) {
+						continue;
+					}
+					String checkName = trainerClassName.toLowerCase();
+					int idx = (checkName.endsWith("couple")
+							|| checkName.contains(" and ")
+							|| checkName.endsWith("kin")
+							|| checkName.endsWith("team")
+							|| checkName.contains(" & ") || (checkName
+							.endsWith("s") && !checkName.endsWith("ss"))) ? 1
+							: 0;
+					allTrainerClasses[idx].add(trainerClassName);
+					int len = trainerClassName.length();
+					if (trainerClassesByLength[idx].containsKey(len)) {
+						trainerClassesByLength[idx].get(len).add(
+								trainerClassName);
+					} else {
+						List<String> namesOfThisLength = new ArrayList<String>();
+						namesOfThisLength.add(trainerClassName);
+						trainerClassesByLength[idx].put(len, namesOfThisLength);
+					}
+				}
+				sc.close();
+			} catch (FileNotFoundException e) {
+				// Can't read, just don't load anything
 			}
 		}
 
@@ -1493,6 +1492,18 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public void applyBWEXPPatch() {
 		// default: do nothing
 
+	}
+	
+	@Override
+	public boolean hasHiddenHollowPokemon() {
+		// default: no
+		return false;
+	}
+	
+	@Override
+	public void randomizeHiddenHollowPokemon() {
+		// default: do nothing
+		
 	}
 
 }

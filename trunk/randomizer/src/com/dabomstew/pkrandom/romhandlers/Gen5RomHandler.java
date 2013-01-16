@@ -246,7 +246,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 						} else if (r[0].equals("CopyStaticPokemon")) {
 							int csp = parseRIInt(r[1]);
 							current.copyStaticPokemon = (csp > 0);
-						} else if (r[0].startsWith("StarterOffsets")) {
+						} else if (r[0].startsWith("StarterOffsets")
+								|| r[0].equals("StaticPokemonFormValues")) {
 							String[] offsets = r[1].substring(1,
 									r[1].length() - 1).split(",");
 							OffsetWithinEntry[] offs = new OffsetWithinEntry[offsets.length];
@@ -856,6 +857,30 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 			if (romEntry.romType == Type_BW) {
 				tagTrainersBW(allTrainers);
 			} else {
+				if (!romEntry.getString("DriftveilPokemon").isEmpty()) {
+					NARCContents driftveil = this.readNARC(romEntry
+							.getString("DriftveilPokemon"));
+					for (int trno = 0; trno < 2; trno++) {
+						Trainer tr = new Trainer();
+						tr.poketype = 3;
+						tr.offset = 0;
+						for (int poke = 0; poke < 3; poke++) {
+							byte[] pkmndata = driftveil.files.get(trno * 3
+									+ poke + 1);
+							TrainerPokemon tpk = new TrainerPokemon();
+							tpk.level = 25;
+							tpk.pokemon = pokes[readWord(pkmndata, 0)];
+							tpk.AILevel = 255;
+							tpk.heldItem = readWord(pkmndata, 12);
+							tpk.move1 = readWord(pkmndata, 2);
+							tpk.move2 = readWord(pkmndata, 2);
+							tpk.move3 = readWord(pkmndata, 2);
+							tpk.move4 = readWord(pkmndata, 2);
+							tr.pokemon.add(tpk);
+						}
+						allTrainers.add(tr);
+					}
+				}
 				tagTrainersBW2(allTrainers);
 			}
 		} catch (IOException ex) {
@@ -991,8 +1016,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		tagRivalBW(trs, "FRIEND1", 0x168);
 		tagRivalBW(trs, "FRIEND1", 0x16b);
 
-		// Tag Battles with Cheren
-		tag(trs, "GYM1", 0x173, 0x278);
+		// Tag/PWT Battles with Cheren
+		tag(trs, "GYM1", 0x173, 0x278, 0x32E);
 
 		// The Restaurant Brothers
 		tag(trs, "GYM9", 0x1f0); // Cilan
@@ -1001,7 +1026,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 		// Themed Trainers
 		tag(trs, "THEMED:ZINZOLIN", 0x2c0, 0x248, 0x15b);
-		tag(trs, "THEMED:COLRESS", 0x166, 0x158, 0x32d);
+		tag(trs, "THEMED:COLRESS", 0x166, 0x158, 0x32d, 0x32f);
 		tag(trs, "THEMED:SHADOW1", 0x247, 0x15c, 0x2af);
 		tag(trs, "THEMED:SHADOW2", 0x1f2, 0x2b0);
 		tag(trs, "THEMED:SHADOW3", 0x1f3, 0x2b1);
@@ -1033,12 +1058,16 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	}
 
 	private void tag(List<Trainer> allTrainers, int number, String tag) {
-		allTrainers.get(number - 1).tag = tag;
+		if (allTrainers.size() > (number - 1)) {
+			allTrainers.get(number - 1).tag = tag;
+		}
 	}
 
 	private void tag(List<Trainer> allTrainers, String tag, int... numbers) {
 		for (int num : numbers) {
-			allTrainers.get(num - 1).tag = tag;
+			if (allTrainers.size() > (num - 1)) {
+				allTrainers.get(num - 1).tag = tag;
+			}
 		}
 	}
 
@@ -1094,6 +1123,61 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 			}
 			this.writeNARC(romEntry.getString("TrainerData"), trainers);
 			this.writeNARC(romEntry.getString("TrainerPokemon"), trpokes);
+			// Deal with PWT
+			if (romEntry.romType == Type_BW2
+					&& !romEntry.getString("DriftveilPokemon").isEmpty()) {
+				NARCContents driftveil = this.readNARC(romEntry
+						.getString("DriftveilPokemon"));
+				Map<Pokemon, List<MoveLearnt>> movesets = this.getMovesLearnt();
+				for (int trno = 0; trno < 2; trno++) {
+					Trainer tr = allTrainers.next();
+					Iterator<TrainerPokemon> tpks = tr.pokemon.iterator();
+					for (int poke = 0; poke < 3; poke++) {
+						byte[] pkmndata = driftveil.files.get(trno * 3 + poke
+								+ 1);
+						TrainerPokemon tpk = tpks.next();
+						// pokemon and held item
+						writeWord(pkmndata, 0, tpk.pokemon.number);
+						writeWord(pkmndata, 12, tpk.heldItem);
+						// pick 4 moves, based on moveset@25
+						int[] moves = new int[4];
+						int moveCount = 0;
+						List<MoveLearnt> set = movesets.get(tpk.pokemon);
+						for (int i = 0; i < set.size(); i++) {
+							MoveLearnt ml = set.get(i);
+							if (ml.level > 25) {
+								break;
+							}
+							// unconditional learn?
+							if (moveCount < 4) {
+								moves[moveCount++] = ml.move;
+							} else {
+								// already knows?
+								boolean doTeach = true;
+								for (int j = 0; j < 4; j++) {
+									if (moves[j] == ml.move) {
+										doTeach = false;
+										break;
+									}
+								}
+								if (doTeach) {
+									// shift up
+									for (int j = 0; j < 3; j++) {
+										moves[j] = moves[j + 1];
+									}
+									moves[3] = ml.move;
+								}
+							}
+						}
+						// write the moveset we calculated
+						for (int i = 0; i < 4; i++) {
+							writeWord(pkmndata, 2 + i * 2, moves[i]);
+						}
+					}
+				}
+				this.writeNARC(romEntry.getString("DriftveilPokemon"),
+						driftveil);
+			}
 		} catch (IOException ex) {
 			// change this later
 			ex.printStackTrace();
@@ -1179,15 +1263,97 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	}
 
 	@Override
+	public boolean canChangeStaticPokemon() {
+		return romEntry.staticPokemonSupport;
+	}
+
+	@Override
 	public List<Pokemon> getStaticPokemon() {
-		// TODO Auto-generated method stub
-		return null;
+		List<Pokemon> sp = new ArrayList<Pokemon>();
+		if (!romEntry.staticPokemonSupport) {
+			return sp;
+		}
+		try {
+			NARCContents scriptNARC = this.readNARC(romEntry
+					.getString("Scripts"));
+			for (StaticPokemon statP : romEntry.staticPokemon) {
+				sp.add(statP.getPokemon(this, scriptNARC));
+			}
+		} catch (IOException e) {
+		}
+		return sp;
 	}
 
 	@Override
 	public boolean setStaticPokemon(List<Pokemon> staticPokemon) {
-		// TODO Auto-generated method stub
-		return false;
+		if (!romEntry.staticPokemonSupport) {
+			return false;
+		}
+		if (staticPokemon.size() != romEntry.staticPokemon.size()) {
+			return false;
+		}
+		try {
+			Iterator<Pokemon> statics = staticPokemon.iterator();
+			NARCContents scriptNARC = this.readNARC(romEntry
+					.getString("Scripts"));
+			for (StaticPokemon statP : romEntry.staticPokemon) {
+				statP.setPokemon(this, scriptNARC, statics.next());
+			}
+			if (romEntry.offsetArrayEntries
+					.containsKey("StaticPokemonFormValues")) {
+				OffsetWithinEntry[] formValues = romEntry.offsetArrayEntries
+						.get("StaticPokemonFormValues");
+				for (OffsetWithinEntry owe : formValues) {
+					writeWord(scriptNARC.files.get(owe.entry), owe.offset, 0);
+				}
+			}
+			this.writeNARC(romEntry.getString("Scripts"), scriptNARC);
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean hasHiddenHollowPokemon() {
+		return romEntry.romType == Type_BW2;
+	}
+
+	@Override
+	public void randomizeHiddenHollowPokemon() {
+		if (romEntry.romType != Type_BW2) {
+			return;
+		}
+		int[] allowedUnovaPokemon = new int[] { 505, 507, 510, 511, 513, 515,
+				519, 523, 525, 527, 529, 531, 533, 535, 538, 539, 542, 545,
+				546, 548, 550, 553, 556, 558, 559, 561, 564, 569, 572, 575,
+				578, 580, 583, 587, 588, 594, 596, 601, 605, 607, 610, 613,
+				616, 618, 619, 621, 622, 624, 626, 628, 630, 631, 632, };
+		int randomSize = 493 + allowedUnovaPokemon.length;
+		try {
+			NARCContents hhNARC = this.readNARC(romEntry
+					.getString("HiddenHollows"));
+			for (byte[] hhEntry : hhNARC.files) {
+				for (int version = 0; version < 2; version++) {
+					for (int rarityslot = 0; rarityslot < 4; rarityslot++) {
+						for (int group = 0; group < 4; group++) {
+							int pokeChoice = RandomSource.nextInt(randomSize) + 1;
+							if (pokeChoice > 493) {
+								pokeChoice = allowedUnovaPokemon[pokeChoice - 494];
+							}
+							writeWord(hhEntry, version * 72 + rarityslot * 24
+									+ group * 2, pokeChoice);
+							int genderRatio = RandomSource.nextInt(101);
+							hhEntry[version * 72 + rarityslot * 24 + 16 + group] = (byte) genderRatio;
+							hhEntry[version * 72 + rarityslot * 24 + 20 + group] = 0; // forme
+						}
+					}
+				}
+				// the rest of the file is items
+			}
+			this.writeNARC(romEntry.getString("HiddenHollows"), hhNARC);
+		} catch (IOException e) {
+		}
 	}
 
 	@Override
@@ -1485,12 +1651,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public String getROMCode() {
-		return ndsCode;
+		return romEntry.romCode;
 	}
 
 	@Override
 	public String getSupportLevel() {
-		return "No Static Pokemon";
+		return romEntry.staticPokemonSupport ? "Complete" : "No Static Pokemon";
 	}
 
 	@Override
