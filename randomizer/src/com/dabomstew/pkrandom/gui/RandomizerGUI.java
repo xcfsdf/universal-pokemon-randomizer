@@ -133,1085 +133,1946 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-
-        pokeStatChangesButtonGroup = new javax.swing.ButtonGroup();
-        pokeTypesButtonGroup = new javax.swing.ButtonGroup();
-        pokeMovesetsButtonGroup = new javax.swing.ButtonGroup();
-        trainerPokesButtonGroup = new javax.swing.ButtonGroup();
-        wildPokesButtonGroup = new javax.swing.ButtonGroup();
-        wildPokesARuleButtonGroup = new javax.swing.ButtonGroup();
-        starterPokemonButtonGroup = new javax.swing.ButtonGroup();
-        romOpenChooser = new javax.swing.JFileChooser();
-        romSaveChooser = new javax.swing.JFileChooser();
-        staticPokemonButtonGroup = new javax.swing.ButtonGroup();
-        tmMovesButtonGroup = new javax.swing.ButtonGroup();
-        tmHmCompatibilityButtonGroup = new javax.swing.ButtonGroup();
-        pokeAbilitiesButtonGroup = new javax.swing.ButtonGroup();
-        mtMovesButtonGroup = new javax.swing.ButtonGroup();
-        mtCompatibilityButtonGroup = new javax.swing.ButtonGroup();
-        generalOptionsPanel = new javax.swing.JPanel();
-        goUpdateTypesCheckBox = new javax.swing.JCheckBox();
-        goUpdateMovesCheckBox = new javax.swing.JCheckBox();
-        goRemoveTradeEvosCheckBox = new javax.swing.JCheckBox();
-        goLowerCaseNamesCheckBox = new javax.swing.JCheckBox();
-        goNationalDexCheckBox = new javax.swing.JCheckBox();
-        romInfoPanel = new javax.swing.JPanel();
-        riRomNameLabel = new javax.swing.JLabel();
-        riRomCodeLabel = new javax.swing.JLabel();
-        riRomSupportLabel = new javax.swing.JLabel();
-        optionsScrollPane = new javax.swing.JScrollPane();
-        optionsContainerPanel = new javax.swing.JPanel();
-        baseStatsPanel = new javax.swing.JPanel();
-        pbsChangesUnchangedRB = new javax.swing.JRadioButton();
-        pbsChangesShuffleRB = new javax.swing.JRadioButton();
-        pbsChangesRandomEvosRB = new javax.swing.JRadioButton();
-        pbsChangesRandomTotalRB = new javax.swing.JRadioButton();
-        pokemonTypesPanel = new javax.swing.JPanel();
-        ptUnchangedRB = new javax.swing.JRadioButton();
-        ptRandomFollowEvosRB = new javax.swing.JRadioButton();
-        ptRandomTotalRB = new javax.swing.JRadioButton();
-        pokemonMovesetsPanel = new javax.swing.JPanel();
-        pmsUnchangedRB = new javax.swing.JRadioButton();
-        pmsRandomTypeRB = new javax.swing.JRadioButton();
-        pmsRandomTotalRB = new javax.swing.JRadioButton();
-        trainersPokemonPanel = new javax.swing.JPanel();
-        tpUnchangedRB = new javax.swing.JRadioButton();
-        tpRandomRB = new javax.swing.JRadioButton();
-        tpTypeThemedRB = new javax.swing.JRadioButton();
-        tpPowerLevelsCB = new javax.swing.JCheckBox();
-        tpTypeWeightingCB = new javax.swing.JCheckBox();
-        tpRivalCarriesStarterCB = new javax.swing.JCheckBox();
-        tpNoLegendariesCB = new javax.swing.JCheckBox();
-        tnRandomizeCB = new javax.swing.JCheckBox();
-        tcnRandomizeCB = new javax.swing.JCheckBox();
-        tpNoEarlyShedinjaCB = new javax.swing.JCheckBox();
-        wildPokemonPanel = new javax.swing.JPanel();
-        wpUnchangedRB = new javax.swing.JRadioButton();
-        wpRandomRB = new javax.swing.JRadioButton();
-        wpArea11RB = new javax.swing.JRadioButton();
-        wpGlobalRB = new javax.swing.JRadioButton();
-        wildPokemonARulePanel = new javax.swing.JPanel();
-        wpARNoneRB = new javax.swing.JRadioButton();
-        wpARCatchEmAllRB = new javax.swing.JRadioButton();
-        wpARTypeThemedRB = new javax.swing.JRadioButton();
-        wpUseTimeCB = new javax.swing.JCheckBox();
-        wpNoLegendariesCB = new javax.swing.JCheckBox();
-        wpCatchRateCB = new javax.swing.JCheckBox();
-        starterPokemonPanel = new javax.swing.JPanel();
-        spUnchangedRB = new javax.swing.JRadioButton();
-        spCustomRB = new javax.swing.JRadioButton();
-        spCustomPoke1Chooser = new javax.swing.JComboBox();
-        spCustomPoke2Chooser = new javax.swing.JComboBox();
-        spCustomPoke3Chooser = new javax.swing.JComboBox();
-        spRandomRB = new javax.swing.JRadioButton();
-        spRandom2EvosRB = new javax.swing.JRadioButton();
-        staticPokemonPanel = new javax.swing.JPanel();
-        stpUnchangedRB = new javax.swing.JRadioButton();
-        stpRandomL4LRB = new javax.swing.JRadioButton();
-        stpRandomTotalRB = new javax.swing.JRadioButton();
-        tmhmsPanel = new javax.swing.JPanel();
-        tmMovesPanel = new javax.swing.JPanel();
-        tmmUnchangedRB = new javax.swing.JRadioButton();
-        tmmRandomRB = new javax.swing.JRadioButton();
-        tmHmCompatPanel = new javax.swing.JPanel();
-        thcUnchangedRB = new javax.swing.JRadioButton();
-        thcRandomTypeRB = new javax.swing.JRadioButton();
-        thcRandomTotalRB = new javax.swing.JRadioButton();
-        abilitiesPanel = new javax.swing.JPanel();
-        paUnchangedRB = new javax.swing.JRadioButton();
-        paRandomizeRB = new javax.swing.JRadioButton();
-        paWonderGuardCB = new javax.swing.JCheckBox();
-        moveTutorsPanel = new javax.swing.JPanel();
-        mtMovesPanel = new javax.swing.JPanel();
-        mtmUnchangedRB = new javax.swing.JRadioButton();
-        mtmRandomRB = new javax.swing.JRadioButton();
-        mtCompatPanel = new javax.swing.JPanel();
-        mtcUnchangedRB = new javax.swing.JRadioButton();
-        mtcRandomTypeRB = new javax.swing.JRadioButton();
-        mtcRandomTotalRB = new javax.swing.JRadioButton();
-        mtNoExistLabel = new javax.swing.JLabel();
-        openROMButton = new javax.swing.JButton();
-        saveROMButton = new javax.swing.JButton();
-        usePresetsButton = new javax.swing.JButton();
-        aboutButton = new javax.swing.JButton();
-        otherOptionsPanel = new javax.swing.JPanel();
-        bwEXPPatchCB = new javax.swing.JCheckBox();
-        raceModeCB = new javax.swing.JCheckBox();
-        randomizeHollowsCB = new javax.swing.JCheckBox();
-        brokenMovesCB = new javax.swing.JCheckBox();
-
-        romOpenChooser.setFileFilter(new ROMFilter());
-
-        romSaveChooser.setDialogType(javax.swing.JFileChooser.SAVE_DIALOG);
-        romSaveChooser.setFileFilter(new ROMFilter());
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("com/dabomstew/pkrandom/gui/Bundle"); // NOI18N
-        setTitle(bundle.getString("RandomizerGUI.title")); // NOI18N
-
-        generalOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.generalOptionsPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        goUpdateTypesCheckBox.setText(bundle.getString("RandomizerGUI.goUpdateTypesCheckBox.text")); // NOI18N
-        goUpdateTypesCheckBox.setToolTipText(bundle.getString("RandomizerGUI.goUpdateTypesCheckBox.toolTipText")); // NOI18N
-
-        goUpdateMovesCheckBox.setText(bundle.getString("RandomizerGUI.goUpdateMovesCheckBox.text")); // NOI18N
-        goUpdateMovesCheckBox.setToolTipText(bundle.getString("RandomizerGUI.goUpdateMovesCheckBox.toolTipText")); // NOI18N
-
-        goRemoveTradeEvosCheckBox.setText(bundle.getString("RandomizerGUI.goRemoveTradeEvosCheckBox.text")); // NOI18N
-        goRemoveTradeEvosCheckBox.setToolTipText(bundle.getString("RandomizerGUI.goRemoveTradeEvosCheckBox.toolTipText")); // NOI18N
-
-        goLowerCaseNamesCheckBox.setText(bundle.getString("RandomizerGUI.goLowerCaseNamesCheckBox.text")); // NOI18N
-        goLowerCaseNamesCheckBox.setToolTipText(bundle.getString("RandomizerGUI.goLowerCaseNamesCheckBox.toolTipText")); // NOI18N
-
-        goNationalDexCheckBox.setText(bundle.getString("RandomizerGUI.goNationalDexCheckBox.text")); // NOI18N
-        goNationalDexCheckBox.setToolTipText(bundle.getString("RandomizerGUI.goNationalDexCheckBox.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout generalOptionsPanelLayout = new javax.swing.GroupLayout(generalOptionsPanel);
-        generalOptionsPanel.setLayout(generalOptionsPanelLayout);
-        generalOptionsPanelLayout.setHorizontalGroup(
-            generalOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(generalOptionsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(generalOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(goUpdateTypesCheckBox)
-                    .addComponent(goUpdateMovesCheckBox)
-                    .addComponent(goRemoveTradeEvosCheckBox)
-                    .addComponent(goLowerCaseNamesCheckBox)
-                    .addComponent(goNationalDexCheckBox))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        generalOptionsPanelLayout.setVerticalGroup(
-            generalOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(generalOptionsPanelLayout.createSequentialGroup()
-                .addComponent(goUpdateTypesCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(goUpdateMovesCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(goRemoveTradeEvosCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(goLowerCaseNamesCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(goNationalDexCheckBox))
-        );
-
-        romInfoPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.romInfoPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        riRomNameLabel.setText(bundle.getString("RandomizerGUI.riRomNameLabel.text")); // NOI18N
-
-        riRomCodeLabel.setText(bundle.getString("RandomizerGUI.riRomCodeLabel.text")); // NOI18N
-
-        riRomSupportLabel.setText(bundle.getString("RandomizerGUI.riRomSupportLabel.text")); // NOI18N
-
-        javax.swing.GroupLayout romInfoPanelLayout = new javax.swing.GroupLayout(romInfoPanel);
-        romInfoPanel.setLayout(romInfoPanelLayout);
-        romInfoPanelLayout.setHorizontalGroup(
-            romInfoPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(romInfoPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(romInfoPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(riRomNameLabel)
-                    .addComponent(riRomCodeLabel)
-                    .addComponent(riRomSupportLabel))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        romInfoPanelLayout.setVerticalGroup(
-            romInfoPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(romInfoPanelLayout.createSequentialGroup()
-                .addGap(5, 5, 5)
-                .addComponent(riRomNameLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(riRomCodeLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(riRomSupportLabel)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        baseStatsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.baseStatsPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        pokeStatChangesButtonGroup.add(pbsChangesUnchangedRB);
-        pbsChangesUnchangedRB.setText(bundle.getString("RandomizerGUI.pbsChangesUnchangedRB.text")); // NOI18N
-        pbsChangesUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.pbsChangesUnchangedRB.toolTipText")); // NOI18N
-
-        pokeStatChangesButtonGroup.add(pbsChangesShuffleRB);
-        pbsChangesShuffleRB.setText(bundle.getString("RandomizerGUI.pbsChangesShuffleRB.text")); // NOI18N
-        pbsChangesShuffleRB.setToolTipText(bundle.getString("RandomizerGUI.pbsChangesShuffleRB.toolTipText")); // NOI18N
-
-        pokeStatChangesButtonGroup.add(pbsChangesRandomEvosRB);
-        pbsChangesRandomEvosRB.setText(bundle.getString("RandomizerGUI.pbsChangesRandomEvosRB.text")); // NOI18N
-        pbsChangesRandomEvosRB.setToolTipText(bundle.getString("RandomizerGUI.pbsChangesRandomEvosRB.toolTipText")); // NOI18N
-
-        pokeStatChangesButtonGroup.add(pbsChangesRandomTotalRB);
-        pbsChangesRandomTotalRB.setText(bundle.getString("RandomizerGUI.pbsChangesRandomTotalRB.text")); // NOI18N
-        pbsChangesRandomTotalRB.setToolTipText(bundle.getString("RandomizerGUI.pbsChangesRandomTotalRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout baseStatsPanelLayout = new javax.swing.GroupLayout(baseStatsPanel);
-        baseStatsPanel.setLayout(baseStatsPanelLayout);
-        baseStatsPanelLayout.setHorizontalGroup(
-            baseStatsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(baseStatsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(baseStatsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pbsChangesUnchangedRB)
-                    .addComponent(pbsChangesShuffleRB)
-                    .addComponent(pbsChangesRandomEvosRB)
-                    .addComponent(pbsChangesRandomTotalRB))
-                .addContainerGap(196, Short.MAX_VALUE))
-        );
-        baseStatsPanelLayout.setVerticalGroup(
-            baseStatsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(baseStatsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(pbsChangesUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pbsChangesShuffleRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pbsChangesRandomEvosRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pbsChangesRandomTotalRB)
-                .addGap(27, 27, 27))
-        );
-
-        pokemonTypesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.pokemonTypesPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        pokeTypesButtonGroup.add(ptUnchangedRB);
-        ptUnchangedRB.setSelected(true);
-        ptUnchangedRB.setText(bundle.getString("RandomizerGUI.ptUnchangedRB.text")); // NOI18N
-        ptUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.ptUnchangedRB.toolTipText")); // NOI18N
-
-        pokeTypesButtonGroup.add(ptRandomFollowEvosRB);
-        ptRandomFollowEvosRB.setText(bundle.getString("RandomizerGUI.ptRandomFollowEvosRB.text")); // NOI18N
-        ptRandomFollowEvosRB.setToolTipText(bundle.getString("RandomizerGUI.ptRandomFollowEvosRB.toolTipText")); // NOI18N
-
-        pokeTypesButtonGroup.add(ptRandomTotalRB);
-        ptRandomTotalRB.setText(bundle.getString("RandomizerGUI.ptRandomTotalRB.text")); // NOI18N
-        ptRandomTotalRB.setToolTipText(bundle.getString("RandomizerGUI.ptRandomTotalRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout pokemonTypesPanelLayout = new javax.swing.GroupLayout(pokemonTypesPanel);
-        pokemonTypesPanel.setLayout(pokemonTypesPanelLayout);
-        pokemonTypesPanelLayout.setHorizontalGroup(
-            pokemonTypesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pokemonTypesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(pokemonTypesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ptUnchangedRB)
-                    .addComponent(ptRandomFollowEvosRB)
-                    .addComponent(ptRandomTotalRB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        pokemonTypesPanelLayout.setVerticalGroup(
-            pokemonTypesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pokemonTypesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(ptUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(ptRandomFollowEvosRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(ptRandomTotalRB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        pokemonMovesetsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.pokemonMovesetsPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        pokeMovesetsButtonGroup.add(pmsUnchangedRB);
-        pmsUnchangedRB.setSelected(true);
-        pmsUnchangedRB.setText(bundle.getString("RandomizerGUI.pmsUnchangedRB.text")); // NOI18N
-        pmsUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.pmsUnchangedRB.toolTipText")); // NOI18N
-
-        pokeMovesetsButtonGroup.add(pmsRandomTypeRB);
-        pmsRandomTypeRB.setText(bundle.getString("RandomizerGUI.pmsRandomTypeRB.text")); // NOI18N
-        pmsRandomTypeRB.setToolTipText(bundle.getString("RandomizerGUI.pmsRandomTypeRB.toolTipText")); // NOI18N
-
-        pokeMovesetsButtonGroup.add(pmsRandomTotalRB);
-        pmsRandomTotalRB.setText(bundle.getString("RandomizerGUI.pmsRandomTotalRB.text")); // NOI18N
-        pmsRandomTotalRB.setToolTipText(bundle.getString("RandomizerGUI.pmsRandomTotalRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout pokemonMovesetsPanelLayout = new javax.swing.GroupLayout(pokemonMovesetsPanel);
-        pokemonMovesetsPanel.setLayout(pokemonMovesetsPanelLayout);
-        pokemonMovesetsPanelLayout.setHorizontalGroup(
-            pokemonMovesetsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pokemonMovesetsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(pokemonMovesetsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pmsUnchangedRB)
-                    .addComponent(pmsRandomTypeRB)
-                    .addComponent(pmsRandomTotalRB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        pokemonMovesetsPanelLayout.setVerticalGroup(
-            pokemonMovesetsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pokemonMovesetsPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(pmsUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pmsRandomTypeRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pmsRandomTotalRB))
-        );
-
-        trainersPokemonPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.trainersPokemonPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        trainerPokesButtonGroup.add(tpUnchangedRB);
-        tpUnchangedRB.setSelected(true);
-        tpUnchangedRB.setText(bundle.getString("RandomizerGUI.tpUnchangedRB.text")); // NOI18N
-        tpUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.tpUnchangedRB.toolTipText")); // NOI18N
-        tpUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tpUnchangedRBActionPerformed(evt);
-            }
-        });
-
-        trainerPokesButtonGroup.add(tpRandomRB);
-        tpRandomRB.setText(bundle.getString("RandomizerGUI.tpRandomRB.text")); // NOI18N
-        tpRandomRB.setToolTipText(bundle.getString("RandomizerGUI.tpRandomRB.toolTipText")); // NOI18N
-        tpRandomRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tpRandomRBActionPerformed(evt);
-            }
-        });
-
-        trainerPokesButtonGroup.add(tpTypeThemedRB);
-        tpTypeThemedRB.setText(bundle.getString("RandomizerGUI.tpTypeThemedRB.text")); // NOI18N
-        tpTypeThemedRB.setToolTipText(bundle.getString("RandomizerGUI.tpTypeThemedRB.toolTipText")); // NOI18N
-        tpTypeThemedRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tpTypeThemedRBActionPerformed(evt);
-            }
-        });
-
-        tpPowerLevelsCB.setText(bundle.getString("RandomizerGUI.tpPowerLevelsCB.text")); // NOI18N
-        tpPowerLevelsCB.setToolTipText(bundle.getString("RandomizerGUI.tpPowerLevelsCB.toolTipText")); // NOI18N
-        tpPowerLevelsCB.setEnabled(false);
-
-        tpTypeWeightingCB.setText(bundle.getString("RandomizerGUI.tpTypeWeightingCB.text")); // NOI18N
-        tpTypeWeightingCB.setToolTipText(bundle.getString("RandomizerGUI.tpTypeWeightingCB.toolTipText")); // NOI18N
-        tpTypeWeightingCB.setEnabled(false);
-
-        tpRivalCarriesStarterCB.setText(bundle.getString("RandomizerGUI.tpRivalCarriesStarterCB.text")); // NOI18N
-        tpRivalCarriesStarterCB.setToolTipText(bundle.getString("RandomizerGUI.tpRivalCarriesStarterCB.toolTipText")); // NOI18N
-        tpRivalCarriesStarterCB.setEnabled(false);
-
-        tpNoLegendariesCB.setText(bundle.getString("RandomizerGUI.tpNoLegendariesCB.text")); // NOI18N
-        tpNoLegendariesCB.setEnabled(false);
-
-        tnRandomizeCB.setText(bundle.getString("RandomizerGUI.tnRandomizeCB.text")); // NOI18N
-        tnRandomizeCB.setToolTipText(bundle.getString("RandomizerGUI.tnRandomizeCB.toolTipText")); // NOI18N
-
-        tcnRandomizeCB.setText(bundle.getString("RandomizerGUI.tcnRandomizeCB.text")); // NOI18N
-        tcnRandomizeCB.setToolTipText(bundle.getString("RandomizerGUI.tcnRandomizeCB.toolTipText")); // NOI18N
-
-        tpNoEarlyShedinjaCB.setText(bundle.getString("RandomizerGUI.tpNoEarlyShedinjaCB.text")); // NOI18N
-        tpNoEarlyShedinjaCB.setToolTipText(bundle.getString("RandomizerGUI.tpNoEarlyShedinjaCB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout trainersPokemonPanelLayout = new javax.swing.GroupLayout(trainersPokemonPanel);
-        trainersPokemonPanel.setLayout(trainersPokemonPanelLayout);
-        trainersPokemonPanelLayout.setHorizontalGroup(
-            trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(trainersPokemonPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(tpTypeThemedRB)
-                    .addGroup(trainersPokemonPanelLayout.createSequentialGroup()
-                        .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(tpUnchangedRB)
-                            .addComponent(tpRandomRB))
-                        .addGap(47, 47, 47)
-                        .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(tpNoEarlyShedinjaCB)
-                            .addGroup(trainersPokemonPanelLayout.createSequentialGroup()
-                                .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(tpTypeWeightingCB, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(tpRivalCarriesStarterCB, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(tpPowerLevelsCB, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(tpNoLegendariesCB, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addGap(18, 18, 18)
-                                .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(tnRandomizeCB)
-                                    .addComponent(tcnRandomizeCB))))))
-                .addContainerGap(129, Short.MAX_VALUE))
-        );
-        trainersPokemonPanelLayout.setVerticalGroup(
-            trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(trainersPokemonPanelLayout.createSequentialGroup()
-                .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(tpUnchangedRB)
-                    .addComponent(tpRivalCarriesStarterCB)
-                    .addComponent(tnRandomizeCB))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(tpRandomRB)
-                    .addComponent(tpPowerLevelsCB)
-                    .addComponent(tcnRandomizeCB))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(trainersPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(tpTypeThemedRB)
-                    .addComponent(tpTypeWeightingCB))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(tpNoLegendariesCB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(tpNoEarlyShedinjaCB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        wildPokemonPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.wildPokemonPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        wildPokesButtonGroup.add(wpUnchangedRB);
-        wpUnchangedRB.setSelected(true);
-        wpUnchangedRB.setText(bundle.getString("RandomizerGUI.wpUnchangedRB.text")); // NOI18N
-        wpUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.wpUnchangedRB.toolTipText")); // NOI18N
-        wpUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                wpUnchangedRBActionPerformed(evt);
-            }
-        });
-
-        wildPokesButtonGroup.add(wpRandomRB);
-        wpRandomRB.setText(bundle.getString("RandomizerGUI.wpRandomRB.text")); // NOI18N
-        wpRandomRB.setToolTipText(bundle.getString("RandomizerGUI.wpRandomRB.toolTipText")); // NOI18N
-        wpRandomRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                wpRandomRBActionPerformed(evt);
-            }
-        });
-
-        wildPokesButtonGroup.add(wpArea11RB);
-        wpArea11RB.setText(bundle.getString("RandomizerGUI.wpArea11RB.text")); // NOI18N
-        wpArea11RB.setToolTipText(bundle.getString("RandomizerGUI.wpArea11RB.toolTipText")); // NOI18N
-        wpArea11RB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                wpArea11RBActionPerformed(evt);
-            }
-        });
-
-        wildPokesButtonGroup.add(wpGlobalRB);
-        wpGlobalRB.setText(bundle.getString("RandomizerGUI.wpGlobalRB.text")); // NOI18N
-        wpGlobalRB.setToolTipText(bundle.getString("RandomizerGUI.wpGlobalRB.toolTipText")); // NOI18N
-        wpGlobalRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                wpGlobalRBActionPerformed(evt);
-            }
-        });
-
-        wildPokemonARulePanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("RandomizerGUI.wildPokemonARulePanel.border.title"))); // NOI18N
-
-        wildPokesARuleButtonGroup.add(wpARNoneRB);
-        wpARNoneRB.setSelected(true);
-        wpARNoneRB.setText(bundle.getString("RandomizerGUI.wpARNoneRB.text")); // NOI18N
-        wpARNoneRB.setToolTipText(bundle.getString("RandomizerGUI.wpARNoneRB.toolTipText")); // NOI18N
-        wpARNoneRB.setEnabled(false);
-
-        wildPokesARuleButtonGroup.add(wpARCatchEmAllRB);
-        wpARCatchEmAllRB.setText(bundle.getString("RandomizerGUI.wpARCatchEmAllRB.text")); // NOI18N
-        wpARCatchEmAllRB.setToolTipText(bundle.getString("RandomizerGUI.wpARCatchEmAllRB.toolTipText")); // NOI18N
-        wpARCatchEmAllRB.setEnabled(false);
-
-        wildPokesARuleButtonGroup.add(wpARTypeThemedRB);
-        wpARTypeThemedRB.setText(bundle.getString("RandomizerGUI.wpARTypeThemedRB.text")); // NOI18N
-        wpARTypeThemedRB.setToolTipText(bundle.getString("RandomizerGUI.wpARTypeThemedRB.toolTipText")); // NOI18N
-        wpARTypeThemedRB.setEnabled(false);
-
-        javax.swing.GroupLayout wildPokemonARulePanelLayout = new javax.swing.GroupLayout(wildPokemonARulePanel);
-        wildPokemonARulePanel.setLayout(wildPokemonARulePanelLayout);
-        wildPokemonARulePanelLayout.setHorizontalGroup(
-            wildPokemonARulePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(wildPokemonARulePanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(wildPokemonARulePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(wpARNoneRB)
-                    .addComponent(wpARCatchEmAllRB)
-                    .addComponent(wpARTypeThemedRB))
-                .addContainerGap(30, Short.MAX_VALUE))
-        );
-        wildPokemonARulePanelLayout.setVerticalGroup(
-            wildPokemonARulePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(wildPokemonARulePanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(wpARNoneRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(wpARCatchEmAllRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 2, Short.MAX_VALUE)
-                .addComponent(wpARTypeThemedRB))
-        );
-
-        wpUseTimeCB.setText(bundle.getString("RandomizerGUI.wpUseTimeCB.text")); // NOI18N
-        wpUseTimeCB.setToolTipText(bundle.getString("RandomizerGUI.wpUseTimeCB.toolTipText")); // NOI18N
-
-        wpNoLegendariesCB.setText(bundle.getString("RandomizerGUI.wpNoLegendariesCB.text")); // NOI18N
-
-        wpCatchRateCB.setText(bundle.getString("RandomizerGUI.wpCatchRateCB.text")); // NOI18N
-        wpCatchRateCB.setToolTipText(bundle.getString("RandomizerGUI.wpCatchRateCB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout wildPokemonPanelLayout = new javax.swing.GroupLayout(wildPokemonPanel);
-        wildPokemonPanel.setLayout(wildPokemonPanelLayout);
-        wildPokemonPanelLayout.setHorizontalGroup(
-            wildPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(wildPokemonPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(wildPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(wpUnchangedRB)
-                    .addComponent(wpRandomRB)
-                    .addComponent(wpArea11RB)
-                    .addComponent(wpGlobalRB))
-                .addGap(18, 18, 18)
-                .addComponent(wildPokemonARulePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addGroup(wildPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(wpUseTimeCB)
-                    .addComponent(wpNoLegendariesCB)
-                    .addComponent(wpCatchRateCB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        wildPokemonPanelLayout.setVerticalGroup(
-            wildPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, wildPokemonPanelLayout.createSequentialGroup()
-                .addComponent(wildPokemonARulePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, wildPokemonPanelLayout.createSequentialGroup()
-                .addGroup(wildPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, wildPokemonPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(wpUnchangedRB)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(wpRandomRB)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(wpArea11RB)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(wpGlobalRB))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, wildPokemonPanelLayout.createSequentialGroup()
-                        .addGap(28, 28, 28)
-                        .addComponent(wpUseTimeCB)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(wpNoLegendariesCB)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(wpCatchRateCB)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        starterPokemonPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.starterPokemonPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        starterPokemonButtonGroup.add(spUnchangedRB);
-        spUnchangedRB.setSelected(true);
-        spUnchangedRB.setText(bundle.getString("RandomizerGUI.spUnchangedRB.text")); // NOI18N
-        spUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.spUnchangedRB.toolTipText")); // NOI18N
-        spUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                spUnchangedRBActionPerformed(evt);
-            }
-        });
-
-        starterPokemonButtonGroup.add(spCustomRB);
-        spCustomRB.setText(bundle.getString("RandomizerGUI.spCustomRB.text")); // NOI18N
-        spCustomRB.setToolTipText(bundle.getString("RandomizerGUI.spCustomRB.toolTipText")); // NOI18N
-        spCustomRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                spCustomRBActionPerformed(evt);
-            }
-        });
-
-        spCustomPoke1Chooser.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        spCustomPoke1Chooser.setEnabled(false);
-
-        spCustomPoke2Chooser.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        spCustomPoke2Chooser.setEnabled(false);
-
-        spCustomPoke3Chooser.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        spCustomPoke3Chooser.setEnabled(false);
-
-        starterPokemonButtonGroup.add(spRandomRB);
-        spRandomRB.setText(bundle.getString("RandomizerGUI.spRandomRB.text")); // NOI18N
-        spRandomRB.setToolTipText(bundle.getString("RandomizerGUI.spRandomRB.toolTipText")); // NOI18N
-        spRandomRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                spRandomRBActionPerformed(evt);
-            }
-        });
-
-        starterPokemonButtonGroup.add(spRandom2EvosRB);
-        spRandom2EvosRB.setText(bundle.getString("RandomizerGUI.spRandom2EvosRB.text")); // NOI18N
-        spRandom2EvosRB.setToolTipText(bundle.getString("RandomizerGUI.spRandom2EvosRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout starterPokemonPanelLayout = new javax.swing.GroupLayout(starterPokemonPanel);
-        starterPokemonPanel.setLayout(starterPokemonPanelLayout);
-        starterPokemonPanelLayout.setHorizontalGroup(
-            starterPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(starterPokemonPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(starterPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(spUnchangedRB)
-                    .addGroup(starterPokemonPanelLayout.createSequentialGroup()
-                        .addComponent(spCustomRB)
-                        .addGap(18, 18, 18)
-                        .addComponent(spCustomPoke1Chooser, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(spCustomPoke2Chooser, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(spCustomPoke3Chooser, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(spRandomRB)
-                    .addComponent(spRandom2EvosRB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        starterPokemonPanelLayout.setVerticalGroup(
-            starterPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(starterPokemonPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(spUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(starterPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(spCustomRB)
-                    .addComponent(spCustomPoke1Chooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(spCustomPoke2Chooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(spCustomPoke3Chooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(spRandomRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(spRandom2EvosRB)
-                .addContainerGap(11, Short.MAX_VALUE))
-        );
-
-        staticPokemonPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.staticPokemonPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        staticPokemonButtonGroup.add(stpUnchangedRB);
-        stpUnchangedRB.setSelected(true);
-        stpUnchangedRB.setText(bundle.getString("RandomizerGUI.stpUnchangedRB.text")); // NOI18N
-        stpUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.stpUnchangedRB.toolTipText")); // NOI18N
-
-        staticPokemonButtonGroup.add(stpRandomL4LRB);
-        stpRandomL4LRB.setText(bundle.getString("RandomizerGUI.stpRandomL4LRB.text")); // NOI18N
-        stpRandomL4LRB.setToolTipText(bundle.getString("RandomizerGUI.stpRandomL4LRB.toolTipText")); // NOI18N
-
-        staticPokemonButtonGroup.add(stpRandomTotalRB);
-        stpRandomTotalRB.setText(bundle.getString("RandomizerGUI.stpRandomTotalRB.text")); // NOI18N
-        stpRandomTotalRB.setToolTipText(bundle.getString("RandomizerGUI.stpRandomTotalRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout staticPokemonPanelLayout = new javax.swing.GroupLayout(staticPokemonPanel);
-        staticPokemonPanel.setLayout(staticPokemonPanelLayout);
-        staticPokemonPanelLayout.setHorizontalGroup(
-            staticPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(staticPokemonPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(staticPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(stpUnchangedRB)
-                    .addComponent(stpRandomL4LRB)
-                    .addComponent(stpRandomTotalRB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        staticPokemonPanelLayout.setVerticalGroup(
-            staticPokemonPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(staticPokemonPanelLayout.createSequentialGroup()
-                .addComponent(stpUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(stpRandomL4LRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(stpRandomTotalRB))
-        );
-
-        tmhmsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.tmhmsPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        tmMovesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("RandomizerGUI.tmMovesPanel.border.title"))); // NOI18N
-
-        tmMovesButtonGroup.add(tmmUnchangedRB);
-        tmmUnchangedRB.setSelected(true);
-        tmmUnchangedRB.setText(bundle.getString("RandomizerGUI.tmmUnchangedRB.text")); // NOI18N
-        tmmUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.tmmUnchangedRB.toolTipText")); // NOI18N
-
-        tmMovesButtonGroup.add(tmmRandomRB);
-        tmmRandomRB.setText(bundle.getString("RandomizerGUI.tmmRandomRB.text")); // NOI18N
-        tmmRandomRB.setToolTipText(bundle.getString("RandomizerGUI.tmmRandomRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout tmMovesPanelLayout = new javax.swing.GroupLayout(tmMovesPanel);
-        tmMovesPanel.setLayout(tmMovesPanelLayout);
-        tmMovesPanelLayout.setHorizontalGroup(
-            tmMovesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(tmMovesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(tmMovesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(tmmUnchangedRB)
-                    .addComponent(tmmRandomRB))
-                .addContainerGap(118, Short.MAX_VALUE))
-        );
-        tmMovesPanelLayout.setVerticalGroup(
-            tmMovesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(tmMovesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(tmmUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(tmmRandomRB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tmHmCompatPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("RandomizerGUI.tmHmCompatPanel.border.title"))); // NOI18N
-
-        tmHmCompatibilityButtonGroup.add(thcUnchangedRB);
-        thcUnchangedRB.setSelected(true);
-        thcUnchangedRB.setText(bundle.getString("RandomizerGUI.thcUnchangedRB.text")); // NOI18N
-        thcUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.thcUnchangedRB.toolTipText")); // NOI18N
-
-        tmHmCompatibilityButtonGroup.add(thcRandomTypeRB);
-        thcRandomTypeRB.setText(bundle.getString("RandomizerGUI.thcRandomTypeRB.text")); // NOI18N
-        thcRandomTypeRB.setToolTipText(bundle.getString("RandomizerGUI.thcRandomTypeRB.toolTipText")); // NOI18N
-
-        tmHmCompatibilityButtonGroup.add(thcRandomTotalRB);
-        thcRandomTotalRB.setText(bundle.getString("RandomizerGUI.thcRandomTotalRB.text")); // NOI18N
-        thcRandomTotalRB.setToolTipText(bundle.getString("RandomizerGUI.thcRandomTotalRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout tmHmCompatPanelLayout = new javax.swing.GroupLayout(tmHmCompatPanel);
-        tmHmCompatPanel.setLayout(tmHmCompatPanelLayout);
-        tmHmCompatPanelLayout.setHorizontalGroup(
-            tmHmCompatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(tmHmCompatPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(tmHmCompatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(thcUnchangedRB)
-                    .addComponent(thcRandomTypeRB)
-                    .addComponent(thcRandomTotalRB))
-                .addContainerGap(79, Short.MAX_VALUE))
-        );
-        tmHmCompatPanelLayout.setVerticalGroup(
-            tmHmCompatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(tmHmCompatPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(thcUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(thcRandomTypeRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(thcRandomTotalRB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        javax.swing.GroupLayout tmhmsPanelLayout = new javax.swing.GroupLayout(tmhmsPanel);
-        tmhmsPanel.setLayout(tmhmsPanelLayout);
-        tmhmsPanelLayout.setHorizontalGroup(
-            tmhmsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(tmhmsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(tmMovesPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(tmHmCompatPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        tmhmsPanelLayout.setVerticalGroup(
-            tmhmsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(tmhmsPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(tmhmsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(tmHmCompatPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(tmMovesPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-
-        abilitiesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.abilitiesPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        pokeAbilitiesButtonGroup.add(paUnchangedRB);
-        paUnchangedRB.setSelected(true);
-        paUnchangedRB.setText(bundle.getString("RandomizerGUI.paUnchangedRB.text")); // NOI18N
-        paUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.paUnchangedRB.toolTipText")); // NOI18N
-        paUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                paUnchangedRBActionPerformed(evt);
-            }
-        });
-
-        pokeAbilitiesButtonGroup.add(paRandomizeRB);
-        paRandomizeRB.setText(bundle.getString("RandomizerGUI.paRandomizeRB.text")); // NOI18N
-        paRandomizeRB.setToolTipText(bundle.getString("RandomizerGUI.paRandomizeRB.toolTipText")); // NOI18N
-        paRandomizeRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                paRandomizeRBActionPerformed(evt);
-            }
-        });
-
-        paWonderGuardCB.setText(bundle.getString("RandomizerGUI.paWonderGuardCB.text")); // NOI18N
-        paWonderGuardCB.setToolTipText(bundle.getString("RandomizerGUI.paWonderGuardCB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout abilitiesPanelLayout = new javax.swing.GroupLayout(abilitiesPanel);
-        abilitiesPanel.setLayout(abilitiesPanelLayout);
-        abilitiesPanelLayout.setHorizontalGroup(
-            abilitiesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(abilitiesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(abilitiesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(paUnchangedRB)
-                    .addComponent(paRandomizeRB)
-                    .addComponent(paWonderGuardCB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        abilitiesPanelLayout.setVerticalGroup(
-            abilitiesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(abilitiesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(paUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(paRandomizeRB)
-                .addGap(18, 18, 18)
-                .addComponent(paWonderGuardCB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        moveTutorsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.moveTutorsPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        mtMovesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("RandomizerGUI.mtMovesPanel.border.title"))); // NOI18N
-
-        mtMovesButtonGroup.add(mtmUnchangedRB);
-        mtmUnchangedRB.setSelected(true);
-        mtmUnchangedRB.setText(bundle.getString("RandomizerGUI.mtmUnchangedRB.text")); // NOI18N
-        mtmUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.mtmUnchangedRB.toolTipText")); // NOI18N
-        mtmUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mtmUnchangedRBActionPerformed(evt);
-            }
-        });
-
-        mtMovesButtonGroup.add(mtmRandomRB);
-        mtmRandomRB.setText(bundle.getString("RandomizerGUI.mtmRandomRB.text")); // NOI18N
-        mtmRandomRB.setToolTipText(bundle.getString("RandomizerGUI.mtmRandomRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout mtMovesPanelLayout = new javax.swing.GroupLayout(mtMovesPanel);
-        mtMovesPanel.setLayout(mtMovesPanelLayout);
-        mtMovesPanelLayout.setHorizontalGroup(
-            mtMovesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(mtMovesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(mtMovesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(mtmUnchangedRB)
-                    .addComponent(mtmRandomRB))
-                .addContainerGap(118, Short.MAX_VALUE))
-        );
-        mtMovesPanelLayout.setVerticalGroup(
-            mtMovesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(mtMovesPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(mtmUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(mtmRandomRB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        mtCompatPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle.getString("RandomizerGUI.mtCompatPanel.border.title"))); // NOI18N
-
-        mtCompatibilityButtonGroup.add(mtcUnchangedRB);
-        mtcUnchangedRB.setSelected(true);
-        mtcUnchangedRB.setText(bundle.getString("RandomizerGUI.mtcUnchangedRB.text")); // NOI18N
-        mtcUnchangedRB.setToolTipText(bundle.getString("RandomizerGUI.mtcUnchangedRB.toolTipText")); // NOI18N
-
-        mtCompatibilityButtonGroup.add(mtcRandomTypeRB);
-        mtcRandomTypeRB.setText(bundle.getString("RandomizerGUI.mtcRandomTypeRB.text")); // NOI18N
-        mtcRandomTypeRB.setToolTipText(bundle.getString("RandomizerGUI.mtcRandomTypeRB.toolTipText")); // NOI18N
-
-        mtCompatibilityButtonGroup.add(mtcRandomTotalRB);
-        mtcRandomTotalRB.setText(bundle.getString("RandomizerGUI.mtcRandomTotalRB.text")); // NOI18N
-        mtcRandomTotalRB.setToolTipText(bundle.getString("RandomizerGUI.mtcRandomTotalRB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout mtCompatPanelLayout = new javax.swing.GroupLayout(mtCompatPanel);
-        mtCompatPanel.setLayout(mtCompatPanelLayout);
-        mtCompatPanelLayout.setHorizontalGroup(
-            mtCompatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(mtCompatPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(mtCompatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(mtcUnchangedRB)
-                    .addComponent(mtcRandomTypeRB)
-                    .addComponent(mtcRandomTotalRB))
-                .addContainerGap(79, Short.MAX_VALUE))
-        );
-        mtCompatPanelLayout.setVerticalGroup(
-            mtCompatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(mtCompatPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(mtcUnchangedRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(mtcRandomTypeRB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(mtcRandomTotalRB)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        mtNoExistLabel.setText(bundle.getString("RandomizerGUI.mtNoExistLabel.text")); // NOI18N
-
-        javax.swing.GroupLayout moveTutorsPanelLayout = new javax.swing.GroupLayout(moveTutorsPanel);
-        moveTutorsPanel.setLayout(moveTutorsPanelLayout);
-        moveTutorsPanelLayout.setHorizontalGroup(
-            moveTutorsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(moveTutorsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(moveTutorsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(moveTutorsPanelLayout.createSequentialGroup()
-                        .addComponent(mtMovesPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 194, Short.MAX_VALUE)
-                        .addComponent(mtCompatPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(moveTutorsPanelLayout.createSequentialGroup()
-                        .addComponent(mtNoExistLabel)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        moveTutorsPanelLayout.setVerticalGroup(
-            moveTutorsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(moveTutorsPanelLayout.createSequentialGroup()
-                .addComponent(mtNoExistLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(moveTutorsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(mtCompatPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(mtMovesPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-
-        javax.swing.GroupLayout optionsContainerPanelLayout = new javax.swing.GroupLayout(optionsContainerPanel);
-        optionsContainerPanel.setLayout(optionsContainerPanelLayout);
-        optionsContainerPanelLayout.setHorizontalGroup(
-            optionsContainerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(pokemonTypesPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(pokemonMovesetsPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(trainersPokemonPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(wildPokemonPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(starterPokemonPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(staticPokemonPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(tmhmsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(optionsContainerPanelLayout.createSequentialGroup()
-                .addComponent(baseStatsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(abilitiesPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addComponent(moveTutorsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-        );
-        optionsContainerPanelLayout.setVerticalGroup(
-            optionsContainerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(optionsContainerPanelLayout.createSequentialGroup()
-                .addGroup(optionsContainerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(baseStatsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(abilitiesPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(14, 14, 14)
-                .addComponent(starterPokemonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(pokemonTypesPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(pokemonMovesetsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(trainersPokemonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(15, 15, 15)
-                .addComponent(wildPokemonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(staticPokemonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(tmhmsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(moveTutorsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        optionsScrollPane.setViewportView(optionsContainerPanel);
-
-        openROMButton.setText(bundle.getString("RandomizerGUI.openROMButton.text")); // NOI18N
-        openROMButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                openROMButtonActionPerformed(evt);
-            }
-        });
-
-        saveROMButton.setText(bundle.getString("RandomizerGUI.saveROMButton.text")); // NOI18N
-        saveROMButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                saveROMButtonActionPerformed(evt);
-            }
-        });
-
-        usePresetsButton.setText(bundle.getString("RandomizerGUI.usePresetsButton.text")); // NOI18N
-        usePresetsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                usePresetsButtonActionPerformed(evt);
-            }
-        });
-
-        aboutButton.setText(bundle.getString("RandomizerGUI.aboutButton.text")); // NOI18N
-        aboutButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                aboutButtonActionPerformed(evt);
-            }
-        });
-
-        otherOptionsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null, bundle.getString("RandomizerGUI.otherOptionsPanel.border.title"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
-
-        bwEXPPatchCB.setText(bundle.getString("RandomizerGUI.bwEXPPatchCB.text")); // NOI18N
-        bwEXPPatchCB.setToolTipText(bundle.getString("RandomizerGUI.bwEXPPatchCB.toolTipText")); // NOI18N
-
-        raceModeCB.setText(bundle.getString("RandomizerGUI.raceModeCB.text")); // NOI18N
-        raceModeCB.setToolTipText(bundle.getString("RandomizerGUI.raceModeCB.toolTipText")); // NOI18N
-
-        randomizeHollowsCB.setText(bundle.getString("RandomizerGUI.randomizeHollowsCB.text")); // NOI18N
-        randomizeHollowsCB.setToolTipText(bundle.getString("RandomizerGUI.randomizeHollowsCB.toolTipText")); // NOI18N
-
-        brokenMovesCB.setText(bundle.getString("RandomizerGUI.brokenMovesCB.text")); // NOI18N
-        brokenMovesCB.setToolTipText(bundle.getString("RandomizerGUI.brokenMovesCB.toolTipText")); // NOI18N
-
-        javax.swing.GroupLayout otherOptionsPanelLayout = new javax.swing.GroupLayout(otherOptionsPanel);
-        otherOptionsPanel.setLayout(otherOptionsPanelLayout);
-        otherOptionsPanelLayout.setHorizontalGroup(
-            otherOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(otherOptionsPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(otherOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(bwEXPPatchCB)
-                    .addComponent(raceModeCB)
-                    .addComponent(randomizeHollowsCB)
-                    .addComponent(brokenMovesCB))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        otherOptionsPanelLayout.setVerticalGroup(
-            otherOptionsPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(otherOptionsPanelLayout.createSequentialGroup()
-                .addComponent(bwEXPPatchCB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(raceModeCB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(randomizeHollowsCB)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(brokenMovesCB)
-                .addGap(26, 26, 26))
-        );
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(optionsScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 716, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(generalOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(otherOptionsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(romInfoPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(saveROMButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 123, Short.MAX_VALUE)
-                            .addComponent(openROMButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(usePresetsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(aboutButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(openROMButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(saveROMButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(usePresetsButton))
-                            .addComponent(romInfoPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(aboutButton))
-                    .addComponent(otherOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(generalOptionsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(optionsScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 382, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
+	// <editor-fold defaultstate="collapsed"
+	// desc="Generated Code">//GEN-BEGIN:initComponents
+	private void initComponents() {
+
+		pokeStatChangesButtonGroup = new javax.swing.ButtonGroup();
+		pokeTypesButtonGroup = new javax.swing.ButtonGroup();
+		pokeMovesetsButtonGroup = new javax.swing.ButtonGroup();
+		trainerPokesButtonGroup = new javax.swing.ButtonGroup();
+		wildPokesButtonGroup = new javax.swing.ButtonGroup();
+		wildPokesARuleButtonGroup = new javax.swing.ButtonGroup();
+		starterPokemonButtonGroup = new javax.swing.ButtonGroup();
+		romOpenChooser = new javax.swing.JFileChooser();
+		romSaveChooser = new javax.swing.JFileChooser();
+		staticPokemonButtonGroup = new javax.swing.ButtonGroup();
+		tmMovesButtonGroup = new javax.swing.ButtonGroup();
+		tmHmCompatibilityButtonGroup = new javax.swing.ButtonGroup();
+		pokeAbilitiesButtonGroup = new javax.swing.ButtonGroup();
+		mtMovesButtonGroup = new javax.swing.ButtonGroup();
+		mtCompatibilityButtonGroup = new javax.swing.ButtonGroup();
+		generalOptionsPanel = new javax.swing.JPanel();
+		goUpdateTypesCheckBox = new javax.swing.JCheckBox();
+		goUpdateMovesCheckBox = new javax.swing.JCheckBox();
+		goRemoveTradeEvosCheckBox = new javax.swing.JCheckBox();
+		goLowerCaseNamesCheckBox = new javax.swing.JCheckBox();
+		goNationalDexCheckBox = new javax.swing.JCheckBox();
+		romInfoPanel = new javax.swing.JPanel();
+		riRomNameLabel = new javax.swing.JLabel();
+		riRomCodeLabel = new javax.swing.JLabel();
+		riRomSupportLabel = new javax.swing.JLabel();
+		optionsScrollPane = new javax.swing.JScrollPane();
+		optionsContainerPanel = new javax.swing.JPanel();
+		baseStatsPanel = new javax.swing.JPanel();
+		pbsChangesUnchangedRB = new javax.swing.JRadioButton();
+		pbsChangesShuffleRB = new javax.swing.JRadioButton();
+		pbsChangesRandomEvosRB = new javax.swing.JRadioButton();
+		pbsChangesRandomTotalRB = new javax.swing.JRadioButton();
+		pokemonTypesPanel = new javax.swing.JPanel();
+		ptUnchangedRB = new javax.swing.JRadioButton();
+		ptRandomFollowEvosRB = new javax.swing.JRadioButton();
+		ptRandomTotalRB = new javax.swing.JRadioButton();
+		pokemonMovesetsPanel = new javax.swing.JPanel();
+		pmsUnchangedRB = new javax.swing.JRadioButton();
+		pmsRandomTypeRB = new javax.swing.JRadioButton();
+		pmsRandomTotalRB = new javax.swing.JRadioButton();
+		trainersPokemonPanel = new javax.swing.JPanel();
+		tpUnchangedRB = new javax.swing.JRadioButton();
+		tpRandomRB = new javax.swing.JRadioButton();
+		tpTypeThemedRB = new javax.swing.JRadioButton();
+		tpPowerLevelsCB = new javax.swing.JCheckBox();
+		tpTypeWeightingCB = new javax.swing.JCheckBox();
+		tpRivalCarriesStarterCB = new javax.swing.JCheckBox();
+		tpNoLegendariesCB = new javax.swing.JCheckBox();
+		tnRandomizeCB = new javax.swing.JCheckBox();
+		tcnRandomizeCB = new javax.swing.JCheckBox();
+		tpNoEarlyShedinjaCB = new javax.swing.JCheckBox();
+		wildPokemonPanel = new javax.swing.JPanel();
+		wpUnchangedRB = new javax.swing.JRadioButton();
+		wpRandomRB = new javax.swing.JRadioButton();
+		wpArea11RB = new javax.swing.JRadioButton();
+		wpGlobalRB = new javax.swing.JRadioButton();
+		wildPokemonARulePanel = new javax.swing.JPanel();
+		wpARNoneRB = new javax.swing.JRadioButton();
+		wpARCatchEmAllRB = new javax.swing.JRadioButton();
+		wpARTypeThemedRB = new javax.swing.JRadioButton();
+		wpUseTimeCB = new javax.swing.JCheckBox();
+		wpNoLegendariesCB = new javax.swing.JCheckBox();
+		wpCatchRateCB = new javax.swing.JCheckBox();
+		starterPokemonPanel = new javax.swing.JPanel();
+		spUnchangedRB = new javax.swing.JRadioButton();
+		spCustomRB = new javax.swing.JRadioButton();
+		spCustomPoke1Chooser = new javax.swing.JComboBox();
+		spCustomPoke2Chooser = new javax.swing.JComboBox();
+		spCustomPoke3Chooser = new javax.swing.JComboBox();
+		spRandomRB = new javax.swing.JRadioButton();
+		spRandom2EvosRB = new javax.swing.JRadioButton();
+		staticPokemonPanel = new javax.swing.JPanel();
+		stpUnchangedRB = new javax.swing.JRadioButton();
+		stpRandomL4LRB = new javax.swing.JRadioButton();
+		stpRandomTotalRB = new javax.swing.JRadioButton();
+		tmhmsPanel = new javax.swing.JPanel();
+		tmMovesPanel = new javax.swing.JPanel();
+		tmmUnchangedRB = new javax.swing.JRadioButton();
+		tmmRandomRB = new javax.swing.JRadioButton();
+		tmHmCompatPanel = new javax.swing.JPanel();
+		thcUnchangedRB = new javax.swing.JRadioButton();
+		thcRandomTypeRB = new javax.swing.JRadioButton();
+		thcRandomTotalRB = new javax.swing.JRadioButton();
+		abilitiesPanel = new javax.swing.JPanel();
+		paUnchangedRB = new javax.swing.JRadioButton();
+		paRandomizeRB = new javax.swing.JRadioButton();
+		paWonderGuardCB = new javax.swing.JCheckBox();
+		moveTutorsPanel = new javax.swing.JPanel();
+		mtMovesPanel = new javax.swing.JPanel();
+		mtmUnchangedRB = new javax.swing.JRadioButton();
+		mtmRandomRB = new javax.swing.JRadioButton();
+		mtCompatPanel = new javax.swing.JPanel();
+		mtcUnchangedRB = new javax.swing.JRadioButton();
+		mtcRandomTypeRB = new javax.swing.JRadioButton();
+		mtcRandomTotalRB = new javax.swing.JRadioButton();
+		mtNoExistLabel = new javax.swing.JLabel();
+		openROMButton = new javax.swing.JButton();
+		saveROMButton = new javax.swing.JButton();
+		usePresetsButton = new javax.swing.JButton();
+		aboutButton = new javax.swing.JButton();
+		otherOptionsPanel = new javax.swing.JPanel();
+		bwEXPPatchCB = new javax.swing.JCheckBox();
+		raceModeCB = new javax.swing.JCheckBox();
+		randomizeHollowsCB = new javax.swing.JCheckBox();
+		brokenMovesCB = new javax.swing.JCheckBox();
+
+		romOpenChooser.setFileFilter(new ROMFilter());
+
+		romSaveChooser.setDialogType(javax.swing.JFileChooser.SAVE_DIALOG);
+		romSaveChooser.setFileFilter(new ROMFilter());
+
+		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+		java.util.ResourceBundle bundle = java.util.ResourceBundle
+				.getBundle("com/dabomstew/pkrandom/gui/Bundle"); // NOI18N
+		setTitle(bundle.getString("RandomizerGUI.title")); // NOI18N
+
+		generalOptionsPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.generalOptionsPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		goUpdateTypesCheckBox.setText(bundle
+				.getString("RandomizerGUI.goUpdateTypesCheckBox.text")); // NOI18N
+		goUpdateTypesCheckBox.setToolTipText(bundle
+				.getString("RandomizerGUI.goUpdateTypesCheckBox.toolTipText")); // NOI18N
+
+		goUpdateMovesCheckBox.setText(bundle
+				.getString("RandomizerGUI.goUpdateMovesCheckBox.text")); // NOI18N
+		goUpdateMovesCheckBox.setToolTipText(bundle
+				.getString("RandomizerGUI.goUpdateMovesCheckBox.toolTipText")); // NOI18N
+
+		goRemoveTradeEvosCheckBox.setText(bundle
+				.getString("RandomizerGUI.goRemoveTradeEvosCheckBox.text")); // NOI18N
+		goRemoveTradeEvosCheckBox
+				.setToolTipText(bundle
+						.getString("RandomizerGUI.goRemoveTradeEvosCheckBox.toolTipText")); // NOI18N
+
+		goLowerCaseNamesCheckBox.setText(bundle
+				.getString("RandomizerGUI.goLowerCaseNamesCheckBox.text")); // NOI18N
+		goLowerCaseNamesCheckBox
+				.setToolTipText(bundle
+						.getString("RandomizerGUI.goLowerCaseNamesCheckBox.toolTipText")); // NOI18N
+
+		goNationalDexCheckBox.setText(bundle
+				.getString("RandomizerGUI.goNationalDexCheckBox.text")); // NOI18N
+		goNationalDexCheckBox.setToolTipText(bundle
+				.getString("RandomizerGUI.goNationalDexCheckBox.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout generalOptionsPanelLayout = new javax.swing.GroupLayout(
+				generalOptionsPanel);
+		generalOptionsPanel.setLayout(generalOptionsPanelLayout);
+		generalOptionsPanelLayout
+				.setHorizontalGroup(generalOptionsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								generalOptionsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												generalOptionsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																goUpdateTypesCheckBox)
+														.addComponent(
+																goUpdateMovesCheckBox)
+														.addComponent(
+																goRemoveTradeEvosCheckBox)
+														.addComponent(
+																goLowerCaseNamesCheckBox)
+														.addComponent(
+																goNationalDexCheckBox))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		generalOptionsPanelLayout
+				.setVerticalGroup(generalOptionsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								generalOptionsPanelLayout
+										.createSequentialGroup()
+										.addComponent(goUpdateTypesCheckBox)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(goUpdateMovesCheckBox)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(goRemoveTradeEvosCheckBox)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(goLowerCaseNamesCheckBox)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(goNationalDexCheckBox)));
+
+		romInfoPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(
+				null,
+				bundle.getString("RandomizerGUI.romInfoPanel.border.title"),
+				javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+				javax.swing.border.TitledBorder.DEFAULT_POSITION,
+				new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		riRomNameLabel.setText(bundle
+				.getString("RandomizerGUI.riRomNameLabel.text")); // NOI18N
+
+		riRomCodeLabel.setText(bundle
+				.getString("RandomizerGUI.riRomCodeLabel.text")); // NOI18N
+
+		riRomSupportLabel.setText(bundle
+				.getString("RandomizerGUI.riRomSupportLabel.text")); // NOI18N
+
+		javax.swing.GroupLayout romInfoPanelLayout = new javax.swing.GroupLayout(
+				romInfoPanel);
+		romInfoPanel.setLayout(romInfoPanelLayout);
+		romInfoPanelLayout
+				.setHorizontalGroup(romInfoPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								romInfoPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												romInfoPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																riRomNameLabel)
+														.addComponent(
+																riRomCodeLabel)
+														.addComponent(
+																riRomSupportLabel))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		romInfoPanelLayout
+				.setVerticalGroup(romInfoPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								romInfoPanelLayout
+										.createSequentialGroup()
+										.addGap(5, 5, 5)
+										.addComponent(riRomNameLabel)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(riRomCodeLabel)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(riRomSupportLabel)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		baseStatsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(
+				null,
+				bundle.getString("RandomizerGUI.baseStatsPanel.border.title"),
+				javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+				javax.swing.border.TitledBorder.DEFAULT_POSITION,
+				new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		pokeStatChangesButtonGroup.add(pbsChangesUnchangedRB);
+		pbsChangesUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.pbsChangesUnchangedRB.text")); // NOI18N
+		pbsChangesUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.pbsChangesUnchangedRB.toolTipText")); // NOI18N
+
+		pokeStatChangesButtonGroup.add(pbsChangesShuffleRB);
+		pbsChangesShuffleRB.setText(bundle
+				.getString("RandomizerGUI.pbsChangesShuffleRB.text")); // NOI18N
+		pbsChangesShuffleRB.setToolTipText(bundle
+				.getString("RandomizerGUI.pbsChangesShuffleRB.toolTipText")); // NOI18N
+
+		pokeStatChangesButtonGroup.add(pbsChangesRandomEvosRB);
+		pbsChangesRandomEvosRB.setText(bundle
+				.getString("RandomizerGUI.pbsChangesRandomEvosRB.text")); // NOI18N
+		pbsChangesRandomEvosRB.setToolTipText(bundle
+				.getString("RandomizerGUI.pbsChangesRandomEvosRB.toolTipText")); // NOI18N
+
+		pokeStatChangesButtonGroup.add(pbsChangesRandomTotalRB);
+		pbsChangesRandomTotalRB.setText(bundle
+				.getString("RandomizerGUI.pbsChangesRandomTotalRB.text")); // NOI18N
+		pbsChangesRandomTotalRB
+				.setToolTipText(bundle
+						.getString("RandomizerGUI.pbsChangesRandomTotalRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout baseStatsPanelLayout = new javax.swing.GroupLayout(
+				baseStatsPanel);
+		baseStatsPanel.setLayout(baseStatsPanelLayout);
+		baseStatsPanelLayout
+				.setHorizontalGroup(baseStatsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								baseStatsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												baseStatsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																pbsChangesUnchangedRB)
+														.addComponent(
+																pbsChangesShuffleRB)
+														.addComponent(
+																pbsChangesRandomEvosRB)
+														.addComponent(
+																pbsChangesRandomTotalRB))
+										.addContainerGap(196, Short.MAX_VALUE)));
+		baseStatsPanelLayout
+				.setVerticalGroup(baseStatsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								baseStatsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(pbsChangesUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(pbsChangesShuffleRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(pbsChangesRandomEvosRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(pbsChangesRandomTotalRB)
+										.addGap(27, 27, 27)));
+
+		pokemonTypesPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.pokemonTypesPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		pokeTypesButtonGroup.add(ptUnchangedRB);
+		ptUnchangedRB.setSelected(true);
+		ptUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.ptUnchangedRB.text")); // NOI18N
+		ptUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.ptUnchangedRB.toolTipText")); // NOI18N
+
+		pokeTypesButtonGroup.add(ptRandomFollowEvosRB);
+		ptRandomFollowEvosRB.setText(bundle
+				.getString("RandomizerGUI.ptRandomFollowEvosRB.text")); // NOI18N
+		ptRandomFollowEvosRB.setToolTipText(bundle
+				.getString("RandomizerGUI.ptRandomFollowEvosRB.toolTipText")); // NOI18N
+
+		pokeTypesButtonGroup.add(ptRandomTotalRB);
+		ptRandomTotalRB.setText(bundle
+				.getString("RandomizerGUI.ptRandomTotalRB.text")); // NOI18N
+		ptRandomTotalRB.setToolTipText(bundle
+				.getString("RandomizerGUI.ptRandomTotalRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout pokemonTypesPanelLayout = new javax.swing.GroupLayout(
+				pokemonTypesPanel);
+		pokemonTypesPanel.setLayout(pokemonTypesPanelLayout);
+		pokemonTypesPanelLayout
+				.setHorizontalGroup(pokemonTypesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								pokemonTypesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												pokemonTypesPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																ptUnchangedRB)
+														.addComponent(
+																ptRandomFollowEvosRB)
+														.addComponent(
+																ptRandomTotalRB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		pokemonTypesPanelLayout
+				.setVerticalGroup(pokemonTypesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								pokemonTypesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(ptUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(ptRandomFollowEvosRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(ptRandomTotalRB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		pokemonMovesetsPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.pokemonMovesetsPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		pokeMovesetsButtonGroup.add(pmsUnchangedRB);
+		pmsUnchangedRB.setSelected(true);
+		pmsUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.pmsUnchangedRB.text")); // NOI18N
+		pmsUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.pmsUnchangedRB.toolTipText")); // NOI18N
+
+		pokeMovesetsButtonGroup.add(pmsRandomTypeRB);
+		pmsRandomTypeRB.setText(bundle
+				.getString("RandomizerGUI.pmsRandomTypeRB.text")); // NOI18N
+		pmsRandomTypeRB.setToolTipText(bundle
+				.getString("RandomizerGUI.pmsRandomTypeRB.toolTipText")); // NOI18N
+
+		pokeMovesetsButtonGroup.add(pmsRandomTotalRB);
+		pmsRandomTotalRB.setText(bundle
+				.getString("RandomizerGUI.pmsRandomTotalRB.text")); // NOI18N
+		pmsRandomTotalRB.setToolTipText(bundle
+				.getString("RandomizerGUI.pmsRandomTotalRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout pokemonMovesetsPanelLayout = new javax.swing.GroupLayout(
+				pokemonMovesetsPanel);
+		pokemonMovesetsPanel.setLayout(pokemonMovesetsPanelLayout);
+		pokemonMovesetsPanelLayout
+				.setHorizontalGroup(pokemonMovesetsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								pokemonMovesetsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												pokemonMovesetsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																pmsUnchangedRB)
+														.addComponent(
+																pmsRandomTypeRB)
+														.addComponent(
+																pmsRandomTotalRB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		pokemonMovesetsPanelLayout
+				.setVerticalGroup(pokemonMovesetsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								pokemonMovesetsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(pmsUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(pmsRandomTypeRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(pmsRandomTotalRB)));
+
+		trainersPokemonPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.trainersPokemonPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		trainerPokesButtonGroup.add(tpUnchangedRB);
+		tpUnchangedRB.setSelected(true);
+		tpUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.tpUnchangedRB.text")); // NOI18N
+		tpUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.tpUnchangedRB.toolTipText")); // NOI18N
+		tpUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				tpUnchangedRBActionPerformed(evt);
+			}
+		});
+
+		trainerPokesButtonGroup.add(tpRandomRB);
+		tpRandomRB.setText(bundle.getString("RandomizerGUI.tpRandomRB.text")); // NOI18N
+		tpRandomRB.setToolTipText(bundle
+				.getString("RandomizerGUI.tpRandomRB.toolTipText")); // NOI18N
+		tpRandomRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				tpRandomRBActionPerformed(evt);
+			}
+		});
+
+		trainerPokesButtonGroup.add(tpTypeThemedRB);
+		tpTypeThemedRB.setText(bundle
+				.getString("RandomizerGUI.tpTypeThemedRB.text")); // NOI18N
+		tpTypeThemedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.tpTypeThemedRB.toolTipText")); // NOI18N
+		tpTypeThemedRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				tpTypeThemedRBActionPerformed(evt);
+			}
+		});
+
+		tpPowerLevelsCB.setText(bundle
+				.getString("RandomizerGUI.tpPowerLevelsCB.text")); // NOI18N
+		tpPowerLevelsCB.setToolTipText(bundle
+				.getString("RandomizerGUI.tpPowerLevelsCB.toolTipText")); // NOI18N
+		tpPowerLevelsCB.setEnabled(false);
+
+		tpTypeWeightingCB.setText(bundle
+				.getString("RandomizerGUI.tpTypeWeightingCB.text")); // NOI18N
+		tpTypeWeightingCB.setToolTipText(bundle
+				.getString("RandomizerGUI.tpTypeWeightingCB.toolTipText")); // NOI18N
+		tpTypeWeightingCB.setEnabled(false);
+
+		tpRivalCarriesStarterCB.setText(bundle
+				.getString("RandomizerGUI.tpRivalCarriesStarterCB.text")); // NOI18N
+		tpRivalCarriesStarterCB
+				.setToolTipText(bundle
+						.getString("RandomizerGUI.tpRivalCarriesStarterCB.toolTipText")); // NOI18N
+		tpRivalCarriesStarterCB.setEnabled(false);
+
+		tpNoLegendariesCB.setText(bundle
+				.getString("RandomizerGUI.tpNoLegendariesCB.text")); // NOI18N
+		tpNoLegendariesCB.setEnabled(false);
+
+		tnRandomizeCB.setText(bundle
+				.getString("RandomizerGUI.tnRandomizeCB.text")); // NOI18N
+		tnRandomizeCB.setToolTipText(bundle
+				.getString("RandomizerGUI.tnRandomizeCB.toolTipText")); // NOI18N
+
+		tcnRandomizeCB.setText(bundle
+				.getString("RandomizerGUI.tcnRandomizeCB.text")); // NOI18N
+		tcnRandomizeCB.setToolTipText(bundle
+				.getString("RandomizerGUI.tcnRandomizeCB.toolTipText")); // NOI18N
+
+		tpNoEarlyShedinjaCB.setText(bundle
+				.getString("RandomizerGUI.tpNoEarlyShedinjaCB.text")); // NOI18N
+		tpNoEarlyShedinjaCB.setToolTipText(bundle
+				.getString("RandomizerGUI.tpNoEarlyShedinjaCB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout trainersPokemonPanelLayout = new javax.swing.GroupLayout(
+				trainersPokemonPanel);
+		trainersPokemonPanel.setLayout(trainersPokemonPanelLayout);
+		trainersPokemonPanelLayout
+				.setHorizontalGroup(trainersPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								trainersPokemonPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												trainersPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																tpTypeThemedRB)
+														.addGroup(
+																trainersPokemonPanelLayout
+																		.createSequentialGroup()
+																		.addGroup(
+																				trainersPokemonPanelLayout
+																						.createParallelGroup(
+																								javax.swing.GroupLayout.Alignment.LEADING)
+																						.addComponent(
+																								tpUnchangedRB)
+																						.addComponent(
+																								tpRandomRB))
+																		.addGap(47,
+																				47,
+																				47)
+																		.addGroup(
+																				trainersPokemonPanelLayout
+																						.createParallelGroup(
+																								javax.swing.GroupLayout.Alignment.LEADING)
+																						.addComponent(
+																								tpNoEarlyShedinjaCB)
+																						.addGroup(
+																								trainersPokemonPanelLayout
+																										.createSequentialGroup()
+																										.addGroup(
+																												trainersPokemonPanelLayout
+																														.createParallelGroup(
+																																javax.swing.GroupLayout.Alignment.LEADING,
+																																false)
+																														.addComponent(
+																																tpTypeWeightingCB,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																Short.MAX_VALUE)
+																														.addComponent(
+																																tpRivalCarriesStarterCB,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																Short.MAX_VALUE)
+																														.addComponent(
+																																tpPowerLevelsCB,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																Short.MAX_VALUE)
+																														.addComponent(
+																																tpNoLegendariesCB,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																javax.swing.GroupLayout.DEFAULT_SIZE,
+																																Short.MAX_VALUE))
+																										.addGap(18,
+																												18,
+																												18)
+																										.addGroup(
+																												trainersPokemonPanelLayout
+																														.createParallelGroup(
+																																javax.swing.GroupLayout.Alignment.LEADING)
+																														.addComponent(
+																																tnRandomizeCB)
+																														.addComponent(
+																																tcnRandomizeCB))))))
+										.addContainerGap(129, Short.MAX_VALUE)));
+		trainersPokemonPanelLayout
+				.setVerticalGroup(trainersPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								trainersPokemonPanelLayout
+										.createSequentialGroup()
+										.addGroup(
+												trainersPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																tpUnchangedRB)
+														.addComponent(
+																tpRivalCarriesStarterCB)
+														.addComponent(
+																tnRandomizeCB))
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addGroup(
+												trainersPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																tpRandomRB)
+														.addComponent(
+																tpPowerLevelsCB)
+														.addComponent(
+																tcnRandomizeCB))
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addGroup(
+												trainersPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																tpTypeThemedRB)
+														.addComponent(
+																tpTypeWeightingCB))
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(tpNoLegendariesCB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(tpNoEarlyShedinjaCB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		wildPokemonPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.wildPokemonPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		wildPokesButtonGroup.add(wpUnchangedRB);
+		wpUnchangedRB.setSelected(true);
+		wpUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.wpUnchangedRB.text")); // NOI18N
+		wpUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpUnchangedRB.toolTipText")); // NOI18N
+		wpUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				wpUnchangedRBActionPerformed(evt);
+			}
+		});
+
+		wildPokesButtonGroup.add(wpRandomRB);
+		wpRandomRB.setText(bundle.getString("RandomizerGUI.wpRandomRB.text")); // NOI18N
+		wpRandomRB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpRandomRB.toolTipText")); // NOI18N
+		wpRandomRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				wpRandomRBActionPerformed(evt);
+			}
+		});
+
+		wildPokesButtonGroup.add(wpArea11RB);
+		wpArea11RB.setText(bundle.getString("RandomizerGUI.wpArea11RB.text")); // NOI18N
+		wpArea11RB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpArea11RB.toolTipText")); // NOI18N
+		wpArea11RB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				wpArea11RBActionPerformed(evt);
+			}
+		});
+
+		wildPokesButtonGroup.add(wpGlobalRB);
+		wpGlobalRB.setText(bundle.getString("RandomizerGUI.wpGlobalRB.text")); // NOI18N
+		wpGlobalRB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpGlobalRB.toolTipText")); // NOI18N
+		wpGlobalRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				wpGlobalRBActionPerformed(evt);
+			}
+		});
+
+		wildPokemonARulePanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle
+						.getString("RandomizerGUI.wildPokemonARulePanel.border.title"))); // NOI18N
+
+		wildPokesARuleButtonGroup.add(wpARNoneRB);
+		wpARNoneRB.setSelected(true);
+		wpARNoneRB.setText(bundle.getString("RandomizerGUI.wpARNoneRB.text")); // NOI18N
+		wpARNoneRB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpARNoneRB.toolTipText")); // NOI18N
+		wpARNoneRB.setEnabled(false);
+
+		wildPokesARuleButtonGroup.add(wpARCatchEmAllRB);
+		wpARCatchEmAllRB.setText(bundle
+				.getString("RandomizerGUI.wpARCatchEmAllRB.text")); // NOI18N
+		wpARCatchEmAllRB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpARCatchEmAllRB.toolTipText")); // NOI18N
+		wpARCatchEmAllRB.setEnabled(false);
+
+		wildPokesARuleButtonGroup.add(wpARTypeThemedRB);
+		wpARTypeThemedRB.setText(bundle
+				.getString("RandomizerGUI.wpARTypeThemedRB.text")); // NOI18N
+		wpARTypeThemedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpARTypeThemedRB.toolTipText")); // NOI18N
+		wpARTypeThemedRB.setEnabled(false);
+
+		javax.swing.GroupLayout wildPokemonARulePanelLayout = new javax.swing.GroupLayout(
+				wildPokemonARulePanel);
+		wildPokemonARulePanel.setLayout(wildPokemonARulePanelLayout);
+		wildPokemonARulePanelLayout
+				.setHorizontalGroup(wildPokemonARulePanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								wildPokemonARulePanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												wildPokemonARulePanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																wpARNoneRB)
+														.addComponent(
+																wpARCatchEmAllRB)
+														.addComponent(
+																wpARTypeThemedRB))
+										.addContainerGap(30, Short.MAX_VALUE)));
+		wildPokemonARulePanelLayout
+				.setVerticalGroup(wildPokemonARulePanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								wildPokemonARulePanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(wpARNoneRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(wpARCatchEmAllRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+												2, Short.MAX_VALUE)
+										.addComponent(wpARTypeThemedRB)));
+
+		wpUseTimeCB.setText(bundle.getString("RandomizerGUI.wpUseTimeCB.text")); // NOI18N
+		wpUseTimeCB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpUseTimeCB.toolTipText")); // NOI18N
+
+		wpNoLegendariesCB.setText(bundle
+				.getString("RandomizerGUI.wpNoLegendariesCB.text")); // NOI18N
+
+		wpCatchRateCB.setText(bundle
+				.getString("RandomizerGUI.wpCatchRateCB.text")); // NOI18N
+		wpCatchRateCB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpCatchRateCB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout wildPokemonPanelLayout = new javax.swing.GroupLayout(
+				wildPokemonPanel);
+		wildPokemonPanel.setLayout(wildPokemonPanelLayout);
+		wildPokemonPanelLayout
+				.setHorizontalGroup(wildPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								wildPokemonPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												wildPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																wpUnchangedRB)
+														.addComponent(
+																wpRandomRB)
+														.addComponent(
+																wpArea11RB)
+														.addComponent(
+																wpGlobalRB))
+										.addGap(18, 18, 18)
+										.addComponent(
+												wildPokemonARulePanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addGap(18, 18, 18)
+										.addGroup(
+												wildPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																wpUseTimeCB)
+														.addComponent(
+																wpNoLegendariesCB)
+														.addComponent(
+																wpCatchRateCB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		wildPokemonPanelLayout
+				.setVerticalGroup(wildPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.TRAILING)
+						.addGroup(
+								javax.swing.GroupLayout.Alignment.LEADING,
+								wildPokemonPanelLayout
+										.createSequentialGroup()
+										.addComponent(
+												wildPokemonARulePanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addGap(0, 0, Short.MAX_VALUE))
+						.addGroup(
+								javax.swing.GroupLayout.Alignment.LEADING,
+								wildPokemonPanelLayout
+										.createSequentialGroup()
+										.addGroup(
+												wildPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.TRAILING)
+														.addGroup(
+																javax.swing.GroupLayout.Alignment.LEADING,
+																wildPokemonPanelLayout
+																		.createSequentialGroup()
+																		.addContainerGap()
+																		.addComponent(
+																				wpUnchangedRB)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																		.addComponent(
+																				wpRandomRB)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																		.addComponent(
+																				wpArea11RB)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																		.addComponent(
+																				wpGlobalRB))
+														.addGroup(
+																javax.swing.GroupLayout.Alignment.LEADING,
+																wildPokemonPanelLayout
+																		.createSequentialGroup()
+																		.addGap(28,
+																				28,
+																				28)
+																		.addComponent(
+																				wpUseTimeCB)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																		.addComponent(
+																				wpNoLegendariesCB)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																		.addComponent(
+																				wpCatchRateCB)))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		starterPokemonPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.starterPokemonPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		starterPokemonButtonGroup.add(spUnchangedRB);
+		spUnchangedRB.setSelected(true);
+		spUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.spUnchangedRB.text")); // NOI18N
+		spUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.spUnchangedRB.toolTipText")); // NOI18N
+		spUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				spUnchangedRBActionPerformed(evt);
+			}
+		});
+
+		starterPokemonButtonGroup.add(spCustomRB);
+		spCustomRB.setText(bundle.getString("RandomizerGUI.spCustomRB.text")); // NOI18N
+		spCustomRB.setToolTipText(bundle
+				.getString("RandomizerGUI.spCustomRB.toolTipText")); // NOI18N
+		spCustomRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				spCustomRBActionPerformed(evt);
+			}
+		});
+
+		spCustomPoke1Chooser.setModel(new javax.swing.DefaultComboBoxModel(
+				new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+		spCustomPoke1Chooser.setEnabled(false);
+
+		spCustomPoke2Chooser.setModel(new javax.swing.DefaultComboBoxModel(
+				new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+		spCustomPoke2Chooser.setEnabled(false);
+
+		spCustomPoke3Chooser.setModel(new javax.swing.DefaultComboBoxModel(
+				new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+		spCustomPoke3Chooser.setEnabled(false);
+
+		starterPokemonButtonGroup.add(spRandomRB);
+		spRandomRB.setText(bundle.getString("RandomizerGUI.spRandomRB.text")); // NOI18N
+		spRandomRB.setToolTipText(bundle
+				.getString("RandomizerGUI.spRandomRB.toolTipText")); // NOI18N
+		spRandomRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				spRandomRBActionPerformed(evt);
+			}
+		});
+
+		starterPokemonButtonGroup.add(spRandom2EvosRB);
+		spRandom2EvosRB.setText(bundle
+				.getString("RandomizerGUI.spRandom2EvosRB.text")); // NOI18N
+		spRandom2EvosRB.setToolTipText(bundle
+				.getString("RandomizerGUI.spRandom2EvosRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout starterPokemonPanelLayout = new javax.swing.GroupLayout(
+				starterPokemonPanel);
+		starterPokemonPanel.setLayout(starterPokemonPanelLayout);
+		starterPokemonPanelLayout
+				.setHorizontalGroup(starterPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								starterPokemonPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												starterPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																spUnchangedRB)
+														.addGroup(
+																starterPokemonPanelLayout
+																		.createSequentialGroup()
+																		.addComponent(
+																				spCustomRB)
+																		.addGap(18,
+																				18,
+																				18)
+																		.addComponent(
+																				spCustomPoke1Chooser,
+																				javax.swing.GroupLayout.PREFERRED_SIZE,
+																				90,
+																				javax.swing.GroupLayout.PREFERRED_SIZE)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																		.addComponent(
+																				spCustomPoke2Chooser,
+																				javax.swing.GroupLayout.PREFERRED_SIZE,
+																				90,
+																				javax.swing.GroupLayout.PREFERRED_SIZE)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																		.addComponent(
+																				spCustomPoke3Chooser,
+																				javax.swing.GroupLayout.PREFERRED_SIZE,
+																				90,
+																				javax.swing.GroupLayout.PREFERRED_SIZE))
+														.addComponent(
+																spRandomRB)
+														.addComponent(
+																spRandom2EvosRB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		starterPokemonPanelLayout
+				.setVerticalGroup(starterPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								starterPokemonPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(spUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addGroup(
+												starterPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																spCustomRB)
+														.addComponent(
+																spCustomPoke1Chooser,
+																javax.swing.GroupLayout.PREFERRED_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.PREFERRED_SIZE)
+														.addComponent(
+																spCustomPoke2Chooser,
+																javax.swing.GroupLayout.PREFERRED_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.PREFERRED_SIZE)
+														.addComponent(
+																spCustomPoke3Chooser,
+																javax.swing.GroupLayout.PREFERRED_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.PREFERRED_SIZE))
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(spRandomRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(spRandom2EvosRB)
+										.addContainerGap(11, Short.MAX_VALUE)));
+
+		staticPokemonPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.staticPokemonPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		staticPokemonButtonGroup.add(stpUnchangedRB);
+		stpUnchangedRB.setSelected(true);
+		stpUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.stpUnchangedRB.text")); // NOI18N
+		stpUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.stpUnchangedRB.toolTipText")); // NOI18N
+
+		staticPokemonButtonGroup.add(stpRandomL4LRB);
+		stpRandomL4LRB.setText(bundle
+				.getString("RandomizerGUI.stpRandomL4LRB.text")); // NOI18N
+		stpRandomL4LRB.setToolTipText(bundle
+				.getString("RandomizerGUI.stpRandomL4LRB.toolTipText")); // NOI18N
+
+		staticPokemonButtonGroup.add(stpRandomTotalRB);
+		stpRandomTotalRB.setText(bundle
+				.getString("RandomizerGUI.stpRandomTotalRB.text")); // NOI18N
+		stpRandomTotalRB.setToolTipText(bundle
+				.getString("RandomizerGUI.stpRandomTotalRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout staticPokemonPanelLayout = new javax.swing.GroupLayout(
+				staticPokemonPanel);
+		staticPokemonPanel.setLayout(staticPokemonPanelLayout);
+		staticPokemonPanelLayout
+				.setHorizontalGroup(staticPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								staticPokemonPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												staticPokemonPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																stpUnchangedRB)
+														.addComponent(
+																stpRandomL4LRB)
+														.addComponent(
+																stpRandomTotalRB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		staticPokemonPanelLayout
+				.setVerticalGroup(staticPokemonPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								staticPokemonPanelLayout
+										.createSequentialGroup()
+										.addComponent(stpUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(stpRandomL4LRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(stpRandomTotalRB)));
+
+		tmhmsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(null,
+				bundle.getString("RandomizerGUI.tmhmsPanel.border.title"),
+				javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+				javax.swing.border.TitledBorder.DEFAULT_POSITION,
+				new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		tmMovesPanel.setBorder(javax.swing.BorderFactory
+				.createTitledBorder(bundle
+						.getString("RandomizerGUI.tmMovesPanel.border.title"))); // NOI18N
+
+		tmMovesButtonGroup.add(tmmUnchangedRB);
+		tmmUnchangedRB.setSelected(true);
+		tmmUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.tmmUnchangedRB.text")); // NOI18N
+		tmmUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.tmmUnchangedRB.toolTipText")); // NOI18N
+
+		tmMovesButtonGroup.add(tmmRandomRB);
+		tmmRandomRB.setText(bundle.getString("RandomizerGUI.tmmRandomRB.text")); // NOI18N
+		tmmRandomRB.setToolTipText(bundle
+				.getString("RandomizerGUI.tmmRandomRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout tmMovesPanelLayout = new javax.swing.GroupLayout(
+				tmMovesPanel);
+		tmMovesPanel.setLayout(tmMovesPanelLayout);
+		tmMovesPanelLayout
+				.setHorizontalGroup(tmMovesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								tmMovesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												tmMovesPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																tmmUnchangedRB)
+														.addComponent(
+																tmmRandomRB))
+										.addContainerGap(118, Short.MAX_VALUE)));
+		tmMovesPanelLayout
+				.setVerticalGroup(tmMovesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								tmMovesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(tmmUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(tmmRandomRB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		tmHmCompatPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle
+						.getString("RandomizerGUI.tmHmCompatPanel.border.title"))); // NOI18N
+
+		tmHmCompatibilityButtonGroup.add(thcUnchangedRB);
+		thcUnchangedRB.setSelected(true);
+		thcUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.thcUnchangedRB.text")); // NOI18N
+		thcUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.thcUnchangedRB.toolTipText")); // NOI18N
+
+		tmHmCompatibilityButtonGroup.add(thcRandomTypeRB);
+		thcRandomTypeRB.setText(bundle
+				.getString("RandomizerGUI.thcRandomTypeRB.text")); // NOI18N
+		thcRandomTypeRB.setToolTipText(bundle
+				.getString("RandomizerGUI.thcRandomTypeRB.toolTipText")); // NOI18N
+
+		tmHmCompatibilityButtonGroup.add(thcRandomTotalRB);
+		thcRandomTotalRB.setText(bundle
+				.getString("RandomizerGUI.thcRandomTotalRB.text")); // NOI18N
+		thcRandomTotalRB.setToolTipText(bundle
+				.getString("RandomizerGUI.thcRandomTotalRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout tmHmCompatPanelLayout = new javax.swing.GroupLayout(
+				tmHmCompatPanel);
+		tmHmCompatPanel.setLayout(tmHmCompatPanelLayout);
+		tmHmCompatPanelLayout
+				.setHorizontalGroup(tmHmCompatPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								tmHmCompatPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												tmHmCompatPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																thcUnchangedRB)
+														.addComponent(
+																thcRandomTypeRB)
+														.addComponent(
+																thcRandomTotalRB))
+										.addContainerGap(79, Short.MAX_VALUE)));
+		tmHmCompatPanelLayout
+				.setVerticalGroup(tmHmCompatPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								tmHmCompatPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(thcUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(thcRandomTypeRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(thcRandomTotalRB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		javax.swing.GroupLayout tmhmsPanelLayout = new javax.swing.GroupLayout(
+				tmhmsPanel);
+		tmhmsPanel.setLayout(tmhmsPanelLayout);
+		tmhmsPanelLayout
+				.setHorizontalGroup(tmhmsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								tmhmsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(
+												tmMovesPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(
+												tmHmCompatPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addContainerGap()));
+		tmhmsPanelLayout
+				.setVerticalGroup(tmhmsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								tmhmsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addGroup(
+												tmhmsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING,
+																false)
+														.addComponent(
+																tmHmCompatPanel,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																Short.MAX_VALUE)
+														.addComponent(
+																tmMovesPanel,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																Short.MAX_VALUE))));
+
+		abilitiesPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(
+				null,
+				bundle.getString("RandomizerGUI.abilitiesPanel.border.title"),
+				javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+				javax.swing.border.TitledBorder.DEFAULT_POSITION,
+				new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		pokeAbilitiesButtonGroup.add(paUnchangedRB);
+		paUnchangedRB.setSelected(true);
+		paUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.paUnchangedRB.text")); // NOI18N
+		paUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.paUnchangedRB.toolTipText")); // NOI18N
+		paUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				paUnchangedRBActionPerformed(evt);
+			}
+		});
+
+		pokeAbilitiesButtonGroup.add(paRandomizeRB);
+		paRandomizeRB.setText(bundle
+				.getString("RandomizerGUI.paRandomizeRB.text")); // NOI18N
+		paRandomizeRB.setToolTipText(bundle
+				.getString("RandomizerGUI.paRandomizeRB.toolTipText")); // NOI18N
+		paRandomizeRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				paRandomizeRBActionPerformed(evt);
+			}
+		});
+
+		paWonderGuardCB.setText(bundle
+				.getString("RandomizerGUI.paWonderGuardCB.text")); // NOI18N
+		paWonderGuardCB.setToolTipText(bundle
+				.getString("RandomizerGUI.paWonderGuardCB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout abilitiesPanelLayout = new javax.swing.GroupLayout(
+				abilitiesPanel);
+		abilitiesPanel.setLayout(abilitiesPanelLayout);
+		abilitiesPanelLayout
+				.setHorizontalGroup(abilitiesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								abilitiesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												abilitiesPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																paUnchangedRB)
+														.addComponent(
+																paRandomizeRB)
+														.addComponent(
+																paWonderGuardCB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		abilitiesPanelLayout
+				.setVerticalGroup(abilitiesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								abilitiesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(paUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(paRandomizeRB)
+										.addGap(18, 18, 18)
+										.addComponent(paWonderGuardCB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		moveTutorsPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(
+				null,
+				bundle.getString("RandomizerGUI.moveTutorsPanel.border.title"),
+				javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+				javax.swing.border.TitledBorder.DEFAULT_POSITION,
+				new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		mtMovesPanel.setBorder(javax.swing.BorderFactory
+				.createTitledBorder(bundle
+						.getString("RandomizerGUI.mtMovesPanel.border.title"))); // NOI18N
+
+		mtMovesButtonGroup.add(mtmUnchangedRB);
+		mtmUnchangedRB.setSelected(true);
+		mtmUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.mtmUnchangedRB.text")); // NOI18N
+		mtmUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.mtmUnchangedRB.toolTipText")); // NOI18N
+		mtmUnchangedRB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				mtmUnchangedRBActionPerformed(evt);
+			}
+		});
+
+		mtMovesButtonGroup.add(mtmRandomRB);
+		mtmRandomRB.setText(bundle.getString("RandomizerGUI.mtmRandomRB.text")); // NOI18N
+		mtmRandomRB.setToolTipText(bundle
+				.getString("RandomizerGUI.mtmRandomRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout mtMovesPanelLayout = new javax.swing.GroupLayout(
+				mtMovesPanel);
+		mtMovesPanel.setLayout(mtMovesPanelLayout);
+		mtMovesPanelLayout
+				.setHorizontalGroup(mtMovesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								mtMovesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												mtMovesPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																mtmUnchangedRB)
+														.addComponent(
+																mtmRandomRB))
+										.addContainerGap(118, Short.MAX_VALUE)));
+		mtMovesPanelLayout
+				.setVerticalGroup(mtMovesPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								mtMovesPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(mtmUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(mtmRandomRB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		mtCompatPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(bundle
+						.getString("RandomizerGUI.mtCompatPanel.border.title"))); // NOI18N
+
+		mtCompatibilityButtonGroup.add(mtcUnchangedRB);
+		mtcUnchangedRB.setSelected(true);
+		mtcUnchangedRB.setText(bundle
+				.getString("RandomizerGUI.mtcUnchangedRB.text")); // NOI18N
+		mtcUnchangedRB.setToolTipText(bundle
+				.getString("RandomizerGUI.mtcUnchangedRB.toolTipText")); // NOI18N
+
+		mtCompatibilityButtonGroup.add(mtcRandomTypeRB);
+		mtcRandomTypeRB.setText(bundle
+				.getString("RandomizerGUI.mtcRandomTypeRB.text")); // NOI18N
+		mtcRandomTypeRB.setToolTipText(bundle
+				.getString("RandomizerGUI.mtcRandomTypeRB.toolTipText")); // NOI18N
+
+		mtCompatibilityButtonGroup.add(mtcRandomTotalRB);
+		mtcRandomTotalRB.setText(bundle
+				.getString("RandomizerGUI.mtcRandomTotalRB.text")); // NOI18N
+		mtcRandomTotalRB.setToolTipText(bundle
+				.getString("RandomizerGUI.mtcRandomTotalRB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout mtCompatPanelLayout = new javax.swing.GroupLayout(
+				mtCompatPanel);
+		mtCompatPanel.setLayout(mtCompatPanelLayout);
+		mtCompatPanelLayout
+				.setHorizontalGroup(mtCompatPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								mtCompatPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												mtCompatPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																mtcUnchangedRB)
+														.addComponent(
+																mtcRandomTypeRB)
+														.addComponent(
+																mtcRandomTotalRB))
+										.addContainerGap(79, Short.MAX_VALUE)));
+		mtCompatPanelLayout
+				.setVerticalGroup(mtCompatPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								mtCompatPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addComponent(mtcUnchangedRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(mtcRandomTypeRB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(mtcRandomTotalRB)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		mtNoExistLabel.setText(bundle
+				.getString("RandomizerGUI.mtNoExistLabel.text")); // NOI18N
+
+		javax.swing.GroupLayout moveTutorsPanelLayout = new javax.swing.GroupLayout(
+				moveTutorsPanel);
+		moveTutorsPanel.setLayout(moveTutorsPanelLayout);
+		moveTutorsPanelLayout
+				.setHorizontalGroup(moveTutorsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								moveTutorsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												moveTutorsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addGroup(
+																moveTutorsPanelLayout
+																		.createSequentialGroup()
+																		.addComponent(
+																				mtMovesPanel,
+																				javax.swing.GroupLayout.PREFERRED_SIZE,
+																				javax.swing.GroupLayout.DEFAULT_SIZE,
+																				javax.swing.GroupLayout.PREFERRED_SIZE)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+																				194,
+																				Short.MAX_VALUE)
+																		.addComponent(
+																				mtCompatPanel,
+																				javax.swing.GroupLayout.PREFERRED_SIZE,
+																				javax.swing.GroupLayout.DEFAULT_SIZE,
+																				javax.swing.GroupLayout.PREFERRED_SIZE))
+														.addGroup(
+																moveTutorsPanelLayout
+																		.createSequentialGroup()
+																		.addComponent(
+																				mtNoExistLabel)
+																		.addGap(0,
+																				0,
+																				Short.MAX_VALUE)))
+										.addContainerGap()));
+		moveTutorsPanelLayout
+				.setVerticalGroup(moveTutorsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								moveTutorsPanelLayout
+										.createSequentialGroup()
+										.addComponent(mtNoExistLabel)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addGroup(
+												moveTutorsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING,
+																false)
+														.addComponent(
+																mtCompatPanel,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																Short.MAX_VALUE)
+														.addComponent(
+																mtMovesPanel,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																Short.MAX_VALUE))));
+
+		javax.swing.GroupLayout optionsContainerPanelLayout = new javax.swing.GroupLayout(
+				optionsContainerPanel);
+		optionsContainerPanel.setLayout(optionsContainerPanelLayout);
+		optionsContainerPanelLayout
+				.setHorizontalGroup(optionsContainerPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addComponent(pokemonTypesPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addComponent(pokemonMovesetsPanel,
+								javax.swing.GroupLayout.Alignment.TRAILING,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addComponent(trainersPokemonPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addComponent(wildPokemonPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addComponent(starterPokemonPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addComponent(staticPokemonPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addComponent(tmhmsPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE)
+						.addGroup(
+								optionsContainerPanelLayout
+										.createSequentialGroup()
+										.addComponent(
+												baseStatsPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(
+												abilitiesPanel,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE))
+						.addComponent(moveTutorsPanel,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								javax.swing.GroupLayout.DEFAULT_SIZE,
+								Short.MAX_VALUE));
+		optionsContainerPanelLayout
+				.setVerticalGroup(optionsContainerPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								optionsContainerPanelLayout
+										.createSequentialGroup()
+										.addGroup(
+												optionsContainerPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING,
+																false)
+														.addComponent(
+																baseStatsPanel,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																Short.MAX_VALUE)
+														.addComponent(
+																abilitiesPanel,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																javax.swing.GroupLayout.DEFAULT_SIZE,
+																Short.MAX_VALUE))
+										.addGap(14, 14, 14)
+										.addComponent(
+												starterPokemonPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(
+												pokemonTypesPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(
+												pokemonMovesetsPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(
+												trainersPokemonPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addGap(15, 15, 15)
+										.addComponent(
+												wildPokemonPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(
+												staticPokemonPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(
+												tmhmsPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(
+												moveTutorsPanel,
+												javax.swing.GroupLayout.PREFERRED_SIZE,
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+
+		optionsScrollPane.setViewportView(optionsContainerPanel);
+
+		openROMButton.setText(bundle
+				.getString("RandomizerGUI.openROMButton.text")); // NOI18N
+		openROMButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				openROMButtonActionPerformed(evt);
+			}
+		});
+
+		saveROMButton.setText(bundle
+				.getString("RandomizerGUI.saveROMButton.text")); // NOI18N
+		saveROMButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				saveROMButtonActionPerformed(evt);
+			}
+		});
+
+		usePresetsButton.setText(bundle
+				.getString("RandomizerGUI.usePresetsButton.text")); // NOI18N
+		usePresetsButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				usePresetsButtonActionPerformed(evt);
+			}
+		});
+
+		aboutButton.setText(bundle.getString("RandomizerGUI.aboutButton.text")); // NOI18N
+		aboutButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				aboutButtonActionPerformed(evt);
+			}
+		});
+
+		otherOptionsPanel
+				.setBorder(javax.swing.BorderFactory.createTitledBorder(
+						null,
+						bundle.getString("RandomizerGUI.otherOptionsPanel.border.title"),
+						javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+						javax.swing.border.TitledBorder.DEFAULT_POSITION,
+						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+
+		bwEXPPatchCB.setText(bundle
+				.getString("RandomizerGUI.bwEXPPatchCB.text")); // NOI18N
+		bwEXPPatchCB.setToolTipText(bundle
+				.getString("RandomizerGUI.bwEXPPatchCB.toolTipText")); // NOI18N
+
+		raceModeCB.setText(bundle.getString("RandomizerGUI.raceModeCB.text")); // NOI18N
+		raceModeCB.setToolTipText(bundle
+				.getString("RandomizerGUI.raceModeCB.toolTipText")); // NOI18N
+
+		randomizeHollowsCB.setText(bundle
+				.getString("RandomizerGUI.randomizeHollowsCB.text")); // NOI18N
+		randomizeHollowsCB.setToolTipText(bundle
+				.getString("RandomizerGUI.randomizeHollowsCB.toolTipText")); // NOI18N
+
+		brokenMovesCB.setText(bundle
+				.getString("RandomizerGUI.brokenMovesCB.text")); // NOI18N
+		brokenMovesCB.setToolTipText(bundle
+				.getString("RandomizerGUI.brokenMovesCB.toolTipText")); // NOI18N
+
+		javax.swing.GroupLayout otherOptionsPanelLayout = new javax.swing.GroupLayout(
+				otherOptionsPanel);
+		otherOptionsPanel.setLayout(otherOptionsPanelLayout);
+		otherOptionsPanelLayout
+				.setHorizontalGroup(otherOptionsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								otherOptionsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(
+												otherOptionsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																bwEXPPatchCB)
+														.addComponent(
+																raceModeCB)
+														.addComponent(
+																randomizeHollowsCB)
+														.addComponent(
+																brokenMovesCB))
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
+		otherOptionsPanelLayout
+				.setVerticalGroup(otherOptionsPanelLayout
+						.createParallelGroup(
+								javax.swing.GroupLayout.Alignment.LEADING)
+						.addGroup(
+								otherOptionsPanelLayout
+										.createSequentialGroup()
+										.addComponent(bwEXPPatchCB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(raceModeCB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(randomizeHollowsCB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(brokenMovesCB)
+										.addGap(26, 26, 26)));
+
+		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
+				getContentPane());
+		getContentPane().setLayout(layout);
+		layout.setHorizontalGroup(layout
+				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+				.addGroup(
+						layout.createSequentialGroup()
+								.addContainerGap()
+								.addGroup(
+										layout.createParallelGroup(
+												javax.swing.GroupLayout.Alignment.LEADING)
+												.addComponent(
+														optionsScrollPane,
+														javax.swing.GroupLayout.DEFAULT_SIZE,
+														716, Short.MAX_VALUE)
+												.addGroup(
+														layout.createSequentialGroup()
+																.addComponent(
+																		generalOptionsPanel,
+																		javax.swing.GroupLayout.PREFERRED_SIZE,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		javax.swing.GroupLayout.PREFERRED_SIZE)
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																.addComponent(
+																		otherOptionsPanel,
+																		javax.swing.GroupLayout.PREFERRED_SIZE,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		javax.swing.GroupLayout.PREFERRED_SIZE)
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																.addComponent(
+																		romInfoPanel,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		Short.MAX_VALUE)
+																.addGap(18, 18,
+																		18)
+																.addGroup(
+																		layout.createParallelGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING,
+																				false)
+																				.addComponent(
+																						saveROMButton,
+																						javax.swing.GroupLayout.Alignment.TRAILING,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						123,
+																						Short.MAX_VALUE)
+																				.addComponent(
+																						openROMButton,
+																						javax.swing.GroupLayout.Alignment.TRAILING,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						Short.MAX_VALUE)
+																				.addComponent(
+																						usePresetsButton,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						Short.MAX_VALUE)
+																				.addComponent(
+																						aboutButton,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						Short.MAX_VALUE))))
+								.addContainerGap()));
+		layout.setVerticalGroup(layout
+				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+				.addGroup(
+						layout.createSequentialGroup()
+								.addContainerGap()
+								.addGroup(
+										layout.createParallelGroup(
+												javax.swing.GroupLayout.Alignment.LEADING,
+												false)
+												.addGroup(
+														layout.createSequentialGroup()
+																.addGroup(
+																		layout.createParallelGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING)
+																				.addGroup(
+																						layout.createSequentialGroup()
+																								.addComponent(
+																										openROMButton)
+																								.addPreferredGap(
+																										javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																								.addComponent(
+																										saveROMButton)
+																								.addPreferredGap(
+																										javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																								.addComponent(
+																										usePresetsButton))
+																				.addComponent(
+																						romInfoPanel,
+																						javax.swing.GroupLayout.PREFERRED_SIZE,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						javax.swing.GroupLayout.PREFERRED_SIZE))
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																.addComponent(
+																		aboutButton))
+												.addComponent(
+														otherOptionsPanel,
+														javax.swing.GroupLayout.DEFAULT_SIZE,
+														javax.swing.GroupLayout.DEFAULT_SIZE,
+														Short.MAX_VALUE)
+												.addComponent(
+														generalOptionsPanel,
+														javax.swing.GroupLayout.DEFAULT_SIZE,
+														javax.swing.GroupLayout.DEFAULT_SIZE,
+														Short.MAX_VALUE))
+								.addPreferredGap(
+										javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+								.addComponent(optionsScrollPane,
+										javax.swing.GroupLayout.DEFAULT_SIZE,
+										382, Short.MAX_VALUE).addContainerGap()));
+
+		pack();
+	}// </editor-fold>//GEN-END:initComponents
 
 	private void mtmUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_mtmUnchangedRBActionPerformed
 		// TODO add your handling code here:
@@ -2050,9 +2911,12 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			}
 			if (raceMode) {
 				for (Pokemon pkmn : allPokes) {
-					checkValue = addToCV(checkValue, pkmn.hp, pkmn.attack,
-							pkmn.defense, pkmn.speed, pkmn.spatk, pkmn.spdef,
-							pkmn.ability1, pkmn.ability2, pkmn.ability3);
+					if (pkmn != null) {
+						checkValue = addToCV(checkValue, pkmn.hp, pkmn.attack,
+								pkmn.defense, pkmn.speed, pkmn.spatk,
+								pkmn.spdef, pkmn.ability1, pkmn.ability2,
+								pkmn.ability3);
+					}
 				}
 			}
 			verboseLog.println();
@@ -2423,7 +3287,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private int addToCV(int checkValue, int... values) {
 		for (int value : values) {
 			checkValue = Integer.rotateLeft(checkValue, 3);
-			checkValue |= value;
+			checkValue ^= value;
 		}
 		return checkValue;
 	}
@@ -2574,111 +3438,111 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		});
 	}
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel abilitiesPanel;
-    private javax.swing.JButton aboutButton;
-    private javax.swing.JPanel baseStatsPanel;
-    private javax.swing.JCheckBox brokenMovesCB;
-    private javax.swing.JCheckBox bwEXPPatchCB;
-    private javax.swing.JPanel generalOptionsPanel;
-    private javax.swing.JCheckBox goLowerCaseNamesCheckBox;
-    private javax.swing.JCheckBox goNationalDexCheckBox;
-    private javax.swing.JCheckBox goRemoveTradeEvosCheckBox;
-    private javax.swing.JCheckBox goUpdateMovesCheckBox;
-    private javax.swing.JCheckBox goUpdateTypesCheckBox;
-    private javax.swing.JPanel moveTutorsPanel;
-    private javax.swing.JPanel mtCompatPanel;
-    private javax.swing.ButtonGroup mtCompatibilityButtonGroup;
-    private javax.swing.ButtonGroup mtMovesButtonGroup;
-    private javax.swing.JPanel mtMovesPanel;
-    private javax.swing.JLabel mtNoExistLabel;
-    private javax.swing.JRadioButton mtcRandomTotalRB;
-    private javax.swing.JRadioButton mtcRandomTypeRB;
-    private javax.swing.JRadioButton mtcUnchangedRB;
-    private javax.swing.JRadioButton mtmRandomRB;
-    private javax.swing.JRadioButton mtmUnchangedRB;
-    private javax.swing.JButton openROMButton;
-    private javax.swing.JPanel optionsContainerPanel;
-    private javax.swing.JScrollPane optionsScrollPane;
-    private javax.swing.JPanel otherOptionsPanel;
-    private javax.swing.JRadioButton paRandomizeRB;
-    private javax.swing.JRadioButton paUnchangedRB;
-    private javax.swing.JCheckBox paWonderGuardCB;
-    private javax.swing.JRadioButton pbsChangesRandomEvosRB;
-    private javax.swing.JRadioButton pbsChangesRandomTotalRB;
-    private javax.swing.JRadioButton pbsChangesShuffleRB;
-    private javax.swing.JRadioButton pbsChangesUnchangedRB;
-    private javax.swing.JRadioButton pmsRandomTotalRB;
-    private javax.swing.JRadioButton pmsRandomTypeRB;
-    private javax.swing.JRadioButton pmsUnchangedRB;
-    private javax.swing.ButtonGroup pokeAbilitiesButtonGroup;
-    private javax.swing.ButtonGroup pokeMovesetsButtonGroup;
-    private javax.swing.ButtonGroup pokeStatChangesButtonGroup;
-    private javax.swing.ButtonGroup pokeTypesButtonGroup;
-    private javax.swing.JPanel pokemonMovesetsPanel;
-    private javax.swing.JPanel pokemonTypesPanel;
-    private javax.swing.JRadioButton ptRandomFollowEvosRB;
-    private javax.swing.JRadioButton ptRandomTotalRB;
-    private javax.swing.JRadioButton ptUnchangedRB;
-    private javax.swing.JCheckBox raceModeCB;
-    private javax.swing.JCheckBox randomizeHollowsCB;
-    private javax.swing.JLabel riRomCodeLabel;
-    private javax.swing.JLabel riRomNameLabel;
-    private javax.swing.JLabel riRomSupportLabel;
-    private javax.swing.JPanel romInfoPanel;
-    private javax.swing.JFileChooser romOpenChooser;
-    private javax.swing.JFileChooser romSaveChooser;
-    private javax.swing.JButton saveROMButton;
-    private javax.swing.JComboBox spCustomPoke1Chooser;
-    private javax.swing.JComboBox spCustomPoke2Chooser;
-    private javax.swing.JComboBox spCustomPoke3Chooser;
-    private javax.swing.JRadioButton spCustomRB;
-    private javax.swing.JRadioButton spRandom2EvosRB;
-    private javax.swing.JRadioButton spRandomRB;
-    private javax.swing.JRadioButton spUnchangedRB;
-    private javax.swing.ButtonGroup starterPokemonButtonGroup;
-    private javax.swing.JPanel starterPokemonPanel;
-    private javax.swing.ButtonGroup staticPokemonButtonGroup;
-    private javax.swing.JPanel staticPokemonPanel;
-    private javax.swing.JRadioButton stpRandomL4LRB;
-    private javax.swing.JRadioButton stpRandomTotalRB;
-    private javax.swing.JRadioButton stpUnchangedRB;
-    private javax.swing.JCheckBox tcnRandomizeCB;
-    private javax.swing.JRadioButton thcRandomTotalRB;
-    private javax.swing.JRadioButton thcRandomTypeRB;
-    private javax.swing.JRadioButton thcUnchangedRB;
-    private javax.swing.JPanel tmHmCompatPanel;
-    private javax.swing.ButtonGroup tmHmCompatibilityButtonGroup;
-    private javax.swing.ButtonGroup tmMovesButtonGroup;
-    private javax.swing.JPanel tmMovesPanel;
-    private javax.swing.JPanel tmhmsPanel;
-    private javax.swing.JRadioButton tmmRandomRB;
-    private javax.swing.JRadioButton tmmUnchangedRB;
-    private javax.swing.JCheckBox tnRandomizeCB;
-    private javax.swing.JCheckBox tpNoEarlyShedinjaCB;
-    private javax.swing.JCheckBox tpNoLegendariesCB;
-    private javax.swing.JCheckBox tpPowerLevelsCB;
-    private javax.swing.JRadioButton tpRandomRB;
-    private javax.swing.JCheckBox tpRivalCarriesStarterCB;
-    private javax.swing.JRadioButton tpTypeThemedRB;
-    private javax.swing.JCheckBox tpTypeWeightingCB;
-    private javax.swing.JRadioButton tpUnchangedRB;
-    private javax.swing.ButtonGroup trainerPokesButtonGroup;
-    private javax.swing.JPanel trainersPokemonPanel;
-    private javax.swing.JButton usePresetsButton;
-    private javax.swing.JPanel wildPokemonARulePanel;
-    private javax.swing.JPanel wildPokemonPanel;
-    private javax.swing.ButtonGroup wildPokesARuleButtonGroup;
-    private javax.swing.ButtonGroup wildPokesButtonGroup;
-    private javax.swing.JRadioButton wpARCatchEmAllRB;
-    private javax.swing.JRadioButton wpARNoneRB;
-    private javax.swing.JRadioButton wpARTypeThemedRB;
-    private javax.swing.JRadioButton wpArea11RB;
-    private javax.swing.JCheckBox wpCatchRateCB;
-    private javax.swing.JRadioButton wpGlobalRB;
-    private javax.swing.JCheckBox wpNoLegendariesCB;
-    private javax.swing.JRadioButton wpRandomRB;
-    private javax.swing.JRadioButton wpUnchangedRB;
-    private javax.swing.JCheckBox wpUseTimeCB;
-    // End of variables declaration//GEN-END:variables
+	// Variables declaration - do not modify//GEN-BEGIN:variables
+	private javax.swing.JPanel abilitiesPanel;
+	private javax.swing.JButton aboutButton;
+	private javax.swing.JPanel baseStatsPanel;
+	private javax.swing.JCheckBox brokenMovesCB;
+	private javax.swing.JCheckBox bwEXPPatchCB;
+	private javax.swing.JPanel generalOptionsPanel;
+	private javax.swing.JCheckBox goLowerCaseNamesCheckBox;
+	private javax.swing.JCheckBox goNationalDexCheckBox;
+	private javax.swing.JCheckBox goRemoveTradeEvosCheckBox;
+	private javax.swing.JCheckBox goUpdateMovesCheckBox;
+	private javax.swing.JCheckBox goUpdateTypesCheckBox;
+	private javax.swing.JPanel moveTutorsPanel;
+	private javax.swing.JPanel mtCompatPanel;
+	private javax.swing.ButtonGroup mtCompatibilityButtonGroup;
+	private javax.swing.ButtonGroup mtMovesButtonGroup;
+	private javax.swing.JPanel mtMovesPanel;
+	private javax.swing.JLabel mtNoExistLabel;
+	private javax.swing.JRadioButton mtcRandomTotalRB;
+	private javax.swing.JRadioButton mtcRandomTypeRB;
+	private javax.swing.JRadioButton mtcUnchangedRB;
+	private javax.swing.JRadioButton mtmRandomRB;
+	private javax.swing.JRadioButton mtmUnchangedRB;
+	private javax.swing.JButton openROMButton;
+	private javax.swing.JPanel optionsContainerPanel;
+	private javax.swing.JScrollPane optionsScrollPane;
+	private javax.swing.JPanel otherOptionsPanel;
+	private javax.swing.JRadioButton paRandomizeRB;
+	private javax.swing.JRadioButton paUnchangedRB;
+	private javax.swing.JCheckBox paWonderGuardCB;
+	private javax.swing.JRadioButton pbsChangesRandomEvosRB;
+	private javax.swing.JRadioButton pbsChangesRandomTotalRB;
+	private javax.swing.JRadioButton pbsChangesShuffleRB;
+	private javax.swing.JRadioButton pbsChangesUnchangedRB;
+	private javax.swing.JRadioButton pmsRandomTotalRB;
+	private javax.swing.JRadioButton pmsRandomTypeRB;
+	private javax.swing.JRadioButton pmsUnchangedRB;
+	private javax.swing.ButtonGroup pokeAbilitiesButtonGroup;
+	private javax.swing.ButtonGroup pokeMovesetsButtonGroup;
+	private javax.swing.ButtonGroup pokeStatChangesButtonGroup;
+	private javax.swing.ButtonGroup pokeTypesButtonGroup;
+	private javax.swing.JPanel pokemonMovesetsPanel;
+	private javax.swing.JPanel pokemonTypesPanel;
+	private javax.swing.JRadioButton ptRandomFollowEvosRB;
+	private javax.swing.JRadioButton ptRandomTotalRB;
+	private javax.swing.JRadioButton ptUnchangedRB;
+	private javax.swing.JCheckBox raceModeCB;
+	private javax.swing.JCheckBox randomizeHollowsCB;
+	private javax.swing.JLabel riRomCodeLabel;
+	private javax.swing.JLabel riRomNameLabel;
+	private javax.swing.JLabel riRomSupportLabel;
+	private javax.swing.JPanel romInfoPanel;
+	private javax.swing.JFileChooser romOpenChooser;
+	private javax.swing.JFileChooser romSaveChooser;
+	private javax.swing.JButton saveROMButton;
+	private javax.swing.JComboBox spCustomPoke1Chooser;
+	private javax.swing.JComboBox spCustomPoke2Chooser;
+	private javax.swing.JComboBox spCustomPoke3Chooser;
+	private javax.swing.JRadioButton spCustomRB;
+	private javax.swing.JRadioButton spRandom2EvosRB;
+	private javax.swing.JRadioButton spRandomRB;
+	private javax.swing.JRadioButton spUnchangedRB;
+	private javax.swing.ButtonGroup starterPokemonButtonGroup;
+	private javax.swing.JPanel starterPokemonPanel;
+	private javax.swing.ButtonGroup staticPokemonButtonGroup;
+	private javax.swing.JPanel staticPokemonPanel;
+	private javax.swing.JRadioButton stpRandomL4LRB;
+	private javax.swing.JRadioButton stpRandomTotalRB;
+	private javax.swing.JRadioButton stpUnchangedRB;
+	private javax.swing.JCheckBox tcnRandomizeCB;
+	private javax.swing.JRadioButton thcRandomTotalRB;
+	private javax.swing.JRadioButton thcRandomTypeRB;
+	private javax.swing.JRadioButton thcUnchangedRB;
+	private javax.swing.JPanel tmHmCompatPanel;
+	private javax.swing.ButtonGroup tmHmCompatibilityButtonGroup;
+	private javax.swing.ButtonGroup tmMovesButtonGroup;
+	private javax.swing.JPanel tmMovesPanel;
+	private javax.swing.JPanel tmhmsPanel;
+	private javax.swing.JRadioButton tmmRandomRB;
+	private javax.swing.JRadioButton tmmUnchangedRB;
+	private javax.swing.JCheckBox tnRandomizeCB;
+	private javax.swing.JCheckBox tpNoEarlyShedinjaCB;
+	private javax.swing.JCheckBox tpNoLegendariesCB;
+	private javax.swing.JCheckBox tpPowerLevelsCB;
+	private javax.swing.JRadioButton tpRandomRB;
+	private javax.swing.JCheckBox tpRivalCarriesStarterCB;
+	private javax.swing.JRadioButton tpTypeThemedRB;
+	private javax.swing.JCheckBox tpTypeWeightingCB;
+	private javax.swing.JRadioButton tpUnchangedRB;
+	private javax.swing.ButtonGroup trainerPokesButtonGroup;
+	private javax.swing.JPanel trainersPokemonPanel;
+	private javax.swing.JButton usePresetsButton;
+	private javax.swing.JPanel wildPokemonARulePanel;
+	private javax.swing.JPanel wildPokemonPanel;
+	private javax.swing.ButtonGroup wildPokesARuleButtonGroup;
+	private javax.swing.ButtonGroup wildPokesButtonGroup;
+	private javax.swing.JRadioButton wpARCatchEmAllRB;
+	private javax.swing.JRadioButton wpARNoneRB;
+	private javax.swing.JRadioButton wpARTypeThemedRB;
+	private javax.swing.JRadioButton wpArea11RB;
+	private javax.swing.JCheckBox wpCatchRateCB;
+	private javax.swing.JRadioButton wpGlobalRB;
+	private javax.swing.JCheckBox wpNoLegendariesCB;
+	private javax.swing.JRadioButton wpRandomRB;
+	private javax.swing.JRadioButton wpUnchangedRB;
+	private javax.swing.JCheckBox wpUseTimeCB;
+	// End of variables declaration//GEN-END:variables
 }
