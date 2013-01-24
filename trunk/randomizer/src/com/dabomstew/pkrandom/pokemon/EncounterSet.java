@@ -30,6 +30,7 @@ public class EncounterSet {
 
 	public int rate;
 	public List<Encounter> encounters = new ArrayList<Encounter>();
+	public boolean battleTrappersBanned = false;
 
 	public String toString() {
 		return "Encounter [Rate = " + rate + ", Encounters = " + encounters

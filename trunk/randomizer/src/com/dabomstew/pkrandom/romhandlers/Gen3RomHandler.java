@@ -874,6 +874,15 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 			offs += 20;
 		}
+		if (romEntry.arrayEntries.containsKey("BattleTrappersBanned")) {
+			// Some encounter sets aren't allowed to have Pokemon
+			// with Arena Trap, Shadow Tag etc.
+			int[] bannedAreas = romEntry.arrayEntries
+					.get("BattleTrappersBanned");
+			for (int areaIdx : bannedAreas) {
+				encounterAreas.get(areaIdx).battleTrappersBanned = true;
+			}
+		}
 		return encounterAreas;
 	}
 
