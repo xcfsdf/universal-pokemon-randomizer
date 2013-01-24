@@ -1,5 +1,8 @@
 #summary Bugs or oddities with the current release of the randomizer.
 
+= General =
+  * The randomiser may not function at all on Windows systems with certain custom themes installed.
+
 = Generation One Games =
   * (oddity) The people who give you Magikarp and Lapras still say Magikarp/Lapras even if you randomize them.
   * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
