@@ -306,7 +306,6 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	private Pokemon[] pokes;
 	private Move[] moves;
 	private RomEntry romEntry;
-	private String ndsCode;
 	private byte[] arm9;
 
 	private static final int Type_BW = 0;
@@ -1216,6 +1215,8 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets) {
+		// Backup of movesets for later
+		Map<Pokemon, List<MoveLearnt>> oldSets = this.getMovesLearnt();
 		try {
 			NARCContents movesLearnt = readNARC(romEntry
 					.getString("PokemonMovesets"));
@@ -1239,6 +1240,35 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		} catch (IOException e) {
 			// change this later
 			e.printStackTrace();
+		}
+
+		// Levelup w/ move evolutions
+		try {
+			NARCContents evoNARC = readNARC(romEntry
+					.getString("PokemonEvolutions"));
+			for (int i = 1; i <= 493; i++) {
+				byte[] evoEntry = evoNARC.files.get(i);
+				for (int evo = 0; evo < 7; evo++) {
+					int evoType = readWord(evoEntry, evo * 6);
+					if (evoType == 21) {
+						// Change the move
+						int oldMove = readWord(evoEntry, evo * 6 + 2);
+						Pokemon pkmn = pokes[i];
+						List<MoveLearnt> oldSet = oldSets.get(pkmn);
+						List<MoveLearnt> newSet = movesets.get(pkmn);
+						for (int m = 0; m < oldSet.size() && m < newSet.size(); m++) {
+							if (oldSet.get(m).move == oldMove) {
+								// Replacement
+								int newMove = newSet.get(m).move;
+								writeWord(evoEntry, evo * 6 + 2, newMove);
+								break;
+							}
+						}
+					}
+				}
+			}
+			writeNARC(romEntry.getString("PokemonEvolutions"), evoNARC);
+		} catch (IOException e) {
 		}
 
 	}
@@ -1335,17 +1365,17 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 					.getString("HiddenHollows"));
 			for (byte[] hhEntry : hhNARC.files) {
 				for (int version = 0; version < 2; version++) {
-					for (int rarityslot = 0; rarityslot < 4; rarityslot++) {
+					for (int rarityslot = 0; rarityslot < 3; rarityslot++) {
 						for (int group = 0; group < 4; group++) {
 							int pokeChoice = RandomSource.nextInt(randomSize) + 1;
 							if (pokeChoice > 493) {
 								pokeChoice = allowedUnovaPokemon[pokeChoice - 494];
 							}
-							writeWord(hhEntry, version * 72 + rarityslot * 24
+							writeWord(hhEntry, version * 78 + rarityslot * 26
 									+ group * 2, pokeChoice);
 							int genderRatio = RandomSource.nextInt(101);
-							hhEntry[version * 72 + rarityslot * 24 + 16 + group] = (byte) genderRatio;
-							hhEntry[version * 72 + rarityslot * 24 + 20 + group] = 0; // forme
+							hhEntry[version * 78 + rarityslot * 26 + 16 + group] = (byte) genderRatio;
+							hhEntry[version * 78 + rarityslot * 26 + 20 + group] = 0; // forme
 						}
 					}
 				}
