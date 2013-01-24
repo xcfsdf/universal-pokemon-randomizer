@@ -156,6 +156,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		private boolean isYellow;
 		private int crcInHeader = -1;
 		private String expPatch;
+		private List<TMTextEntry> tmTexts = new ArrayList<TMTextEntry>();
 		private Map<String, Integer> entries = new HashMap<String, Integer>();
 		private Map<String, int[]> arrayEntries = new HashMap<String, int[]>();
 		private List<Integer> staticPokemonSingle = new ArrayList<Integer>();
@@ -181,6 +182,12 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		public String toString() {
 			return Arrays.toString(offsets);
 		}
+	}
+
+	private static class TMTextEntry {
+		private int number;
+		private int offset;
+		private String template;
 	}
 
 	private static void loadROMInfo() {
@@ -230,6 +237,16 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 								gc.offsets = new int[] { offs };
 								current.staticPokemonGameCorner.add(gc);
 							}
+						} else if (r[0].equals("TMText[]")) {
+							if (r[1].startsWith("[") && r[1].endsWith("]")) {
+								String[] parts = r[1].substring(1,
+										r[1].length() - 1).split(",", 3);
+								TMTextEntry tte = new TMTextEntry();
+								tte.number = parseRIInt(parts[0]);
+								tte.offset = parseRIInt(parts[1]);
+								tte.template = parts[2];
+								current.tmTexts.add(tte);
+							}
 						} else if (r[0].equals("Game")) {
 							current.romName = r[1];
 						} else if (r[0].equals("Version")) {
@@ -260,6 +277,10 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 												.addAll(otherEntry.staticPokemonSingle);
 										current.staticPokemonGameCorner
 												.addAll(otherEntry.staticPokemonGameCorner);
+									}
+									if (current.getValue("CopyTMText") == 1) {
+										current.tmTexts
+												.addAll(otherEntry.tmTexts);
 									}
 									current.tableFile = otherEntry.tableFile;
 								}
@@ -1504,30 +1525,13 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 			}
 		}
 
-		// Rudimentary TM text
-		for (int i = 0; i < 50; i++) {
-			int tm = i + 1;
-			List<Integer> foundTexts = RomFunctions.search(rom, traduire("TM"
-					+ String.format("%02d", tm) + " "));
-			if (foundTexts.size() == 1) {
-				// bingo
-				int textOffset = foundTexts.get(0);
-
-				String newText = "TM" + String.format("%02d", tm) + " teaches="
-						+ RomFunctions.moveNames[moveIndexes.get(i)] + "!»";
-				if (tm == 28) {
-					// Tombstoner quiz, pick any move but the real TM28
-					int fakeMove = moveIndexes.get(27);
-					while (fakeMove == moveIndexes.get(27)) {
-						fakeMove = RandomSource
-								.nextInt(RomFunctions.moveNames.length - 1) + 1;
-					}
-					newText = "TM" + String.format("%02d", tm) + " is="
-							+ RomFunctions.moveNames[fakeMove] + "?»";
-				}
-				writeFixedLengthScriptString(newText, textOffset,
-						newText.length() + 1);
-			}
+		// TM Text
+		for (TMTextEntry tte : romEntry.tmTexts) {
+			String moveName = RomFunctions.moveNames[moveIndexes
+					.get(tte.number - 1)];
+			String text = tte.template.replace("%m", moveName);
+			writeFixedLengthScriptString(text, tte.offset,
+					lengthOfStringAt(tte.offset));
 		}
 	}
 
@@ -1846,5 +1850,11 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 			rom[offset + i] = (byte) Integer.parseInt(
 					hexString.substring(i * 2, i * 2 + 2), 16);
 		}
+	}
+
+	@Override
+	public List<Integer> getGameBreakingMoves() {
+		// Sonicboom & drage & OHKO moves
+		return Arrays.asList(49, 82, 32, 90, 12);
 	}
 }

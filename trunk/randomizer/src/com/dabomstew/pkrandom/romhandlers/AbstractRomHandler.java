@@ -30,6 +30,7 @@ package com.dabomstew.pkrandom.romhandlers;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -675,10 +676,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void randomizeMovesLearnt(boolean typeThemed) {
+	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken) {
 		// Get current sets
-
 		Map<Pokemon, List<MoveLearnt>> movesets = this.getMovesLearnt();
+		@SuppressWarnings("unchecked")
+		List<Integer> banned = noBroken ? this.getGameBreakingMoves()
+				: Collections.EMPTY_LIST;
 		for (Pokemon pkmn : movesets.keySet()) {
 			Set<Integer> learnt = new TreeSet<Integer>();
 			List<MoveLearnt> moves = movesets.get(pkmn);
@@ -689,7 +692,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 			// Rest replace with randoms
 			for (int i = 1; i < moves.size(); i++) {
 				int picked = pickMove(pkmn, typeThemed, false);
-				while (learnt.contains(picked)) {
+				while (learnt.contains(picked) || banned.contains(picked)) {
 					picked = pickMove(pkmn, typeThemed, false);
 				}
 				moves.get(i).move = picked;
@@ -734,15 +737,19 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void randomizeTMMoves() {
+	public void randomizeTMMoves(boolean noBroken) {
 		// Pick some random TM moves.
 		int tmCount = this.getTMCount();
 		List<Move> allMoves = this.getMoves();
 		List<Integer> newTMs = new ArrayList<Integer>();
+		@SuppressWarnings("unchecked")
+		List<Integer> banned = noBroken ? this.getGameBreakingMoves()
+				: Collections.EMPTY_LIST;
 		for (int i = 0; i < tmCount; i++) {
 			int chosenMove = RandomSource.nextInt(allMoves.size() - 1) + 1;
 			while (newTMs.contains(chosenMove)
-					|| RomFunctions.bannedRandomMoves[chosenMove]) {
+					|| RomFunctions.bannedRandomMoves[chosenMove]
+					|| banned.contains(chosenMove)) {
 				chosenMove = RandomSource.nextInt(allMoves.size() - 1) + 1;
 			}
 			newTMs.add(chosenMove);
@@ -784,7 +791,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void randomizeMoveTutorMoves() {
+	public void randomizeMoveTutorMoves(boolean noBroken) {
 		if (!this.hasMoveTutors()) {
 			return;
 		}
@@ -793,10 +800,14 @@ public abstract class AbstractRomHandler implements RomHandler {
 		List<Move> allMoves = this.getMoves();
 		List<Integer> tms = this.getTMMoves();
 		List<Integer> newMTs = new ArrayList<Integer>();
+		@SuppressWarnings("unchecked")
+		List<Integer> banned = noBroken ? this.getGameBreakingMoves()
+				: Collections.EMPTY_LIST;
 		for (int i = 0; i < mtCount; i++) {
 			int chosenMove = RandomSource.nextInt(allMoves.size() - 1) + 1;
 			while (newMTs.contains(chosenMove) || tms.contains(chosenMove)
-					|| RomFunctions.bannedRandomMoves[chosenMove]) {
+					|| RomFunctions.bannedRandomMoves[chosenMove]
+					|| banned.contains(chosenMove)) {
 				chosenMove = RandomSource.nextInt(allMoves.size() - 1) + 1;
 			}
 			newMTs.add(chosenMove);
@@ -1493,17 +1504,23 @@ public abstract class AbstractRomHandler implements RomHandler {
 		// default: do nothing
 
 	}
-	
+
 	@Override
 	public boolean hasHiddenHollowPokemon() {
 		// default: no
 		return false;
 	}
-	
+
 	@Override
 	public void randomizeHiddenHollowPokemon() {
 		// default: do nothing
-		
+
+	}
+
+	@Override
+	public List<Integer> getGameBreakingMoves() {
+		// Sonicboom & drage
+		return Arrays.asList(49, 82);
 	}
 
 }

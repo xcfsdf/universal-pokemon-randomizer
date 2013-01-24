@@ -158,7 +158,7 @@ public interface RomHandler {
 
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets);
 
-	public void randomizeMovesLearnt(boolean typeThemed);
+	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken);
 
 	// Randomizer: static pokemon (except starters)
 
@@ -180,7 +180,7 @@ public interface RomHandler {
 
 	public void setTMMoves(List<Integer> moveIndexes);
 
-	public void randomizeTMMoves();
+	public void randomizeTMMoves(boolean noBroken);
 
 	public int getTMCount();
 
@@ -210,7 +210,7 @@ public interface RomHandler {
 
 	public void setMoveTutorMoves(List<Integer> moves);
 
-	public void randomizeMoveTutorMoves();
+	public void randomizeMoveTutorMoves(boolean noBroken);
 
 	public Map<Pokemon, boolean[]> getMoveTutorCompatibility();
 
@@ -284,5 +284,7 @@ public interface RomHandler {
 	public boolean hasBWEXPPatch();
 
 	public void applyBWEXPPatch();
+
+	public List<Integer> getGameBreakingMoves();
 
 }

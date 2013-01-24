@@ -69,7 +69,8 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	protected abstract boolean detectNDSRom(String ndsCode);
 
 	private static final byte[] arm9sig = new byte[] { 0x21, 0x06, (byte) 0xC0,
-			(byte) 0xDE, (byte) 0xA0, 0x0B, 0, 0, 0, 0, 0, 0 };
+			(byte) 0xDE };
+	private byte[] storedSig;
 	private static final byte[] arm90sig = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0 };
 
@@ -86,11 +87,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		dataFolder = dataFolder.replaceAll("[^A-Za-z0-9_]+", "");
 		File df = new File("./" + dataFolder);
 		df.mkdir();
-		// Temp code
-//		if (true) {
-//			loadedROM();
-//			return true;
-//		}
 		try {
 			DSFunctions.extract(filename, dataFolder);
 		} catch (Exception e) {
@@ -102,9 +98,11 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 			sigMode = false;
 			int arm9length = arm9.length;
 			// Look for typical signature
-			if (sigtail(arm9, arm9.length - arm9sig.length, arm9sig)) {
+			if (sigtail(arm9, arm9.length - 12, arm9sig)) {
 				sigMode = true;
-				arm9length -= arm9sig.length;
+				storedSig = new byte[12];
+				System.arraycopy(arm9, arm9.length - 12, storedSig, 0, 12);
+				arm9length -= 12;
 			}
 			// Look for zeroes signature
 			if (sigtail(arm9, arm9.length - arm90sig.length, arm90sig)
@@ -201,10 +199,10 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 			}
 			if (sigMode) {
 				madeChanges = true;
-				byte[] newarm9 = new byte[arm9.length + arm9sig.length];
+				byte[] newarm9 = new byte[arm9.length + storedSig.length];
 				System.arraycopy(arm9, 0, newarm9, 0, arm9.length);
-				System.arraycopy(arm9sig, 0, newarm9, arm9.length,
-						arm9sig.length);
+				System.arraycopy(storedSig, 0, newarm9, arm9.length,
+						storedSig.length);
 				arm9 = newarm9;
 			}
 
@@ -432,13 +430,17 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	}
 
 	protected int readWord(byte[] data, int offset) {
-		return (data[offset] & 0xFF) + ((data[offset + 1] & 0xFF) << 8);
+		return (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
 	}
 
 	protected int readLong(byte[] data, int offset) {
-		return (data[offset] & 0xFF) + ((data[offset + 1] & 0xFF) << 8)
-				+ ((data[offset + 2] & 0xFF) << 16)
-				+ ((data[offset + 3] & 0xFF) << 24);
+		return (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8)
+				| ((data[offset + 2] & 0xFF) << 16)
+				| ((data[offset + 3] & 0xFF) << 24);
+	}
+
+	protected int readRelativePointer(byte[] data, int offset) {
+		return readLong(data, offset) + offset + 4;
 	}
 
 	protected void writeWord(byte[] data, int offset, int value) {
@@ -451,6 +453,11 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		data[offset + 1] = (byte) ((value >> 8) & 0xFF);
 		data[offset + 2] = (byte) ((value >> 16) & 0xFF);
 		data[offset + 3] = (byte) ((value >> 24) & 0xFF);
+	}
+
+	protected void writeRelativePointer(byte[] data, int offset, int pointer) {
+		int relPointer = pointer - (offset + 4);
+		writeLong(data, offset, relPointer);
 	}
 
 	protected byte[] readFile(String location) throws IOException {

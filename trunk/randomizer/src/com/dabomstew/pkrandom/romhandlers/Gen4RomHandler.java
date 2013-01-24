@@ -1752,6 +1752,8 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets) {
+		// Get backup of movesets
+		Map<Pokemon, List<MoveLearnt>> oldSets = this.getMovesLearnt();
 		int[] extraLearnSets = new int[] { 7, 13, 13 };
 		// Build up a new NARC
 		NARCContents movesLearnt = new NARCContents();
@@ -1787,8 +1789,34 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		try {
 			this.writeNARC(romEntry.getString("PokemonMovesets"), movesLearnt);
 		} catch (IOException e) {
-			// change this later
-			e.printStackTrace();
+		}
+		// Levelup w/ move evolutions
+		try {
+			NARCContents evoNARC = readNARC(romEntry
+					.getString("PokemonEvolutions"));
+			for (int i = 1; i <= 493; i++) {
+				byte[] evoEntry = evoNARC.files.get(i);
+				for (int evo = 0; evo < 7; evo++) {
+					int evoType = readWord(evoEntry, evo * 6);
+					if (evoType == 20) {
+						// Change the move
+						int oldMove = readWord(evoEntry, evo * 6 + 2);
+						Pokemon pkmn = pokes[i];
+						List<MoveLearnt> oldSet = oldSets.get(pkmn);
+						List<MoveLearnt> newSet = movesets.get(pkmn);
+						for (int m = 0; m < oldSet.size() && m < newSet.size(); m++) {
+							if (oldSet.get(m).move == oldMove) {
+								// Replacement
+								int newMove = newSet.get(m).move;
+								writeWord(evoEntry, evo * 6 + 2, newMove);
+								break;
+							}
+						}
+					}
+				}
+			}
+			writeNARC(romEntry.getString("PokemonEvolutions"), evoNARC);
+		} catch (IOException e) {
 		}
 
 	}

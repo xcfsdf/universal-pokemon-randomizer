@@ -782,6 +782,60 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		offset = readSeaEncounters(offset, areas); // Johto
 		offset = readLandEncounters(offset, areas, useTimeOfDay); // Kanto
 		offset = readSeaEncounters(offset, areas); // Kanto
+		offset = readLandEncounters(offset, areas, useTimeOfDay); // Specials
+		offset = readSeaEncounters(offset, areas); // Specials
+
+		// Fishing Data
+		offset = romEntry.getValue("FishingWildsOffset");
+		for (int k = 0; k < 12; k++) {
+			EncounterSet es = new EncounterSet();
+			for (int i = 0; i < 11; i++) {
+				if (i == 6 || i == 8) {
+					offset += 3;
+					continue;
+				}
+				offset++;
+				int pokeNum = rom[offset++] & 0xFF;
+				int level = rom[offset++] & 0xFF;
+				Encounter enc = new Encounter();
+				enc.pokemon = pokes[pokeNum];
+				enc.level = level;
+				es.encounters.add(enc);
+			}
+			areas.add(es);
+		}
+
+		for (int k = 0; k < 11; k++) {
+			EncounterSet es = new EncounterSet();
+			for (int i = 0; i < 4; i++) {
+				int pokeNum = rom[offset++] & 0xFF;
+				int level = rom[offset++] & 0xFF;
+				Encounter enc = new Encounter();
+				enc.pokemon = pokes[pokeNum];
+				enc.level = level;
+				es.encounters.add(enc);
+			}
+			areas.add(es);
+		}
+
+		// Headbutt Data
+		offset = romEntry.getValue("HeadbuttWildsOffset");
+		int limit = romEntry.getValue("HeadbuttTableSize");
+		for (int i = 0; i < limit; i++) {
+			EncounterSet es = new EncounterSet();
+			while ((rom[offset] & 0xFF) != 0xFF) {
+				offset++;
+				int pokeNum = rom[offset++] & 0xFF;
+				int level = rom[offset++] & 0xFF;
+				Encounter enc = new Encounter();
+				enc.pokemon = pokes[pokeNum];
+				enc.level = level;
+				es.encounters.add(enc);
+			}
+			offset++;
+			areas.add(es);
+		}
+
 		return areas;
 	}
 
@@ -846,6 +900,51 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		offset = writeSeaEncounters(offset, areas); // Johto
 		offset = writeLandEncounters(offset, areas, useTimeOfDay); // Kanto
 		offset = writeSeaEncounters(offset, areas); // Kanto
+		offset = writeLandEncounters(offset, areas, useTimeOfDay); // Specials
+		offset = writeSeaEncounters(offset, areas); // Specials
+
+		// Fishing Data
+		offset = romEntry.getValue("FishingWildsOffset");
+		for (int k = 0; k < 12; k++) {
+			EncounterSet es = areas.next();
+			Iterator<Encounter> encs = es.encounters.iterator();
+			for (int i = 0; i < 11; i++) {
+				if (i == 6 || i == 8) {
+					offset += 3;
+					continue;
+				}
+				offset++;
+				Encounter enc = encs.next();
+				rom[offset++] = (byte) enc.pokemon.number;
+				rom[offset++] = (byte) enc.level;
+			}
+		}
+
+		for (int k = 0; k < 11; k++) {
+			EncounterSet es = areas.next();
+			Iterator<Encounter> encs = es.encounters.iterator();
+			for (int i = 0; i < 4; i++) {
+				Encounter enc = encs.next();
+				rom[offset++] = (byte) enc.pokemon.number;
+				rom[offset++] = (byte) enc.level;
+			}
+		}
+
+		// Headbutt Data
+		offset = romEntry.getValue("HeadbuttWildsOffset");
+		int limit = romEntry.getValue("HeadbuttTableSize");
+		for (int i = 0; i < limit; i++) {
+			EncounterSet es = areas.next();
+			Iterator<Encounter> encs = es.encounters.iterator();
+			while ((rom[offset] & 0xFF) != 0xFF) {
+				Encounter enc = encs.next();
+				offset++;
+				rom[offset++] = (byte) enc.pokemon.number;
+				rom[offset++] = (byte) enc.level;
+			}
+			offset++;
+		}
+
 	}
 
 	private int writeLandEncounters(int offset, Iterator<EncounterSet> areas,
