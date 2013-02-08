@@ -18,3 +18,5 @@ None for now...
 
 = Generation Five Games =
   * A battle with Zinzolin isn't consistent with his other battles.
+  * The Pokedex crashes if you access it without a Unova Pokemon registered (game problem, not really fixable by me for the moment)
+  * At least in Black 2/White 2, Habitat List and Area data are not updated if you randomize Wild Pokemon.
