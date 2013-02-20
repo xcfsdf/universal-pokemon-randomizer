@@ -29,6 +29,7 @@ import java.util.Map;
 
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
 import com.dabomstew.pkrandom.pokemon.MoveLearnt;
 import com.dabomstew.pkrandom.pokemon.Pokemon;
@@ -224,9 +225,17 @@ public interface RomHandler {
 
 	public void setTrainerNames(List<String> trainerNames);
 
-	public boolean fixedTrainerNamesLength();
+	public enum TrainerNameMode {
+		SAME_LENGTH, MAX_LENGTH, MAX_LENGTH_WITH_CLASS
+	};
 
+	public TrainerNameMode trainerNameMode();
+
+	// Returns this with or without the class
 	public int maxTrainerNameLength();
+
+	// Only needed if above mode is "MAX LENGTH WITH CLASS"
+	public List<Integer> getTCNameLengthsByTrainer();
 
 	public void randomizeTrainerNames(byte[] presetNames);
 
@@ -257,6 +266,20 @@ public interface RomHandler {
 
 	public void randomizeHiddenHollowPokemon();
 
+	// Items
+
+	public ItemList getAllowedItems();
+
+	public void randomizeWildHeldItems();
+
+	public String[] getItemNames();
+
+	public List<Integer> getStarterHeldItems();
+
+	public void setStarterHeldItems(List<Integer> items);
+
+	public void randomizeStarterHeldItems();
+
 	// Misc
 
 	public void applyCamelCaseNames();
@@ -286,5 +309,7 @@ public interface RomHandler {
 	public void applyBWEXPPatch();
 
 	public List<Integer> getGameBreakingMoves();
+
+	public void applySignature();
 
 }

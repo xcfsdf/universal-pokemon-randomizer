@@ -31,7 +31,7 @@ import java.io.IOException;
 
 public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 
-	protected byte[] rom;
+	public byte[] rom;
 
 	public boolean detectRom(String filename) {
 		if (new File(filename).length() > 32 * 1024 * 1024) {

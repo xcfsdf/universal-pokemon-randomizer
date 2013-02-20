@@ -30,6 +30,7 @@ package com.dabomstew.pkrandom.gui;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -46,9 +47,11 @@ import java.util.zip.CRC32;
 
 import javax.swing.AbstractButton;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.xml.bind.DatatypeConverter;
 
 import com.dabomstew.pkrandom.FileFunctions;
@@ -79,9 +82,13 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private static final long serialVersionUID = 637989089525556154L;
 	private RomHandler romHandler;
 	protected RomHandler[] checkHandlers;
-	public static final byte PRESET_FILE_VERSION = 112;
+	public static final byte PRESET_FILE_VERSION = 120;
+	public static final int UPDATE_VERSION = 1200;
 
 	public static PrintStream verboseLog = System.out;
+
+	public OperationDialog opDialog;
+	public boolean presetMode;
 
 	/**
 	 * Creates new form RandomizerGUI
@@ -94,14 +101,16 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		initComponents();
 		initialiseState();
 		setLocationRelativeTo(null);
+		new UpdateCheckThread(this, false).start();
 	}
 
 	public void testForRequiredConfigs() {
-		String[] required = new String[] { "Advance.tbl", "Generation4.tbl",
-				"gen1_offsets.ini", "gen2_offsets.ini", "gen3_offsets.ini",
-				"gen4_offsets.ini", "gen5_offsets.ini", "trainerclasses.txt",
-				"trainernames.txt", "gameboy_english.tbl",
-				"gameboy_greeneng.tbl", "gameboy_jap.tbl", "gsc_english.tbl" };
+		String[] required = new String[] { "gameboy_jap.tbl",
+				"rby_english.tbl", "green_bootleg.tbl", "gsc_english.tbl",
+				"gba_english.tbl", "gba_jap.tbl", "Generation4.tbl",
+				"Generation5.tbl", "gen1_offsets.ini", "gen2_offsets.ini",
+				"gen3_offsets.ini", "gen4_offsets.ini", "gen5_offsets.ini",
+				"trainerclasses.txt", "trainernames.txt" };
 		for (String filename : required) {
 			if (!FileFunctions.configExists(filename)) {
 				JOptionPane
@@ -134,6 +143,10 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
 	// desc="Generated Code">//GEN-BEGIN:initComponents
 	private void initComponents() {
 
@@ -146,6 +159,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		starterPokemonButtonGroup = new javax.swing.ButtonGroup();
 		romOpenChooser = new javax.swing.JFileChooser();
 		romSaveChooser = new javax.swing.JFileChooser();
+		qsOpenChooser = new javax.swing.JFileChooser();
+		qsSaveChooser = new javax.swing.JFileChooser();
 		staticPokemonButtonGroup = new javax.swing.ButtonGroup();
 		tmMovesButtonGroup = new javax.swing.ButtonGroup();
 		tmHmCompatibilityButtonGroup = new javax.swing.ButtonGroup();
@@ -242,11 +257,19 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		raceModeCB = new javax.swing.JCheckBox();
 		randomizeHollowsCB = new javax.swing.JCheckBox();
 		brokenMovesCB = new javax.swing.JCheckBox();
+		heldItemsCB = new javax.swing.JCheckBox();
+		loadQSButton = new javax.swing.JButton();
+		saveQSButton = new javax.swing.JButton();
 
 		romOpenChooser.setFileFilter(new ROMFilter());
 
 		romSaveChooser.setDialogType(javax.swing.JFileChooser.SAVE_DIALOG);
 		romSaveChooser.setFileFilter(new ROMFilter());
+
+		qsOpenChooser.setFileFilter(new QSFileFilter());
+
+		qsSaveChooser.setDialogType(javax.swing.JFileChooser.SAVE_DIALOG);
+		qsSaveChooser.setFileFilter(new QSFileFilter());
 
 		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		java.util.ResourceBundle bundle = java.util.ResourceBundle
@@ -768,7 +791,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																																tnRandomizeCB)
 																														.addComponent(
 																																tcnRandomizeCB))))))
-										.addContainerGap(129, Short.MAX_VALUE)));
+										.addContainerGap(62, Short.MAX_VALUE)));
 		trainersPokemonPanelLayout
 				.setVerticalGroup(trainersPokemonPanelLayout
 						.createParallelGroup(
@@ -1671,7 +1694,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																				javax.swing.GroupLayout.PREFERRED_SIZE)
 																		.addPreferredGap(
 																				javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-																				194,
+																				javax.swing.GroupLayout.DEFAULT_SIZE,
 																				Short.MAX_VALUE)
 																		.addComponent(
 																				mtCompatPanel,
@@ -1910,6 +1933,10 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		brokenMovesCB.setToolTipText(bundle
 				.getString("RandomizerGUI.brokenMovesCB.toolTipText")); // NOI18N
 
+		heldItemsCB.setText(bundle.getString("RandomizerGUI.heldItemsCB.text")); // NOI18N
+		heldItemsCB.setToolTipText(bundle
+				.getString("RandomizerGUI.heldItemsCB.toolTipText")); // NOI18N
+
 		javax.swing.GroupLayout otherOptionsPanelLayout = new javax.swing.GroupLayout(
 				otherOptionsPanel);
 		otherOptionsPanel.setLayout(otherOptionsPanelLayout);
@@ -1932,7 +1959,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 														.addComponent(
 																randomizeHollowsCB)
 														.addComponent(
-																brokenMovesCB))
+																brokenMovesCB)
+														.addComponent(
+																heldItemsCB))
 										.addContainerGap(
 												javax.swing.GroupLayout.DEFAULT_SIZE,
 												Short.MAX_VALUE)));
@@ -1953,7 +1982,30 @@ public class RandomizerGUI extends javax.swing.JFrame {
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(brokenMovesCB)
-										.addGap(26, 26, 26)));
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+												3, Short.MAX_VALUE)
+										.addComponent(heldItemsCB)));
+
+		loadQSButton.setText(bundle
+				.getString("RandomizerGUI.loadQSButton.text")); // NOI18N
+		loadQSButton.setToolTipText(bundle
+				.getString("RandomizerGUI.loadQSButton.toolTipText")); // NOI18N
+		loadQSButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				loadQSButtonActionPerformed(evt);
+			}
+		});
+
+		saveQSButton.setText(bundle
+				.getString("RandomizerGUI.saveQSButton.text")); // NOI18N
+		saveQSButton.setToolTipText(bundle
+				.getString("RandomizerGUI.saveQSButton.toolTipText")); // NOI18N
+		saveQSButton.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				saveQSButtonActionPerformed(evt);
+			}
+		});
 
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
 				getContentPane());
@@ -1986,13 +2038,35 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																		javax.swing.GroupLayout.PREFERRED_SIZE)
 																.addPreferredGap(
 																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-																.addComponent(
-																		romInfoPanel,
-																		javax.swing.GroupLayout.DEFAULT_SIZE,
-																		javax.swing.GroupLayout.DEFAULT_SIZE,
-																		Short.MAX_VALUE)
-																.addGap(18, 18,
-																		18)
+																.addGroup(
+																		layout.createParallelGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING)
+																				.addGroup(
+																						layout.createSequentialGroup()
+																								.addComponent(
+																										romInfoPanel,
+																										javax.swing.GroupLayout.DEFAULT_SIZE,
+																										javax.swing.GroupLayout.DEFAULT_SIZE,
+																										Short.MAX_VALUE)
+																								.addGap(18,
+																										18,
+																										18))
+																				.addGroup(
+																						layout.createSequentialGroup()
+																								.addGap(10,
+																										10,
+																										10)
+																								.addComponent(
+																										loadQSButton)
+																								.addGap(29,
+																										29,
+																										29)
+																								.addComponent(
+																										saveQSButton)
+																								.addPreferredGap(
+																										javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+																										javax.swing.GroupLayout.DEFAULT_SIZE,
+																										Short.MAX_VALUE)))
 																.addGroup(
 																		layout.createParallelGroup(
 																				javax.swing.GroupLayout.Alignment.LEADING,
@@ -2053,8 +2127,18 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																						javax.swing.GroupLayout.PREFERRED_SIZE))
 																.addPreferredGap(
 																		javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-																.addComponent(
-																		aboutButton))
+																.addGroup(
+																		layout.createParallelGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING)
+																				.addComponent(
+																						aboutButton)
+																				.addGroup(
+																						layout.createParallelGroup(
+																								javax.swing.GroupLayout.Alignment.BASELINE)
+																								.addComponent(
+																										loadQSButton)
+																								.addComponent(
+																										saveQSButton))))
 												.addComponent(
 														otherOptionsPanel,
 														javax.swing.GroupLayout.DEFAULT_SIZE,
@@ -2074,15 +2158,18 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		pack();
 	}// </editor-fold>//GEN-END:initComponents
 
-	private void mtmUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_mtmUnchangedRBActionPerformed
-		// TODO add your handling code here:
-	}// GEN-LAST:event_mtmUnchangedRBActionPerformed
-
 	private void initialiseState() {
 		this.romHandler = null;
 		initialFormState();
 		this.romOpenChooser.setCurrentDirectory(new File("./"));
 		this.romSaveChooser.setCurrentDirectory(new File("./"));
+		if (new File("./settings/").exists()) {
+			this.qsOpenChooser.setCurrentDirectory(new File("./settings/"));
+			this.qsSaveChooser.setCurrentDirectory(new File("./settings/"));
+		} else {
+			this.qsOpenChooser.setCurrentDirectory(new File("./"));
+			this.qsSaveChooser.setCurrentDirectory(new File("./"));
+		}
 	}
 
 	private void initialFormState() {
@@ -2107,10 +2194,15 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		this.randomizeHollowsCB.setSelected(false);
 		this.brokenMovesCB.setEnabled(false);
 		this.brokenMovesCB.setSelected(false);
+		this.heldItemsCB.setEnabled(false);
+		this.heldItemsCB.setSelected(false);
 
 		this.riRomNameLabel.setText("NO ROM LOADED");
 		this.riRomCodeLabel.setText("");
 		this.riRomSupportLabel.setText("");
+
+		this.loadQSButton.setEnabled(false);
+		this.saveQSButton.setEnabled(false);
 
 		this.pbsChangesUnchangedRB.setEnabled(false);
 		this.pbsChangesRandomEvosRB.setEnabled(false);
@@ -2229,13 +2321,40 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		romOpenChooser.setSelectedFile(null);
 		int returnVal = romOpenChooser.showOpenDialog(this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File fh = romOpenChooser.getSelectedFile();
+			final File fh = romOpenChooser.getSelectedFile();
 			for (RomHandler rh : checkHandlers) {
 				if (rh.detectRom(fh.getAbsolutePath())) {
 					this.romHandler = rh;
-					this.romHandler.loadRom(fh.getAbsolutePath());
-					initialFormState();
-					romLoaded();
+					opDialog = new OperationDialog("Loading...", this, true);
+					Thread t = new Thread() {
+						@Override
+						public void run() {
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									opDialog.setVisible(true);
+								}
+							});
+							try {
+								RandomizerGUI.this.romHandler.loadRom(fh
+										.getAbsolutePath());
+							} catch (Exception ex) {
+								JOptionPane.showMessageDialog(
+										RandomizerGUI.this, "ROM load failed.");
+							}
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									RandomizerGUI.this.opDialog
+											.setVisible(false);
+									RandomizerGUI.this.initialFormState();
+									RandomizerGUI.this.romLoaded();
+								}
+							});
+						}
+					};
+					t.start();
+
 					return;
 				}
 			}
@@ -2282,6 +2401,12 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		this.brokenMovesCB.setSelected(false);
 		this.brokenMovesCB.setEnabled(true);
+
+		this.heldItemsCB.setSelected(false);
+		this.heldItemsCB.setEnabled(!(romHandler instanceof Gen1RomHandler));
+
+		this.loadQSButton.setEnabled(true);
+		this.saveQSButton.setEnabled(true);
 
 		this.pbsChangesUnchangedRB.setEnabled(true);
 		this.pbsChangesUnchangedRB.setSelected(true);
@@ -2487,15 +2612,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			long seed = RandomSource.pickSeed();
 			// Apply it
 			RandomSource.seed(seed);
-			performRandomization(fh.getAbsolutePath(), null, null);
-			// Compile a config string
-			String configString = getConfigString();
-			// Show the preset maker
-			new PresetMakeDialog(this, seed, configString);
-
-			// Done
-			this.romHandler = null;
-			initialFormState();
+			presetMode = false;
+			performRandomization(fh.getAbsolutePath(), seed, null, null);
 		}
 	}
 
@@ -2514,7 +2632,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		baos.write(makeByteSelected(this.ptRandomFollowEvosRB,
 				this.ptRandomTotalRB, this.ptUnchangedRB, this.bwEXPPatchCB,
-				this.raceModeCB, this.randomizeHollowsCB, this.brokenMovesCB));
+				this.raceModeCB, this.randomizeHollowsCB, this.brokenMovesCB,
+				this.heldItemsCB));
 
 		baos.write(makeByteSelected(this.spCustomRB, this.spRandomRB,
 				this.spUnchangedRB, this.spRandom2EvosRB));
@@ -2608,7 +2727,6 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		CRC32 checksum = new CRC32();
 		checksum.update(data, 0, data.length - 12);
-
 		if ((int) checksum.getValue() != crc) {
 			return null; // checksum failure
 		}
@@ -2692,7 +2810,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		restoreStates(data[2], this.ptRandomFollowEvosRB, this.ptRandomTotalRB,
 				this.ptUnchangedRB, this.bwEXPPatchCB, this.raceModeCB,
-				this.randomizeHollowsCB, this.brokenMovesCB);
+				this.randomizeHollowsCB, this.brokenMovesCB, this.heldItemsCB);
 
 		restoreStates(data[3], this.spCustomRB, this.spRandomRB,
 				this.spUnchangedRB, this.spRandom2EvosRB);
@@ -2735,8 +2853,15 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 	private void restoreSelectedIndex(byte[] data, int offset,
 			JComboBox comboBox) {
-		comboBox.setSelectedIndex((data[offset] & 0xFF)
-				| ((data[offset + 1] & 0xFF) << 8));
+		int selIndex = (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
+		if (comboBox.getModel().getSize() > selIndex) {
+			comboBox.setSelectedIndex(selIndex);
+		} else if (this.spCustomRB.isSelected()) {
+			JOptionPane
+					.showMessageDialog(
+							this,
+							"Could not set one of the custom starters from the settings file because it does not exist in this generation.");
+		}
 	}
 
 	private void restoreStates(byte b, AbstractButton... switches) {
@@ -2775,13 +2900,13 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		return initial;
 	}
 
-	private void performRandomization(String filename, byte[] trainerClasses,
-			byte[] trainerNames) {
-		boolean raceMode = raceModeCB.isSelected();
+	private void performRandomization(final String filename, final long seed,
+			byte[] trainerClasses, byte[] trainerNames) {
+		final boolean raceMode = raceModeCB.isSelected();
 		int checkValue = 0;
-		long startTime = System.currentTimeMillis();
+		final long startTime = System.currentTimeMillis();
 		// Setup verbose log
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		String nl = System.getProperty("line.separator");
 		try {
 			verboseLog = new PrintStream(baos, false, "UTF-8");
@@ -2842,7 +2967,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		}
 
 		// Abilities? (new 1.0.2)
-		if (this.paRandomizeRB.isSelected()) {
+		if (this.romHandler.abilitiesPerPokemon() > 0
+				&& this.paRandomizeRB.isSelected()) {
 			romHandler.randomizeAbilities(this.paWonderGuardCB.isSelected());
 		}
 
@@ -2853,10 +2979,17 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			romHandler.randomizePokemonTypes(false);
 		}
 
+		// Wild Held Items?
+		String[] itemNames = romHandler.getItemNames();
+		if (this.heldItemsCB.isSelected()) {
+			romHandler.randomizeWildHeldItems();
+		}
+
 		// Log base stats & types if changed at all
 		if (this.pbsChangesUnchangedRB.isSelected()
 				&& this.ptUnchangedRB.isSelected()
-				&& this.paUnchangedRB.isSelected()) {
+				&& this.paUnchangedRB.isSelected()
+				&& this.heldItemsCB.isSelected() == false) {
 			verboseLog.println("Pokemon base stats & type: unchanged" + nl);
 		} else {
 			verboseLog.println("--Pokemon Base Stats & Types--");
@@ -2883,6 +3016,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				for (int i = 0; i < abils; i++) {
 					verboseLog.print("|ABILITY" + (i + 1) + "    ");
 				}
+				verboseLog.print("|ITEM");
 				verboseLog.println();
 				for (Pokemon pkmn : allPokes) {
 					if (pkmn != null) {
@@ -2902,6 +3036,35 @@ public class RandomizerGUI extends javax.swing.JFrame {
 							if (abils > 2) {
 								verboseLog.printf("|%-12s",
 										romHandler.abilityName(pkmn.ability3));
+							}
+						}
+						verboseLog.print("|");
+						if (pkmn.guaranteedHeldItem > 0) {
+							verboseLog.print(itemNames[pkmn.guaranteedHeldItem]
+									+ " (100%)");
+						} else {
+							int itemCount = 0;
+							if (pkmn.commonHeldItem > 0) {
+								itemCount++;
+								verboseLog.print(itemNames[pkmn.commonHeldItem]
+										+ " (common)");
+							}
+							if (pkmn.rareHeldItem > 0) {
+								if (itemCount > 0) {
+									verboseLog.print(", ");
+								}
+								itemCount++;
+								verboseLog.print(itemNames[pkmn.rareHeldItem]
+										+ " (rare)");
+							}
+							if (pkmn.darkGrassHeldItem > 0) {
+								if (itemCount > 0) {
+									verboseLog.print(", ");
+								}
+								itemCount++;
+								verboseLog
+										.print(itemNames[pkmn.darkGrassHeldItem]
+												+ " (dark grass only)");
 							}
 						}
 						verboseLog.println();
@@ -2981,6 +3144,10 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				}
 				romHandler.setStarters(starters);
 				verboseLog.println();
+			}
+			if (this.heldItemsCB.isSelected()
+					&& (romHandler instanceof Gen1RomHandler) == false) {
+				romHandler.randomizeStarterHeldItems();
 			}
 		}
 
@@ -3079,12 +3246,13 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		}
 
 		// Trainer names & class names randomization
-		if (this.tnRandomizeCB.isSelected()) {
-			romHandler.randomizeTrainerNames(trainerNames);
-		}
 
 		if (this.tcnRandomizeCB.isSelected()) {
 			romHandler.randomizeTrainerClassNames(trainerClasses);
+		}
+
+		if (this.tnRandomizeCB.isSelected()) {
+			romHandler.randomizeTrainerNames(trainerNames);
 		}
 
 		// Wild Pokemon
@@ -3230,57 +3398,110 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			}
 		}
 
+		// Signature...
+		romHandler.applySignature();
+
 		// Save
-		romHandler.saveRom(filename);
-
-		// Log tail
-		verboseLog
-				.println("------------------------------------------------------------------");
-		verboseLog.println("Randomization of " + romHandler.getROMName()
-				+ " completed.");
-		verboseLog.println("Time elapsed: "
-				+ (System.currentTimeMillis() - startTime) + "ms");
-		verboseLog.println("RNG Calls: " + RandomSource.callsSinceSeed());
-		verboseLog
-				.println("------------------------------------------------------------------");
-
-		// Log?
-		verboseLog.close();
-		byte[] out = baos.toByteArray();
-		verboseLog = System.out;
-
-		if (raceMode) {
-			JOptionPane
-					.showMessageDialog(
-							this,
-							"Your check value for the race is:\n"
-									+ String.format("%08X", checkValue)
-									+ "\nDistribute this along with the preset file, if you're the race maker!\n"
-									+ "If you received this in a race, compare it to the value the race maker gave.");
-		} else {
-			int response = JOptionPane
-					.showConfirmDialog(
-							this,
-							"Do you want to save a log file of the randomization performed?\nThis may allow you to gain an unfair advantage, do not do so if you are doing something like a race.",
-							"Save Log?", JOptionPane.YES_NO_OPTION);
-			if (response == JOptionPane.YES_OPTION) {
+		final int finishedCV = checkValue;
+		opDialog = new OperationDialog("Saving...", this, true);
+		Thread t = new Thread() {
+			@Override
+			public void run() {
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						opDialog.setVisible(true);
+					}
+				});
 				try {
-					FileOutputStream fos = new FileOutputStream(filename
-							+ ".log");
-					fos.write(0xEF);
-					fos.write(0xBB);
-					fos.write(0xBF);
-					fos.write(out);
-					fos.close();
-				} catch (IOException e) {
-					JOptionPane.showMessageDialog(this,
-							"Could not save log file!");
-					return;
+					RandomizerGUI.this.romHandler.saveRom(filename);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					JOptionPane.showMessageDialog(RandomizerGUI.this,
+							"ROM save failed.");
 				}
-				JOptionPane.showMessageDialog(this, "Log file saved to\n"
-						+ filename + ".log");
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						RandomizerGUI.this.opDialog.setVisible(false);
+						// Log tail
+						verboseLog
+								.println("------------------------------------------------------------------");
+						verboseLog.println("Randomization of "
+								+ romHandler.getROMName() + " completed.");
+						verboseLog.println("Time elapsed: "
+								+ (System.currentTimeMillis() - startTime)
+								+ "ms");
+						verboseLog.println("RNG Calls: "
+								+ RandomSource.callsSinceSeed());
+						verboseLog
+								.println("------------------------------------------------------------------");
+
+						// Log?
+						verboseLog.close();
+						byte[] out = baos.toByteArray();
+						verboseLog = System.out;
+
+						if (raceMode) {
+							JOptionPane
+									.showMessageDialog(
+											RandomizerGUI.this,
+											"Your check value for the race is:\n"
+													+ String.format("%08X",
+															finishedCV)
+													+ "\nDistribute this along with the preset file, if you're the race maker!\n"
+													+ "If you received this in a race, compare it to the value the race maker gave.");
+						} else {
+							int response = JOptionPane
+									.showConfirmDialog(
+											RandomizerGUI.this,
+											"Do you want to save a log file of the randomization performed?\nThis may allow you to gain an unfair advantage, do not do so if you are doing something like a race.",
+											"Save Log?",
+											JOptionPane.YES_NO_OPTION);
+							if (response == JOptionPane.YES_OPTION) {
+								try {
+									FileOutputStream fos = new FileOutputStream(
+											filename + ".log");
+									fos.write(0xEF);
+									fos.write(0xBB);
+									fos.write(0xBF);
+									fos.write(out);
+									fos.close();
+								} catch (IOException e) {
+									JOptionPane.showMessageDialog(
+											RandomizerGUI.this,
+											"Could not save log file!");
+									return;
+								}
+								JOptionPane.showMessageDialog(
+										RandomizerGUI.this,
+										"Log file saved to\n" + filename
+												+ ".log");
+							}
+						}
+						if (presetMode) {
+							JOptionPane
+									.showMessageDialog(RandomizerGUI.this,
+											"Randomization Complete. You can now play!");
+							// Done
+							RandomizerGUI.this.romHandler = null;
+							initialFormState();
+						} else {
+							// Compile a config string
+							String configString = getConfigString();
+							// Show the preset maker
+							new PresetMakeDialog(RandomizerGUI.this, seed,
+									configString);
+
+							// Done
+							RandomizerGUI.this.romHandler = null;
+							initialFormState();
+						}
+					}
+				});
 			}
-		}
+		};
+		t.start();
 
 	}
 
@@ -3313,18 +3534,122 @@ public class RandomizerGUI extends javax.swing.JFrame {
 						this.romHandler.getDefaultExtension(), extensions);
 				// Apply the seed we were given
 				RandomSource.seed(seed);
-				performRandomization(fh.getAbsolutePath(),
+				presetMode = true;
+				performRandomization(fh.getAbsolutePath(), seed,
 						pld.getTrainerClasses(), pld.getTrainerNames());
-				// Done!
-				JOptionPane.showMessageDialog(this,
-						"Randomization Complete. You can now play!");
-			}
 
-			this.romHandler = null;
-			initialFormState();
+			} else {
+				this.romHandler = null;
+				initialFormState();
+			}
 		}
 
 	}
+
+	public void updateFound(int newVersion, String changelog) {
+		new UpdateFoundDialog(this, newVersion, changelog);
+	}
+
+	public void noUpdateFound() {
+		JOptionPane.showMessageDialog(this, "No new updates found.");
+	}
+
+	private void loadQSButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_loadQSButtonActionPerformed
+		if (this.romHandler == null) {
+			return;
+		}
+		qsOpenChooser.setSelectedFile(null);
+		int returnVal = qsOpenChooser.showOpenDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File fh = qsOpenChooser.getSelectedFile();
+			try {
+				FileInputStream fis = new FileInputStream(fh);
+				int version = fis.read();
+				if (version < PRESET_FILE_VERSION) {
+					JOptionPane
+							.showMessageDialog(
+									this,
+									"This quick settings file is for an old randomizer version.\nYou should make a new file.");
+					fis.close();
+					return;
+				} else if (version > PRESET_FILE_VERSION) {
+					JOptionPane
+							.showMessageDialog(
+									this,
+									"This quick settings file is for a newer randomizer version.\nYou should upgrade your randomizer.");
+					fis.close();
+					return;
+				}
+				int cslength = fis.read();
+				byte[] csBuf = new byte[cslength];
+				fis.read(csBuf);
+				fis.close();
+				String configString = new String(csBuf, "UTF-8");
+				String romName = getValidRequiredROMName(configString,
+						new byte[] {}, new byte[] {});
+				if (romName == null) {
+					JOptionPane.showMessageDialog(this,
+							"Settings file is not valid.");
+				}
+				// now we just load it
+				initialFormState();
+				romLoaded();
+				restoreFrom(configString);
+				JCheckBox[] checkboxes = new JCheckBox[] { this.brokenMovesCB,
+						this.bwEXPPatchCB, this.goLowerCaseNamesCheckBox,
+						this.goNationalDexCheckBox,
+						this.goRemoveTradeEvosCheckBox,
+						this.goUpdateMovesCheckBox, this.goUpdateTypesCheckBox,
+						this.heldItemsCB, this.paWonderGuardCB,
+						this.raceModeCB, this.randomizeHollowsCB,
+						this.tcnRandomizeCB, this.tnRandomizeCB,
+						this.tpNoEarlyShedinjaCB, this.tpNoLegendariesCB,
+						this.tpPowerLevelsCB, this.tpRivalCarriesStarterCB,
+						this.tpTypeWeightingCB, this.wpCatchRateCB,
+						this.wpNoLegendariesCB, this.wpUseTimeCB };
+				for (JCheckBox cb : checkboxes) {
+					if (!cb.isEnabled() || !cb.isVisible()) {
+						cb.setSelected(false);
+					}
+				}
+				JOptionPane.showMessageDialog(this, "Settings loaded from "
+						+ fh.getName());
+			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(this,
+						"Settings file load failed. Please try again.");
+			} catch (InvalidSupplementFilesException e) {
+				// not possible
+			}
+		}
+	}// GEN-LAST:event_loadQSButtonActionPerformed
+
+	private void saveQSButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_saveQSButtonActionPerformed
+		if (this.romHandler == null) {
+			return;
+		}
+		qsSaveChooser.setSelectedFile(null);
+		int returnVal = qsSaveChooser.showSaveDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File fh = qsSaveChooser.getSelectedFile();
+			// Fix or add extension
+			fh = FileFunctions.fixFilename(fh, "rnqs");
+			// Save now?
+			try {
+				FileOutputStream fos = new FileOutputStream(fh);
+				fos.write(PRESET_FILE_VERSION);
+				byte[] configString = getConfigString().getBytes("UTF-8");
+				fos.write(configString.length);
+				fos.write(configString);
+				fos.close();
+			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(this,
+						"Settings file save failed. Please try again.");
+			}
+		}
+	}// GEN-LAST:event_saveQSButtonActionPerformed
+
+	private void mtmUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_mtmUnchangedRBActionPerformed
+	}// GEN-LAST:event_mtmUnchangedRBActionPerformed
 
 	private void paUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_paUnchangedRBActionPerformed
 		this.enableOrDisableSubControls();
@@ -3450,6 +3775,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JCheckBox goRemoveTradeEvosCheckBox;
 	private javax.swing.JCheckBox goUpdateMovesCheckBox;
 	private javax.swing.JCheckBox goUpdateTypesCheckBox;
+	private javax.swing.JCheckBox heldItemsCB;
+	private javax.swing.JButton loadQSButton;
 	private javax.swing.JPanel moveTutorsPanel;
 	private javax.swing.JPanel mtCompatPanel;
 	private javax.swing.ButtonGroup mtCompatibilityButtonGroup;
@@ -3484,6 +3811,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JRadioButton ptRandomFollowEvosRB;
 	private javax.swing.JRadioButton ptRandomTotalRB;
 	private javax.swing.JRadioButton ptUnchangedRB;
+	private javax.swing.JFileChooser qsOpenChooser;
+	private javax.swing.JFileChooser qsSaveChooser;
 	private javax.swing.JCheckBox raceModeCB;
 	private javax.swing.JCheckBox randomizeHollowsCB;
 	private javax.swing.JLabel riRomCodeLabel;
@@ -3492,6 +3821,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JPanel romInfoPanel;
 	private javax.swing.JFileChooser romOpenChooser;
 	private javax.swing.JFileChooser romSaveChooser;
+	private javax.swing.JButton saveQSButton;
 	private javax.swing.JButton saveROMButton;
 	private javax.swing.JComboBox spCustomPoke1Chooser;
 	private javax.swing.JComboBox spCustomPoke2Chooser;

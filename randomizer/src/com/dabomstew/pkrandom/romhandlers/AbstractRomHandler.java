@@ -50,6 +50,7 @@ import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
 import com.dabomstew.pkrandom.pokemon.EvolutionData;
+import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
 import com.dabomstew.pkrandom.pokemon.MoveLearnt;
 import com.dabomstew.pkrandom.pokemon.Pokemon;
@@ -971,9 +972,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 					if (trainername.isEmpty()) {
 						continue;
 					}
+					if (trainername.startsWith("\uFEFF")) {
+						trainername = trainername.substring(1);
+					}
 					int idx = trainername.contains("&") ? 1 : 0;
 					allTrainerNames[idx].add(trainername);
-					int len = trainername.length();
+					int len = this.internalStringLength(trainername);
 					if (trainerNamesByLength[idx].containsKey(len)) {
 						trainerNamesByLength[idx].get(len).add(trainername);
 					} else {
@@ -994,15 +998,18 @@ public abstract class AbstractRomHandler implements RomHandler {
 			// RBY have no trainer names
 			return;
 		}
-		boolean mustBeSameLength = this.fixedTrainerNamesLength();
+		TrainerNameMode mode = this.trainerNameMode();
 		int maxLength = this.maxTrainerNameLength();
 
 		// Init the translation map and new list
 		Map<String, String> translation = new HashMap<String, String>();
 		List<String> newTrainerNames = new ArrayList<String>();
+		List<Integer> tcNameLengths = this.getTCNameLengthsByTrainer();
 
 		// Start choosing
+		int tnIndex = -1;
 		for (String trainerName : currentTrainerNames) {
+			tnIndex++;
 			if (translation.containsKey(trainerName)
 					&& trainerName.equalsIgnoreCase("GRUNT") == false
 					&& trainerName.equalsIgnoreCase("EXECUTIVE") == false) {
@@ -1012,16 +1019,26 @@ public abstract class AbstractRomHandler implements RomHandler {
 				int idx = trainerName.contains("&") ? 1 : 0;
 				List<String> pickFrom = allTrainerNames[idx];
 				int intStrLen = this.internalStringLength(trainerName);
-				if (mustBeSameLength) {
+				if (mode == TrainerNameMode.SAME_LENGTH) {
 					pickFrom = trainerNamesByLength[idx].get(intStrLen);
 				}
 				String changeTo = trainerName;
 				if (pickFrom != null && pickFrom.size() > 0 && intStrLen > 1) {
+					int tries = 0;
 					changeTo = pickFrom.get(RandomSource.nextInt(pickFrom
 							.size()));
-					while (changeTo.length() > maxLength) {
+					int ctl = this.internalStringLength(changeTo);
+					while ((mode == TrainerNameMode.MAX_LENGTH && ctl > maxLength)
+							|| (mode == TrainerNameMode.MAX_LENGTH_WITH_CLASS && ctl
+									+ tcNameLengths.get(tnIndex) > maxLength)) {
+						tries++;
+						if (tries == 50) {
+							changeTo = trainerName;
+							break;
+						}
 						changeTo = pickFrom.get(RandomSource.nextInt(pickFrom
 								.size()));
+						ctl = this.internalStringLength(changeTo);
 					}
 				}
 				translation.put(trainerName, changeTo);
@@ -1064,16 +1081,19 @@ public abstract class AbstractRomHandler implements RomHandler {
 					if (trainerClassName.isEmpty()) {
 						continue;
 					}
+					if (trainerClassName.startsWith("\uFEFF")) {
+						trainerClassName = trainerClassName.substring(1);
+					}
 					String checkName = trainerClassName.toLowerCase();
 					int idx = (checkName.endsWith("couple")
 							|| checkName.contains(" and ")
 							|| checkName.endsWith("kin")
 							|| checkName.endsWith("team")
-							|| checkName.contains(" & ") || (checkName
+							|| checkName.contains("&") || (checkName
 							.endsWith("s") && !checkName.endsWith("ss"))) ? 1
 							: 0;
 					allTrainerClasses[idx].add(trainerClassName);
-					int len = trainerClassName.length();
+					int len = this.internalStringLength(trainerClassName);
 					if (trainerClassesByLength[idx].containsKey(len)) {
 						trainerClassesByLength[idx].get(len).add(
 								trainerClassName);
@@ -1138,6 +1158,116 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public int maxTrainerClassNameLength() {
 		// default: no real limit
 		return Integer.MAX_VALUE;
+	}
+
+	@Override
+	public void randomizeWildHeldItems() {
+		List<Pokemon> pokemon = allPokemonWithoutNull();
+		ItemList possibleItems = this.getAllowedItems();
+		for (Pokemon pk : pokemon) {
+			if (pk.guaranteedHeldItem == -1 && pk.commonHeldItem == -1
+					&& pk.rareHeldItem == -1 && pk.darkGrassHeldItem == -1) {
+				// No held items at all, abort
+				return;
+			}
+			boolean canHaveDarkGrass = pk.darkGrassHeldItem != -1;
+			if (pk.guaranteedHeldItem != -1) {
+				// Guaranteed held items are supported.
+				if (pk.guaranteedHeldItem > 0) {
+					// Currently have a guaranteed item
+					double decision = RandomSource.nextDouble();
+					if (decision < 0.9) {
+						// Stay as guaranteed
+						canHaveDarkGrass = false;
+						pk.guaranteedHeldItem = possibleItems.randomItem();
+					} else {
+						// Change to 25% or 55% chance
+						pk.guaranteedHeldItem = 0;
+						pk.commonHeldItem = possibleItems.randomItem();
+						pk.rareHeldItem = possibleItems.randomItem();
+						while (pk.rareHeldItem == pk.commonHeldItem) {
+							pk.rareHeldItem = possibleItems.randomItem();
+						}
+					}
+				} else {
+					// No guaranteed item atm
+					double decision = RandomSource.nextDouble();
+					if (decision < 0.5) {
+						// No held item at all
+						pk.commonHeldItem = 0;
+						pk.rareHeldItem = 0;
+					} else if (decision < 0.65) {
+						// Just a rare item
+						pk.commonHeldItem = 0;
+						pk.rareHeldItem = possibleItems.randomItem();
+					} else if (decision < 0.8) {
+						// Just a common item
+						pk.commonHeldItem = possibleItems.randomItem();
+						pk.rareHeldItem = 0;
+					} else if (decision < 0.95) {
+						// Both a common and rare item
+						pk.commonHeldItem = possibleItems.randomItem();
+						pk.rareHeldItem = possibleItems.randomItem();
+						while (pk.rareHeldItem == pk.commonHeldItem) {
+							pk.rareHeldItem = possibleItems.randomItem();
+						}
+					} else {
+						// Guaranteed item
+						canHaveDarkGrass = false;
+						pk.guaranteedHeldItem = possibleItems.randomItem();
+						pk.commonHeldItem = 0;
+						pk.rareHeldItem = 0;
+					}
+				}
+			} else {
+				// Code for no guaranteed items
+				double decision = RandomSource.nextDouble();
+				if (decision < 0.5) {
+					// No held item at all
+					pk.commonHeldItem = 0;
+					pk.rareHeldItem = 0;
+				} else if (decision < 0.65) {
+					// Just a rare item
+					pk.commonHeldItem = 0;
+					pk.rareHeldItem = possibleItems.randomItem();
+				} else if (decision < 0.8) {
+					// Just a common item
+					pk.commonHeldItem = possibleItems.randomItem();
+					pk.rareHeldItem = 0;
+				} else {
+					// Both a common and rare item
+					pk.commonHeldItem = possibleItems.randomItem();
+					pk.rareHeldItem = possibleItems.randomItem();
+					while (pk.rareHeldItem == pk.commonHeldItem) {
+						pk.rareHeldItem = possibleItems.randomItem();
+					}
+				}
+			}
+
+			if (canHaveDarkGrass) {
+				double dgDecision = RandomSource.nextDouble();
+				if (dgDecision < 0.5) {
+					// Yes, dark grass item
+					pk.darkGrassHeldItem = possibleItems.randomItem();
+				} else {
+					pk.darkGrassHeldItem = 0;
+				}
+			} else if (pk.darkGrassHeldItem != -1) {
+				pk.darkGrassHeldItem = 0;
+			}
+		}
+
+	}
+
+	@Override
+	public void randomizeStarterHeldItems() {
+		List<Integer> oldHeldItems = this.getStarterHeldItems();
+		List<Integer> newHeldItems = new ArrayList<Integer>();
+		ItemList possibleItems = this.getAllowedItems();
+		for (int i = 0; i < oldHeldItems.size(); i++) {
+			newHeldItems.add(possibleItems.randomItem());
+		}
+		this.setStarterHeldItems(newHeldItems);
 	}
 
 	private int pickMove(Pokemon pkmn, boolean typeThemed, boolean damaging) {

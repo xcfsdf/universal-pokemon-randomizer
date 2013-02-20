@@ -43,6 +43,7 @@ import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
+import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
 import com.dabomstew.pkrandom.pokemon.MoveLearnt;
 import com.dabomstew.pkrandom.pokemon.Pokemon;
@@ -157,9 +158,11 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	}
 
 	private static List<RomEntry> roms;
+	private static ItemList allowedItems;
 
 	static {
 		loadROMInfo();
+		setupAllowedItems();
 	}
 
 	private static void loadROMInfo() {
@@ -302,6 +305,22 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
+	private static void setupAllowedItems() {
+		allowedItems = new ItemList(638);
+		// Key items + version exclusives
+		allowedItems.banRange(428, 109);
+		allowedItems.banRange(621, 18);
+		allowedItems.banSingles(574, 578, 579, 616, 617);
+		// Unknown blank items or version exclusives
+		allowedItems.banRange(113, 3);
+		allowedItems.banRange(120, 14);
+		// TMs & HMs - tms cant be held in gen5
+		allowedItems.banRange(328, 100);
+		allowedItems.banRange(618, 3);
+		// Battle Launcher exclusives
+		allowedItems.banRange(592, 24);
+	}
+
 	// This ROM
 	private Pokemon[] pokes;
 	private Move[] moves;
@@ -406,6 +425,23 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		pkmn.ability1 = stats[24] & 0xFF;
 		pkmn.ability2 = stats[25] & 0xFF;
 		pkmn.ability3 = stats[26] & 0xFF;
+
+		// Held Items?
+		int item1 = readWord(stats, 12);
+		int item2 = readWord(stats, 14);
+
+		if (item1 == item2) {
+			// guaranteed
+			pkmn.guaranteedHeldItem = item1;
+			pkmn.commonHeldItem = 0;
+			pkmn.rareHeldItem = 0;
+			pkmn.darkGrassHeldItem = 0;
+		} else {
+			pkmn.guaranteedHeldItem = 0;
+			pkmn.commonHeldItem = item1;
+			pkmn.rareHeldItem = item2;
+			pkmn.darkGrassHeldItem = readWord(stats, 16);
+		}
 	}
 
 	private String[] readPokemonNames() {
@@ -512,6 +548,17 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		stats[24] = (byte) pkmn.ability1;
 		stats[25] = (byte) pkmn.ability2;
 		stats[26] = (byte) pkmn.ability3;
+
+		// Held items
+		if (pkmn.guaranteedHeldItem > 0) {
+			writeWord(stats, 12, pkmn.guaranteedHeldItem);
+			writeWord(stats, 14, pkmn.guaranteedHeldItem);
+			writeWord(stats, 16, 0);
+		} else {
+			writeWord(stats, 12, pkmn.commonHeldItem);
+			writeWord(stats, 14, pkmn.rareHeldItem);
+			writeWord(stats, 16, pkmn.darkGrassHeldItem);
+		}
 	}
 
 	@Override
@@ -639,6 +686,17 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		return true;
 	}
 
+	@Override
+	public List<Integer> getStarterHeldItems() {
+		// do nothing
+		return new ArrayList<Integer>();
+	}
+
+	@Override
+	public void setStarterHeldItems(List<Integer> items) {
+		// do nothing
+	}
+
 	private void replaceStarterFiles(NARCContents starterNARC,
 			NARCContents pokespritesNARC, int starterIndex, int pokeNumber)
 			throws IOException, InterruptedException {
@@ -740,6 +798,131 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		return encs;
 	}
 
+	/* @formatter:off */
+	private static final int[][] habitatListEntries = new int[][] {
+		{ 104, 105 }, // Route 4
+		{ 124 }, // Route 15
+		{ 134 }, // Route 21
+		{ 84, 85, 86 }, // Clay Tunnel
+		{ 23, 24, 25, 26 }, // Twist Mountain
+		{ 97 }, // Village Bridge
+		{ 27, 28, 29, 30 }, // Dragonspiral Tower
+		{ 81, 82, 83 }, // Relic Passage
+		{ 106 }, // Route 5*
+		{ 125 }, // Route 16*
+		{ 98 }, // Marvelous Bridge
+		{ 123 }, // Abundant Shrine
+		{ 132 }, // Undella Town
+		{ 107 }, // Route 6
+		{ 43 }, // Undella Bay
+		{ 102, 103 }, // Wellspring Cave
+		{ 95 }, // Nature Preserve
+		{ 127 }, // Route 18
+		{ 32, 33, 34, 35, 36 }, // Giant Chasm
+		{ 111 }, // Route 7
+		{ 31, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80 }, // Victory Road
+		{ 12, 13, 14, 15, 16, 17, 18, 19 }, // Relic Castle
+		{ 0 }, // Striation City
+		{ 128 }, // Route 19
+		{ 3 }, // Aspertia City
+		{ 116 }, // Route 8*
+		{ 44, 45 }, // Floccesy Ranch
+		{ 61, 62, 63, 64, 65, 66, 67, 68, 69, 70 }, // Strange House
+		{ 129 }, // Route 20
+		{ 4 }, // Virbank City
+		{ 37, 38, 39, 40, 41 }, // Castelia Sewers
+		{ 118 }, // Route 9
+		{ 46, 47 }, // Virbank Complex
+		{ 42 }, // P2 Laboratory
+		{ 1 }, // Castelia City
+		{ 8, 9 }, // Pinwheel Forest
+		{ 5 }, // Humilau City
+		{ 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 }, // Reversal Mountain
+		{ 6, 7 }, // Dreamyard
+		{ 112, 113, 114, 115 }, // Celestial Tower
+		{ 130 }, // Route 22
+		{ 10, 11 }, // Desert Resort
+		{ 119 }, // Route 11
+		{ 133 }, // Route 17
+		{ 99 }, // Route 1
+		{ 131 }, // Route 23
+		{ 2 }, // Icirrus City*
+		{ 120 }, // Route 12
+		{ 100 }, // Route 2
+		{ 108, 109 }, // Mistralton Cave
+		{ 121 }, // Route 13
+		{ 101 }, // Route 3
+		{ 117 }, // Moor of Icirrus*
+		{ 96 }, // Driftveil Drawbridge
+		{ 93, 94 }, // Seaside Cave
+		{ 126 }, // Lostlorn Forest
+		{ 122 }, // Route 14
+		{ 20, 21, 22 }, // Chargestone Cave
+	};
+	
+	private static final int[] wildFileToAreaMap = new int[] {
+		2,
+		4,
+		8,
+		59,
+		61,
+		63,
+		19, 19,
+		20, 20,
+		21, 21,
+		22, 22, 22, 22, 22, 22, 22, 22,
+		24, 24, 24,
+		25, 25, 25, 25,
+		26, 26, 26, 26,
+		76,
+		27, 27, 27, 27, 27,
+		70, 70, 70, 70, 70,
+		29,
+		35,
+		71, 71,
+		72, 72,
+		73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
+		74, 74, 74, 74, 74, 74, 74, 74, 74, 74,
+		76, 76, 76, 76, 76, 76, 76, 76, 76, 76,
+		77, 77, 77,
+		79, 79, 79, 79, 79, 79, 79, 79, 79,
+		78, 78,
+		-1, // Nature Preserve (not on map)
+		55,
+		57,
+		58,
+		37,
+		38,
+		39,
+		30, 30,
+		40, 40,
+		41,
+		42,
+		31, 31, 31,
+		43,
+		32, 32, 32, 32,
+		44,
+		33,
+		45,
+		46,
+		47,
+		48,
+		49,
+		34,
+		50,
+		51,
+		36,
+		53,
+		66,
+		67,
+		69,
+		75,
+		12,
+		52,
+		68,
+	};
+	/* @formatter:on */
+
 	@Override
 	public void setEncounters(boolean useTimeOfDay,
 			List<EncounterSet> encountersList) {
@@ -765,11 +948,146 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 
 			// Save
 			writeNARC(romEntry.getString("WildPokemon"), encounterNARC);
+
+			// Habitat List / Area Data?
+			if (romEntry.romType == Type_BW2) {
+				// disabled: habitat list changes cause a crash if too many
+				// entries for now.
+
+				// NARCContents habitatNARC = readNARC(romEntry
+				// .getString("HabitatList"));
+				// for (int i = 0; i < habitatNARC.files.size(); i++) {
+				// byte[] oldEntry = habitatNARC.files.get(i);
+				// int[] encounterFiles = habitatListEntries[i];
+				// Map<Pokemon, byte[]> pokemonHere = new TreeMap<Pokemon,
+				// byte[]>();
+				// for (int encFile : encounterFiles) {
+				// byte[] encEntry = encounterNARC.files.get(encFile);
+				// if (encEntry.length > 232) {
+				// for (int s = 0; s < 4; s++) {
+				// addHabitats(encEntry, s * 232, pokemonHere, s);
+				// }
+				// } else {
+				// for (int s = 0; s < 4; s++) {
+				// addHabitats(encEntry, 0, pokemonHere, s);
+				// }
+				// }
+				// }
+				// // Make the new file
+				// byte[] habitatEntry = new byte[10 + pokemonHere.size() * 28];
+				// System.arraycopy(oldEntry, 0, habitatEntry, 0, 10);
+				// habitatEntry[8] = (byte) pokemonHere.size();
+				// // 28-byte entries for each pokemon
+				// int num = -1;
+				// for (Pokemon pkmn : pokemonHere.keySet()) {
+				// num++;
+				// writeWord(habitatEntry, 10 + num * 28, pkmn.number);
+				// byte[] slots = pokemonHere.get(pkmn);
+				// System.arraycopy(slots, 0, habitatEntry, 12 + num * 28,
+				// 12);
+				// }
+				// // Save
+				// habitatNARC.files.set(i, habitatEntry);
+				// }
+				// // Save habitat
+				// this.writeNARC(romEntry.getString("HabitatList"),
+				// habitatNARC);
+
+				// Area Data
+				NARCContents areaNARC = this.readNARC(romEntry
+						.getString("PokemonAreaData"));
+				List<byte[]> newFiles = new ArrayList<byte[]>();
+				for (int i = 0; i < 649; i++) {
+					byte[] nf = new byte[345];
+					nf[0] = 1;
+					newFiles.add(nf);
+				}
+				// Get data now
+				for (int i = 0; i < encounterNARC.files.size(); i++) {
+					byte[] encEntry = encounterNARC.files.get(i);
+					if (encEntry.length > 232) {
+						for (int s = 0; s < 4; s++) {
+							parseAreaData(encEntry, s * 232, newFiles, s, i);
+						}
+					} else {
+						for (int s = 0; s < 4; s++) {
+							parseAreaData(encEntry, 0, newFiles, s, i);
+						}
+					}
+				}
+				// Now update unobtainables & save
+				for (int i = 0; i < 649; i++) {
+					byte[] file = newFiles.get(i);
+					for (int s = 0; s < 4; s++) {
+						boolean unobtainable = true;
+						for (int e = 0; e < 85; e++) {
+							if (file[s * 86 + e + 2] != 0) {
+								unobtainable = false;
+								break;
+							}
+						}
+						if (unobtainable) {
+							file[s * 86 + 1] = 1;
+						}
+					}
+					areaNARC.files.set(i, file);
+				}
+				// Save
+				this.writeNARC(romEntry.getString("PokemonAreaData"), areaNARC);
+			}
 		} catch (IOException e) {
 			// whuh-oh
 			e.printStackTrace();
 		}
 
+	}
+
+	private void parseAreaData(byte[] entry, int startOffset,
+			List<byte[]> areaData, int season, int fileNumber) {
+		int[] amounts = new int[] { 12, 12, 12, 5, 5, 5, 5 };
+
+		int offset = 8;
+		for (int i = 0; i < 7; i++) {
+			int rate = entry[startOffset + i] & 0xFF;
+			if (rate != 0) {
+				for (int e = 0; e < amounts[i]; e++) {
+					Pokemon pkmn = pokes[((entry[startOffset + offset + e * 4] & 0xFF) + ((entry[startOffset
+							+ offset + 1 + e * 4] & 0x03) << 8))];
+					byte[] pokeFile = areaData.get(pkmn.number - 1);
+					int areaIndex = wildFileToAreaMap[fileNumber];
+					// Have to skip Nature Preserve encounters
+					if (areaIndex != -1) {
+						pokeFile[season * 86 + 2 + areaIndex] |= (1 << i);
+					}
+				}
+			}
+			offset += amounts[i] * 4;
+		}
+	}
+
+	private void addHabitats(byte[] entry, int startOffset,
+			Map<Pokemon, byte[]> pokemonHere, int season) {
+		int[] amounts = new int[] { 12, 12, 12, 5, 5, 5, 5 };
+		int[] type = new int[] { 0, 0, 0, 1, 1, 2, 2 };
+
+		int offset = 8;
+		for (int i = 0; i < 7; i++) {
+			int rate = entry[startOffset + i] & 0xFF;
+			if (rate != 0) {
+				for (int e = 0; e < amounts[i]; e++) {
+					Pokemon pkmn = pokes[((entry[startOffset + offset + e * 4] & 0xFF) + ((entry[startOffset
+							+ offset + 1 + e * 4] & 0x03) << 8))];
+					if (pokemonHere.containsKey(pkmn)) {
+						pokemonHere.get(pkmn)[type[i] + season * 3] = 1;
+					} else {
+						byte[] locs = new byte[12];
+						locs[type[i] + season * 3] = 1;
+						pokemonHere.put(pkmn, locs);
+					}
+				}
+			}
+			offset += amounts[i] * 4;
+		}
 	}
 
 	private void writeEncounterEntry(Iterator<EncounterSet> encounters,
@@ -1819,8 +2137,14 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	}
 
 	@Override
-	public boolean fixedTrainerNamesLength() {
-		return false;
+	public TrainerNameMode trainerNameMode() {
+		return TrainerNameMode.MAX_LENGTH;
+	}
+
+	@Override
+	public List<Integer> getTCNameLengthsByTrainer() {
+		// not needed
+		return new ArrayList<Integer>();
 	}
 
 	@Override
@@ -1862,5 +2186,21 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	@Override
 	public int internalStringLength(String string) {
 		return ssd.lengthFor(string);
+	}
+
+	@Override
+	public void applySignature() {
+		// For now, do nothing.
+
+	}
+
+	@Override
+	public ItemList getAllowedItems() {
+		return allowedItems;
+	}
+
+	@Override
+	public String[] getItemNames() {
+		return RomFunctions.itemNames[4];
 	}
 }

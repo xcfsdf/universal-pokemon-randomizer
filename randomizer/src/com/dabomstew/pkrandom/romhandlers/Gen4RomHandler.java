@@ -43,6 +43,7 @@ import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
+import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
 import com.dabomstew.pkrandom.pokemon.MoveLearnt;
 import com.dabomstew.pkrandom.pokemon.Pokemon;
@@ -149,9 +150,11 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	}
 
 	private static List<RomEntry> roms;
+	private static ItemList allowedItems;
 
 	static {
 		loadROMInfo();
+		setupAllowedItems();
 	}
 
 	private static void loadROMInfo() {
@@ -283,6 +286,18 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
+	private static void setupAllowedItems() {
+		allowedItems = new ItemList(536);
+		// Key items + version exclusives
+		allowedItems.banRange(428, 109);
+		// Unknown blank items or version exclusives
+		allowedItems.banRange(112, 23);
+		// HMs
+		allowedItems.banRange(420, 8);
+		// TMs
+		allowedItems.tmRange(328, 92);
+	}
+
 	// This rom
 	private Pokemon[] pokes;
 	private Move[] moves;
@@ -396,6 +411,22 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		// Abilities
 		pkmn.ability1 = stats[22] & 0xFF;
 		pkmn.ability2 = stats[23] & 0xFF;
+
+		// Held Items?
+		int item1 = readWord(stats, 12);
+		int item2 = readWord(stats, 14);
+
+		if (item1 == item2) {
+			// guaranteed
+			pkmn.guaranteedHeldItem = item1;
+			pkmn.commonHeldItem = 0;
+			pkmn.rareHeldItem = 0;
+		} else {
+			pkmn.guaranteedHeldItem = 0;
+			pkmn.commonHeldItem = item1;
+			pkmn.rareHeldItem = item2;
+		}
+		pkmn.darkGrassHeldItem = -1;
 	}
 
 	private String[] readPokemonNames() {
@@ -517,6 +548,15 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 
 		stats[22] = (byte) pkmn.ability1;
 		stats[23] = (byte) pkmn.ability2;
+
+		// Held items
+		if (pkmn.guaranteedHeldItem > 0) {
+			writeWord(stats, 12, pkmn.guaranteedHeldItem);
+			writeWord(stats, 14, pkmn.guaranteedHeldItem);
+		} else {
+			writeWord(stats, 12, pkmn.commonHeldItem);
+			writeWord(stats, 14, pkmn.rareHeldItem);
+		}
 	}
 
 	@Override
@@ -809,6 +849,17 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 			}
 			return true;
 		}
+	}
+
+	@Override
+	public List<Integer> getStarterHeldItems() {
+		// do nothing
+		return new ArrayList<Integer>();
+	}
+
+	@Override
+	public void setStarterHeldItems(List<Integer> items) {
+		// do nothing
 	}
 
 	@Override
@@ -1288,9 +1339,9 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		int enclength = encounters.size();
 		for (int i = 0; i < enclength; i++) {
 			Encounter enc = encounters.get(i);
-			data[offset] = (byte) enc.level;
-			data[offset + 1] = (byte) enc.maxLevel;
-			writeWord(data, offset + 2, enc.pokemon.number);
+			data[offset + i * 4] = (byte) enc.level;
+			data[offset + i * 4 + 1] = (byte) enc.maxLevel;
+			writeWord(data, offset + i * 4 + 2, enc.pokemon.number);
 		}
 
 	}
@@ -2355,8 +2406,14 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	}
 
 	@Override
-	public boolean fixedTrainerNamesLength() {
-		return false;
+	public TrainerNameMode trainerNameMode() {
+		return TrainerNameMode.MAX_LENGTH;
+	}
+
+	@Override
+	public List<Integer> getTCNameLengthsByTrainer() {
+		// not needed
+		return new ArrayList<Integer>();
 	}
 
 	@Override
@@ -2398,6 +2455,22 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	@Override
 	public int internalStringLength(String string) {
 		return string.length();
+	}
+
+	@Override
+	public void applySignature() {
+		// For now, do nothing.
+
+	}
+
+	@Override
+	public ItemList getAllowedItems() {
+		return allowedItems;
+	}
+
+	@Override
+	public String[] getItemNames() {
+		return RomFunctions.itemNames[3];
 	}
 
 }
