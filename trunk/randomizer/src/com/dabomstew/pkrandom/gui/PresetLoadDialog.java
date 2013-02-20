@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
@@ -468,24 +469,56 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 		romFileChooser.setSelectedFile(null);
 		int returnVal = romFileChooser.showOpenDialog(this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File fh = romFileChooser.getSelectedFile();
+			final File fh = romFileChooser.getSelectedFile();
 			for (RomHandler rh : parentGUI.checkHandlers) {
 				if (rh.detectRom(fh.getAbsolutePath())) {
-					rh.loadRom(fh.getAbsolutePath());
-					if (rh.getROMName().equals(requiredName)) {
-						// Got it
-						this.romFileField.setText(fh.getAbsolutePath());
-						this.currentROM = rh;
-						this.acceptButton.setEnabled(true);
-						return;
-					} else {
-						JOptionPane.showMessageDialog(
-								this,
-								"This isn't the required ROM.\nRequired: "
-										+ requiredName + "\nThis ROM: "
-										+ rh.getROMName());
-						return;
-					}
+					final RomHandler checkHandler = rh;
+					final JDialog opDialog = new OperationDialog("Loading...",
+							this, true);
+					Thread t = new Thread() {
+						@Override
+						public void run() {
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									opDialog.setVisible(true);
+								}
+							});
+							try {
+								checkHandler.loadRom(fh.getAbsolutePath());
+							} catch (Exception ex) {
+								JOptionPane.showMessageDialog(
+										PresetLoadDialog.this,
+										"ROM load failed.");
+							}
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									opDialog.setVisible(false);
+									if (checkHandler.getROMName().equals(
+											requiredName)) {
+										// Got it
+										romFileField.setText(fh
+												.getAbsolutePath());
+										currentROM = checkHandler;
+										acceptButton.setEnabled(true);
+										return;
+									} else {
+										JOptionPane.showMessageDialog(
+												PresetLoadDialog.this,
+												"This isn't the required ROM.\nRequired: "
+														+ requiredName
+														+ "\nThis ROM: "
+														+ checkHandler
+																.getROMName());
+										return;
+									}
+								}
+							});
+						}
+					};
+					t.start();
+					return;
 				}
 			}
 			JOptionPane.showMessageDialog(this,

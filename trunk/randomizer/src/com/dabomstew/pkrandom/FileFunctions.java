@@ -1,15 +1,18 @@
 package com.dabomstew.pkrandom;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 
 public class FileFunctions {
 
-	private static final boolean internalConfig = false;
+	public static final boolean internalConfig = false;
 
 	public static File fixFilename(File original, String defaultExtension) {
 		return fixFilename(original, defaultExtension, null);
@@ -24,7 +27,8 @@ public class FileFunctions {
 			List<String> bannedExtensions) {
 		String filename = original.getName();
 		if (filename.lastIndexOf('.') >= filename.length() - 5
-				&& filename.lastIndexOf('.') != filename.length() - 1) {
+				&& filename.lastIndexOf('.') != filename.length() - 1
+				&& filename.length() > 4 && filename.lastIndexOf('.') != -1) {
 			// valid extension, read it off
 			String ext = filename.substring(filename.lastIndexOf('.') + 1)
 					.toLowerCase();
@@ -72,5 +76,19 @@ public class FileFunctions {
 		is.read(buf);
 		is.close();
 		return buf;
+	}
+
+	public static byte[] downloadFile(String url) throws IOException {
+		BufferedInputStream in = new BufferedInputStream(
+				new URL(url).openStream());
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		byte[] buf = new byte[1024];
+		int count;
+		while ((count = in.read(buf, 0, 1024)) != -1) {
+			out.write(buf, 0, count);
+		}
+		in.close();
+		byte[] output = out.toByteArray();
+		return output;
 	}
 }

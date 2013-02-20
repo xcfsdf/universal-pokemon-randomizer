@@ -420,7 +420,13 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 					wholeFile[offset + 2], wholeFile[offset + 1],
 					wholeFile[offset] };
 			String magicS = new String(magic, "US-ASCII");
+
 			int frame_size = readLong(wholeFile, offset + 4);
+			// Patch for BB/VW and other DS hacks which don't update
+			// the size of their expanded NARCs correctly
+			if (i == frameCount - 1 && offset + frame_size < wholeFile.length) {
+				frame_size = wholeFile.length - offset;
+			}
 			byte[] frame = new byte[frame_size - 8];
 			System.arraycopy(wholeFile, offset + 8, frame, 0, frame_size - 8);
 			frames.put(magicS, frame);
@@ -498,6 +504,9 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	}
 
 	protected int typeTMPaletteNumber(Type t) {
+		if (t == null) {
+			return 411; // CURSE
+		}
 		switch (t) {
 		case FIGHTING:
 			return 398;
