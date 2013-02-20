@@ -25,6 +25,10 @@ import com.dabomstew.pkrandom.FileFunctions;
  */
 public class UpdateFoundDialog extends javax.swing.JDialog {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1641494584047215623L;
 	private int targetVersion;
 
 	/**

@@ -799,6 +799,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 	}
 
 	/* @formatter:off */
+	@SuppressWarnings("unused")
 	private static final int[][] habitatListEntries = new int[][] {
 		{ 104, 105 }, // Route 4
 		{ 124 }, // Route 15
@@ -1065,6 +1066,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void addHabitats(byte[] entry, int startOffset,
 			Map<Pokemon, byte[]> pokemonHere, int season) {
 		int[] amounts = new int[] { 12, 12, 12, 5, 5, 5, 5 };

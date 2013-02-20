@@ -31,7 +31,7 @@ import java.io.IOException;
 
 public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 
-	public byte[] rom;
+	protected byte[] rom;
 
 	public boolean detectRom(String filename) {
 		if (new File(filename).length() > 32 * 1024 * 1024) {
@@ -64,7 +64,7 @@ public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public boolean canChangeStaticPokemon() {
 		return true;
@@ -103,7 +103,7 @@ public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 		}
 		return (byte) thisByte;
 	}
-	
+
 	protected int readWord(int offset) {
 		return (rom[offset] & 0xFF) + ((rom[offset + 1] & 0xFF) << 8);
 	}
