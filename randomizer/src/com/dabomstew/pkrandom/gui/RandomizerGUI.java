@@ -106,7 +106,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 	public void testForRequiredConfigs() {
 		String[] required = new String[] { "gameboy_jap.tbl",
-				"rby_english.tbl", "green_bootleg.tbl", "gsc_english.tbl",
+				"rby_english.tbl", "green_translation.tbl", "gsc_english.tbl",
 				"gba_english.tbl", "gba_jap.tbl", "Generation4.tbl",
 				"Generation5.tbl", "gen1_offsets.ini", "gen2_offsets.ini",
 				"gen3_offsets.ini", "gen4_offsets.ini", "gen5_offsets.ini",
