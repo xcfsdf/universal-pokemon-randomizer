@@ -1,5 +1,5 @@
-Universal Pokemon Randomizers 1.1.2
-by Dabomstew, 2012
+Universal Pokemon Randomizer 1.2.0
+by Dabomstew, 2012-13
 
 Homepage: http://pokehacks.dabomstew.com/randomizer/index.php
 Source: https://code.google.com/p/universal-pokemon-randomizer/
@@ -14,7 +14,7 @@ Contents
 6. Games/ROMs supported
 7. License
 8. Known Issues
-9. Contact
+9. Useful/Interesting Links
 
 Introduction
 ------------
@@ -69,12 +69,14 @@ of it if you haven't played Pokemon games much before.
   * The names of trainers & the classes they belong in
   * The moves that Move Tutors teach, in certain games where they are
     particularly significant.
+  * The items that it is possible for Pokemon to hold in the wild, and in
+    certain situations the items that Pokemon given to you are holding.
   
 How To Use
 ----------
 Extract this ZIP file before doing anything else!!!
 
-Make sure you have Java 1.6 installed, then run the included JAR file.
+Make sure you have Java 1.6 or later installed, then run the included JAR file.
 
 In some situations, you will be able to just double-click on the JAR file and
 the program will run. If not, execute the following command from your command
@@ -88,38 +90,43 @@ randomized, then save the randomized ROM.
 Games/ROMs supported
 --------------------
 
-Version 1.1.2 supports the following ROMs:
+Version 1.2.0 supports the following official ROMs:
 
-  * Pokemon Red (any*)
-  * Pokemon Blue (any*)
+  * Pokemon Red (any)
+  * Pokemon Blue (any)
   * Pokemon Green (J)
-  * Pokemon Yellow (any*)
-  * Pokemon Gold (U/E)
-  * Pokemon Silver (U/E)
-  * Pokemon Crystal (U/E)
-  * Pokemon Ruby (U) and (E)
-  * Pokemon Sapphire (U) and (E)
-  * Pokemon Emerald (U)
-  * Pokemon FireRed (U) (1.0 and 1.1)
-  * Pokemon LeafGreen (U) (1.0 and 1.1)
-  * Pokemon Diamond (any*)
-  * Pokemon Pearl (any*)
-  * Pokemon Platinum (any*)
-  * Pokemon HeartGold (any*)
-  * Pokemon SoulSilver (any*)
-  * Pokemon Black (U)
-  * Pokemon White (U)
-  * Pokemon Black2 (U)
-  * Pokemon White2 (U)
+  * Pokemon Yellow (any)
+  * Pokemon Gold (any except Korean)
+  * Pokemon Silver (any except Korean)
+  * Pokemon Crystal (any)
+  * Pokemon Ruby (any)
+  * Pokemon Sapphire (any)
+  * Pokemon Emerald (any)
+  * Pokemon FireRed (any)
+  * Pokemon LeafGreen (any)
+  * Pokemon Diamond (any)
+  * Pokemon Pearl (any)
+  * Pokemon Platinum (any)
+  * Pokemon HeartGold (any)
+  * Pokemon SoulSilver (any)
+  * Pokemon Black (any)
+  * Pokemon White (any)
+  * Pokemon Black2 (any)
+  * Pokemon White2 (any)
   
-As you can see, pretty much every US 1.0 game is supported. Future releases
-should improve the compatibility with foreign-language games, though the DS
-games may work right now anyway, albeit with some random English text inserted.
+As you can see, pretty much every game except the Korean releases of Gold
+and Silver are supported. This is because these releases were very much
+one-offs, and have little to nothing in the way of a ROM hacking community
+which would be needed to make it possible to support them.
 
-Any game marked as any* can be used with any language ROM to my knowledge,
-though random English text can and will be inserted in some places. Also,
-some features may not be fully available for non-English ROMs, though the core
-functionality will always work.
+Whilst pretty much every release of every game is supported to a good level,
+this randomizer is still targeted at English games - so users of foreign
+language games may still find that the functionality is a bit limited or
+small amounts of English text appear ingame where they did not before.
+
+Randomizing ROM hacks of the above games is not a supported feature, but may
+still be possible depending on the specifics of the hack itself. In general,
+the simpler a hack is, the more likely it will be able to be randomized.
 
 License
 -------
@@ -135,7 +142,14 @@ Known Issues
 ------------
 See https://code.google.com/p/universal-pokemon-randomizer/wiki/KnownIssues
 
-Contact
--------
+Useful/Interesting Links
+------------------------
 If you have bugs, suggestions, or other concerns to tell me, contact me at
 http://pokehacks.dabomstew.com/randomizer/comments.php
+
+To see Pokemon games (randomized with this randomizer, primarily) and others
+run quickly and/or raced live, check out my live stream at
+http://www.twitch.tv/dabomstew/new
+
+To check out Pokemon races along with many other games raced fast, visit the
+community at http://speedrunslive.com/
