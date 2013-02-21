@@ -781,12 +781,22 @@ public abstract class AbstractRomHandler implements RomHandler {
 		for (Pokemon pkmn : movesets.keySet()) {
 			Set<Integer> learnt = new TreeSet<Integer>();
 			List<MoveLearnt> moves = movesets.get(pkmn);
-			// First move should be replaced with a damaging one
+			// Last level 1 move should be replaced with a damaging one
 			int damagingMove = pickMove(pkmn, typeThemed, true);
-			moves.get(0).move = damagingMove;
+			// Find last lv1 move
+			// lv1index ends up as the index of the first non-lv1 move
+			int lv1index = 0;
+			while (lv1index < moves.size() && moves.get(lv1index).level == 1) {
+				lv1index++;
+			}
+			// last lv1 move is 1 before lv1index
+			moves.get(lv1index - 1).move = damagingMove;
 			learnt.add(damagingMove);
 			// Rest replace with randoms
-			for (int i = 1; i < moves.size(); i++) {
+			for (int i = 0; i < moves.size(); i++) {
+				if (i == (lv1index - 1)) {
+					continue;
+				}
 				int picked = pickMove(pkmn, typeThemed, false);
 				while (learnt.contains(picked) || banned.contains(picked)) {
 					picked = pickMove(pkmn, typeThemed, false);
