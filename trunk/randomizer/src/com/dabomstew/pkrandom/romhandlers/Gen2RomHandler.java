@@ -118,7 +118,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		return 0; // normal by default
 	}
 
-	public static class RomEntry {
+	private static class RomEntry {
 		private String name;
 		private String romCode;
 		private int version, nonJapanese;
@@ -127,10 +127,10 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		private int crcInHeader = -1;
 		private String expPatch;
 		private List<TMTextEntry> tmTexts = new ArrayList<TMTextEntry>();
-		public Map<String, Integer> entries = new HashMap<String, Integer>();
-		public Map<String, int[]> arrayEntries = new HashMap<String, int[]>();
-		public List<Integer> staticPokemonSingle = new ArrayList<Integer>();
-		public Map<Integer, Integer> staticPokemonGameCorner = new TreeMap<Integer, Integer>();
+		private Map<String, Integer> entries = new HashMap<String, Integer>();
+		private Map<String, int[]> arrayEntries = new HashMap<String, int[]>();
+		private List<Integer> staticPokemonSingle = new ArrayList<Integer>();
+		private Map<Integer, Integer> staticPokemonGameCorner = new TreeMap<Integer, Integer>();
 		private Map<Integer, Integer> staticPokemonCopy = new TreeMap<Integer, Integer>();
 
 		private int getValue(String key) {
@@ -335,7 +335,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 
 	// This ROM's data
 	private Pokemon[] pokes;
-	public RomEntry romEntry;
+	private RomEntry romEntry;
 	private Move[] moves;
 	private String[] tb = new String[256];
 	private Map<String, Byte> d = new HashMap<String, Byte>();
