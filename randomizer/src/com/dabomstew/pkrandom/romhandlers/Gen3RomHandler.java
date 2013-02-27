@@ -978,15 +978,17 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 	private void writeFRLGStarterText(String findName, Pokemon pkmn,
 			String oakText) {
 		List<Integer> foundTexts = RomFunctions.search(rom, traduire(findName));
-		int offset = foundTexts.get(0);
-		String pokeName = pkmn.name;
-		String pokeType = pkmn.primaryType.toString();
-		if (pokeType.equals("NORMAL") && pkmn.secondaryType != null) {
-			pokeType = pkmn.secondaryType.toString();
+		if (foundTexts.size() > 0) {
+			int offset = foundTexts.get(0);
+			String pokeName = pkmn.name;
+			String pokeType = pkmn.primaryType.toString();
+			if (pokeType.equals("NORMAL") && pkmn.secondaryType != null) {
+				pokeType = pkmn.secondaryType.toString();
+			}
+			String speech = pokeName + " is your choice.\\pSo, \\v01, "
+					+ oakText + pokeType + " POKéMON " + pokeName + "?";
+			writeFixedLengthString(speech, offset, lengthOfStringAt(offset) + 1);
 		}
-		String speech = pokeName + " is your choice.\\pSo, \\v01, " + oakText
-				+ pokeType + " POKéMON " + pokeName + "?";
-		writeFixedLengthString(speech, offset, lengthOfStringAt(offset) + 1);
 	}
 
 	@Override

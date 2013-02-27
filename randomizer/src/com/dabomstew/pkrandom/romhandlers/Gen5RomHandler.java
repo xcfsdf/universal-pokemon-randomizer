@@ -619,6 +619,51 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 							starter);
 				}
 			}
+			// GIVE ME BACK MY PURRLOIN
+			if (romEntry.romType == Type_BW2) {
+				byte[] newScript = new byte[] { 0x28, 0x00, (byte) 0xA1, 0x40,
+						0x04, 0x00, (byte) 0xDE, 0x00, 0x00, 0x00, (byte) 0xFD,
+						0x01, 0x05, 0x00 };
+				if (romEntry.romCode.charAt(3) == 'J') {
+					newScript[0x6] -= 4;
+				}
+				byte[] oldFile = scriptNARC.files.get(romEntry
+						.getInt("PokedexGivenFileOffset"));
+				byte[] newFile = new byte[oldFile.length + newScript.length];
+				int offset = find(oldFile, "2800A1400400");
+				if (offset > 0) {
+					System.arraycopy(oldFile, 0, newFile, 0, oldFile.length);
+					System.arraycopy(newScript, 0, newFile, oldFile.length,
+							newScript.length);
+					newFile[offset++] = 0x1E;
+					newFile[offset++] = 0x0;
+					writeRelativePointer(newFile, offset, oldFile.length);
+					scriptNARC.files.set(
+							romEntry.getInt("PokedexGivenFileOffset"), newFile);
+				}
+			} else {
+				byte[] newScript = new byte[] { 0x24, 0x00, (byte) 0xA7, 0x02,
+						(byte) 0xE7, 0x00, 0x00, 0x00, (byte) 0xDE, 0x00, 0x00,
+						0x00, (byte) 0xF8, 0x01, 0x05, 0x00 };
+				if (romEntry.romCode.charAt(3) == 'J') {
+					newScript[0x4] -= 4;
+					newScript[0x8] -= 4;
+				}
+				byte[] oldFile = scriptNARC.files.get(romEntry
+						.getInt("PokedexGivenFileOffset"));
+				byte[] newFile = new byte[oldFile.length + newScript.length];
+				int offset = find(oldFile, "2400A702");
+				if (offset > 0) {
+					System.arraycopy(oldFile, 0, newFile, 0, oldFile.length);
+					System.arraycopy(newScript, 0, newFile, oldFile.length,
+							newScript.length);
+					newFile[offset++] = 0x04;
+					newFile[offset++] = 0x0;
+					writeRelativePointer(newFile, offset, oldFile.length);
+					scriptNARC.files.set(
+							romEntry.getInt("PokedexGivenFileOffset"), newFile);
+				}
+			}
 			this.writeNARC(romEntry.getString("Scripts"), scriptNARC);
 
 			// Starter sprites
