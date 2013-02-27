@@ -2102,7 +2102,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 					// Make it into level 37, we're done.
 					log("Made " + pokes[i].name + " evolve into "
 							+ pokes[evolvingTo].name + " at level 37");
-					writeWord(evoOffset + j * 8, 1);
+					writeWord(evoOffset + j * 8, 4);
 					writeWord(evoOffset + j * 8 + 2, 37);
 				} else if (method == 6) {
 
@@ -2110,7 +2110,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 						// Poliwhirl: Lv 37
 						log("Made " + pokes[i].name + " evolve into "
 								+ pokes[evolvingTo].name + " at level 37");
-						writeWord(evoOffset + j * 8, 1);
+						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 37);
 					} else if (i == 79) {
 						// Slowpoke: Water Stone
@@ -2123,13 +2123,13 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 						// Seadra: Lv 40
 						log("Made " + pokes[i].name + " evolve into "
 								+ pokes[evolvingTo].name + " at level 40");
-						writeWord(evoOffset + j * 8, 1);
+						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 40);
 					} else if (i == 366 && evolvingTo == 367) {
 						// Clamperl -> Huntail: Lv30
 						log("Made " + pokes[i].name + " evolve into "
 								+ pokes[evolvingTo].name + " at level 30");
-						writeWord(evoOffset + j * 8, 1);
+						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 30);
 					} else if (i == 366 && evolvingTo == 368) {
 						// Clamperl -> Gorebyss: Water Stone
@@ -2142,7 +2142,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 						// Onix, Scyther or Porygon: Lv30
 						log("Made " + pokes[i].name + " evolve into "
 								+ pokes[evolvingTo].name + " at level 30");
-						writeWord(evoOffset + j * 8, 1);
+						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 30);
 					}
 				}

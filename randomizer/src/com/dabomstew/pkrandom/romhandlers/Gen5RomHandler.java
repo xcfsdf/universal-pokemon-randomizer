@@ -2075,7 +2075,7 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
 						// Replace w/ level 37
 						log("Made " + pokes[i].name + " evolve into "
 								+ pokes[species].name + " at level 37");
-						writeWord(evoEntry, evo * 6, 1);
+						writeWord(evoEntry, evo * 6, 4);
 						writeWord(evoEntry, evo * 6 + 2, 37);
 					} else if (evoType == 6) {
 						// Get the current item & evolution
