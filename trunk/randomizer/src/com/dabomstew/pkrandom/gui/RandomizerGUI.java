@@ -83,7 +83,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private RomHandler romHandler;
 	protected RomHandler[] checkHandlers;
 	public static final byte PRESET_FILE_VERSION = 120;
-	public static final int UPDATE_VERSION = 1200;
+	public static final int UPDATE_VERSION = 1201;
 
 	public static PrintStream verboseLog = System.out;
 
@@ -92,8 +92,10 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 	/**
 	 * Creates new form RandomizerGUI
+	 * 
+	 * @param autoupdate
 	 */
-	public RandomizerGUI() {
+	public RandomizerGUI(boolean autoupdate) {
 		testForRequiredConfigs();
 		checkHandlers = new RomHandler[] { new Gen1RomHandler(),
 				new Gen2RomHandler(), new Gen3RomHandler(),
@@ -101,7 +103,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		initComponents();
 		initialiseState();
 		setLocationRelativeTo(null);
-		new UpdateCheckThread(this, false).start();
+		if (autoupdate) {
+			new UpdateCheckThread(this, false).start();
+		}
 	}
 
 	public void testForRequiredConfigs() {
@@ -3720,26 +3724,17 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	 *            the command line arguments
 	 */
 	public static void main(String args[]) {
-		/* Set the Nimbus look and feel */
-		// <editor-fold defaultstate="collapsed"
-		// desc=" Look and feel setting code (optional) ">
-		/*
-		 * If Nimbus (introduced in Java SE 6) is not available, stay with the
-		 * default look and feel. For details see
-		 * http://download.oracle.com/javase
-		 * /tutorial/uiswing/lookandfeel/plaf.html
-		 */
+		boolean autoupdate = true;
+		for (String arg : args) {
+			if (arg.equalsIgnoreCase("--noupdate")) {
+				autoupdate = false;
+				break;
+			}
+		}
+		final boolean au = autoupdate;
 		try {
 			javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager
 					.getSystemLookAndFeelClassName());
-			// for (javax.swing.UIManager.LookAndFeelInfo info :
-			// javax.swing.UIManager
-			// .getInstalledLookAndFeels()) {
-			// if ("Nimbus".equals(info.getName())) {
-			// javax.swing.UIManager.setLookAndFeel(info.getClassName());
-			// break;
-			// }
-			// }
 		} catch (ClassNotFoundException ex) {
 			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
 					.log(java.util.logging.Level.SEVERE, null, ex);
@@ -3753,12 +3748,11 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
 					.log(java.util.logging.Level.SEVERE, null, ex);
 		}
-		// </editor-fold>
 
 		/* Create and display the form */
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new RandomizerGUI().setVisible(true);
+				new RandomizerGUI(au).setVisible(true);
 			}
 		});
 	}

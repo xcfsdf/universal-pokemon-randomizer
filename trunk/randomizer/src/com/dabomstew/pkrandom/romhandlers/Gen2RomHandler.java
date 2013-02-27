@@ -340,6 +340,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	private String[] tb = new String[256];
 	private Map<String, Byte> d = new HashMap<String, Byte>();
 	private int longestTableToken;
+	private boolean havePatchedFleeing;
 
 	@Override
 	public boolean detectRom(byte[] rom) {
@@ -1001,6 +1002,9 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	@Override
 	public void setEncounters(boolean useTimeOfDay,
 			List<EncounterSet> encounters) {
+		if (!havePatchedFleeing) {
+			patchFleeing();
+		}
 		int offset = romEntry.getValue("WildPokemonOffset");
 		Iterator<EncounterSet> areas = encounters.iterator();
 		offset = writeLandEncounters(offset, areas, useTimeOfDay); // Johto
@@ -1051,7 +1055,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 			}
 			offset++;
 		}
-		
+
 		// Bug Catching Contest Data
 		offset = romEntry.getValue("BCCWildsOffset");
 		EncounterSet bccES = areas.next();
@@ -1500,6 +1504,9 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	public boolean setStaticPokemon(List<Pokemon> staticPokemon) {
 		if (romEntry.getValue("StaticPokemonSupport") == 0) {
 			return false;
+		}
+		if (!havePatchedFleeing) {
+			patchFleeing();
 		}
 		if (staticPokemon.size() != romEntry.staticPokemonSingle.size()
 				+ romEntry.staticPokemonGameCorner.size()) {
@@ -2101,6 +2108,14 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	@Override
 	public String[] getItemNames() {
 		return RomFunctions.itemNames[1];
+	}
+
+	private void patchFleeing() {
+		havePatchedFleeing = true;
+		int offset = romEntry.getValue("FleeingDataOffset");
+		rom[offset] = (byte) 0xFF;
+		rom[offset + 0xE] = (byte) 0xFF;
+		rom[offset + 0x17] = (byte) 0xFF;
 	}
 
 }

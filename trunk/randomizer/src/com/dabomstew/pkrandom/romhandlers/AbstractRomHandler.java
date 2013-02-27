@@ -986,14 +986,17 @@ public abstract class AbstractRomHandler implements RomHandler {
 						trainername = trainername.substring(1);
 					}
 					int idx = trainername.contains("&") ? 1 : 0;
-					allTrainerNames[idx].add(trainername);
 					int len = this.internalStringLength(trainername);
-					if (trainerNamesByLength[idx].containsKey(len)) {
-						trainerNamesByLength[idx].get(len).add(trainername);
-					} else {
-						List<String> namesOfThisLength = new ArrayList<String>();
-						namesOfThisLength.add(trainername);
-						trainerNamesByLength[idx].put(len, namesOfThisLength);
+					if (len <= 10) {
+						allTrainerNames[idx].add(trainername);
+						if (trainerNamesByLength[idx].containsKey(len)) {
+							trainerNamesByLength[idx].get(len).add(trainername);
+						} else {
+							List<String> namesOfThisLength = new ArrayList<String>();
+							namesOfThisLength.add(trainername);
+							trainerNamesByLength[idx].put(len,
+									namesOfThisLength);
+						}
 					}
 				}
 				sc.close();
