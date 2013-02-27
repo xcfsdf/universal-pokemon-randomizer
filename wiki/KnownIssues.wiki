@@ -11,12 +11,12 @@
   * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
 
 = Generation Three Games =
-None for now...
+  * When "Remove Trade Evolutions" is checked, Pokemon that have their trade evolutions apparently changed to levelups are instead changed to "levelup with high happiness".
 
 = Generation Four Games =
-None for now...
+  * When "Remove Trade Evolutions" is checked, Pokemon that have their trade evolutions apparently changed to levelups are instead changed to "levelup with high happiness".
 
 = Generation Five Games =
   * A battle with Zinzolin isn't consistent with his other battles.
-  * The Pokedex crashes if you access it without a Unova Pokemon registered (game problem, not really fixable by me for the moment)
-  * At least in Black 2/White 2, Habitat List and Area data are not updated if you randomize Wild Pokemon.
+  * At least in Black 2/White 2, Habitat List is not updated if you randomize Wild Pokemon. For now, this cannot be fixed.
+  * When "Remove Trade Evolutions" is checked, Pokemon that have their trade evolutions apparently changed to levelups are instead changed to "levelup with high happiness".
