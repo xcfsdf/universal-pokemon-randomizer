@@ -144,7 +144,7 @@ This page lists ROMs that are officially compatible with the randomizer. In time
 </thead>
 <tbody>
 <tr>
-<th colspan="5">Under Construction</th>
+<th colspan="6">Under Construction</th>
 </tr>
 </tbody>
 </table>
