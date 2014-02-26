@@ -27,6 +27,7 @@ public class Move {
 
 	public String name;
 	public int number;
+	public int internalId;
 	public int power;
 	public int pp;
 	public double hitratio;

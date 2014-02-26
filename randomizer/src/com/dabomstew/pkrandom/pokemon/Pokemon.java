@@ -61,13 +61,16 @@ public class Pokemon implements Comparable<Pokemon> {
 		spatk = stats.get(3);
 		spdef = stats.get(4);
 		speed = stats.get(5);
+		
+		// make special the average of spatk and spdef
+		special = (int) Math.ceil((spatk + spdef) / 2.0f);
 
 		// Copy special from a random one of spatk or spdef
-		if (RandomSource.random() < 0.5) {
-			special = spatk;
-		} else {
-			special = spdef;
-		}
+//		if (RandomSource.random() < 0.5) {
+//			special = spatk;
+//		} else {
+//			special = spdef;
+//		}
 	}
 
 	public void randomizeStatsWithinBST() {

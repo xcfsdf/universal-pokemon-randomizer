@@ -59,7 +59,7 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 	private boolean completed = false;
 	private String requiredName = null;
 	private volatile boolean changeFieldsWithoutCheck = false;
-	private byte[] trainerClasses = null, trainerNames = null;
+	private byte[] trainerClasses = null, trainerNames = null, nicknames = null;
 
 	/**
 	 * Creates new form PresetLoadDialog
@@ -120,7 +120,7 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 		try {
 			name = RandomizerGUI.getValidRequiredROMName(
 					this.configStringField.getText(), trainerClasses,
-					trainerNames);
+					trainerNames, nicknames);
 		} catch (InvalidSupplementFilesException ex) {
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
@@ -188,6 +188,10 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 
 	public byte[] getTrainerNames() {
 		return trainerNames;
+	}
+	
+	public byte[] getNicknames() {
+		return nicknames;
 	}
 
 	/**
@@ -422,7 +426,7 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 			try {
 				DataInputStream dis = new DataInputStream(new FileInputStream(
 						fh));
-				byte checkByte = dis.readByte();
+				int checkByte = dis.readByte() & 0xFF;
 				if (checkByte != RandomizerGUI.PRESET_FILE_VERSION) {
 					dis.close();
 					JOptionPane
@@ -438,6 +442,9 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 				int tnlen = dis.readInt();
 				trainerNames = new byte[tnlen];
 				dis.read(trainerNames);
+				int nnlen = dis.readInt();
+				nicknames = new byte[nnlen];
+				dis.read(nicknames);
 				changeFieldsWithoutCheck = true;
 				this.randomSeedField.setText(Long.toString(seed));
 				this.configStringField.setText(preset);
