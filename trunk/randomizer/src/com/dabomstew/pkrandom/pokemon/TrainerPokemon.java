@@ -35,6 +35,7 @@ public class TrainerPokemon {
 
 	public int AILevel;
 	public int heldItem;
+	public int ability;
 
 	public String toString() {
 		return pokemon.name + " Lv" + level;

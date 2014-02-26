@@ -45,7 +45,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	protected String dataFolder;
 
 	private boolean sigMode;
-	private boolean zeroSigMode;
 	private int szOffset;
 	private int szMode = 0;
 	private boolean compressFlag;
@@ -97,21 +96,20 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 			byte[] arm9 = readFile("arm9.bin");
 			sigMode = false;
 			int arm9length = arm9.length;
-			// Look for typical signature
-			if (sigtail(arm9, arm9.length - 12, arm9sig)) {
+			// Extract garbage "signatures" at the end of arm9
+			storedSig = new byte[0];
+			while (sigtail(arm9, arm9length - 12, arm9sig)
+					|| sigtail(arm9, arm9length - 12, arm90sig)) {
 				sigMode = true;
-				storedSig = new byte[12];
-				System.arraycopy(arm9, arm9.length - 12, storedSig, 0, 12);
+				byte[] tempSig = new byte[12 + storedSig.length];
+				if (storedSig.length > 0) {
+					System.arraycopy(storedSig, 0, tempSig, 12,
+							storedSig.length);
+				}
+				System.arraycopy(arm9, arm9length - 12, tempSig, 0, 12);
 				arm9length -= 12;
+				storedSig = tempSig;
 			}
-			// Look for zeroes signature
-			if (sigtail(arm9, arm9.length - arm90sig.length, arm90sig)
-					&& arm9[arm9length - 17] >= 0x08
-					&& arm9[arm9length - 17] <= 0x0B) {
-				zeroSigMode = true;
-				arm9length -= arm90sig.length;
-			}
-
 			compressFlag = false;
 			szOffset = 0;
 			if (((int) arm9[arm9length - 5]) >= 0x08
@@ -203,15 +201,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 				System.arraycopy(arm9, 0, newarm9, 0, arm9.length);
 				System.arraycopy(storedSig, 0, newarm9, arm9.length,
 						storedSig.length);
-				arm9 = newarm9;
-			}
-
-			if (zeroSigMode) {
-				madeChanges = true;
-				byte[] newarm9 = new byte[arm9.length + arm90sig.length];
-				System.arraycopy(arm9, 0, newarm9, 0, arm9.length);
-				System.arraycopy(arm90sig, 0, newarm9, arm9.length,
-						arm90sig.length);
 				arm9 = newarm9;
 			}
 

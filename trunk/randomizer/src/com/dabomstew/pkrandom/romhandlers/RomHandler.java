@@ -29,6 +29,7 @@ import java.util.Map;
 
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
 import com.dabomstew.pkrandom.pokemon.MoveLearnt;
@@ -127,12 +128,12 @@ public interface RomHandler {
 			List<EncounterSet> encounters);
 
 	public void randomEncounters(boolean useTimeOfDay, boolean catchEmAll,
-			boolean typeThemed, boolean noLegendaries);
+			boolean typeThemed, boolean usePowerLevels, boolean noLegendaries);
 
 	public void area1to1Encounters(boolean useTimeOfDay, boolean catchEmAll,
-			boolean typeThemed, boolean noLegendaries);
+			boolean typeThemed, boolean usePowerLevels, boolean noLegendaries);
 
-	public void game1to1Encounters(boolean useTimeOfDay, boolean noLegendaries);
+	public void game1to1Encounters(boolean useTimeOfDay, boolean usePowerLevels, boolean noLegendaries);
 
 	public boolean hasTimeBasedEncounters();
 
@@ -160,6 +161,8 @@ public interface RomHandler {
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets);
 
 	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken);
+	
+	public void metronomeOnlyMode();
 
 	// Randomizer: static pokemon (except starters)
 
@@ -279,6 +282,45 @@ public interface RomHandler {
 	public void setStarterHeldItems(List<Integer> items);
 
 	public void randomizeStarterHeldItems();
+	
+	// Field Items
+	
+	// TMs on the field
+	
+	public List<Integer> getRequiredFieldTMs();
+	
+	public List<Integer> getCurrentFieldTMs();
+	
+	public void setFieldTMs(List<Integer> fieldTMs);
+	
+	// Everything else
+	
+	public List<Integer> getRegularFieldItems();
+	
+	public void setRegularFieldItems(List<Integer> items);
+	
+	// Randomizer methods
+	
+	public void shuffleFieldItems();
+	
+	public void randomizeFieldItems();
+	
+	// Trades
+	
+	public List<IngameTrade> getIngameTrades();
+	
+	public void setIngameTrades(List<IngameTrade> trades);
+	
+	public void randomizeIngameTrades(boolean randomizeRequest,
+			byte[] presetNicknames, boolean randomNickname,
+			byte[] presetTrainerNames, boolean randomOT, boolean randomStats, boolean randomItem);
+	
+	public boolean hasDVs();
+	
+	public int maxTradeNicknameLength();
+	
+	public int maxTradeOTNameLength();
+	
 
 	// Misc
 

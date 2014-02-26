@@ -32,10 +32,17 @@ import com.dabomstew.pkrandom.RomFunctions;
 
 public enum Type {
 
-	NORMAL, FIGHTING, FLYING, GRASS, WATER, FIRE, ROCK, GROUND, PSYCHIC, BUG, DRAGON, ELECTRIC, GHOST, POISON, ICE, STEEL, DARK;
-
-	public boolean isInRBY() {
-		return this != STEEL && this != DARK;
+	NORMAL, FIGHTING, FLYING, GRASS, WATER, FIRE, ROCK, GROUND, PSYCHIC, BUG, DRAGON, ELECTRIC, GHOST, POISON, ICE, STEEL, DARK,
+	GAS(true), FAIRY(true), WOOD(true), ABNORMAL(true), WIND(true), SOUND(true), LIGHT(true);
+	
+	public boolean isHackOnly;
+	
+	private Type() {
+		this.isHackOnly = false;
+	}
+	
+	private Type(boolean isHackOnly) {
+		this.isHackOnly = isHackOnly;
 	}
 
 	private static final List<Type> VALUES = Collections
@@ -45,7 +52,7 @@ public enum Type {
 	public static Type randomType() {
 		return VALUES.get(RandomSource.nextInt(SIZE));
 	}
-	
+
 	public String camelCase() {
 		return RomFunctions.camelCase(this.toString());
 	}

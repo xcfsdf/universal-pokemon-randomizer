@@ -217,7 +217,7 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 			try {
 				DataOutputStream dos = new DataOutputStream(
 						new FileOutputStream(fh));
-				dos.writeByte(RandomizerGUI.PRESET_FILE_VERSION);
+				dos.writeByte((byte)RandomizerGUI.PRESET_FILE_VERSION);
 				dos.writeLong(seed);
 				dos.writeUTF(configString);
 				byte[] trainerclasses = readFile(FileFunctions
@@ -228,6 +228,10 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 						.openConfig("trainernames.txt"));
 				dos.writeInt(trainernames.length);
 				dos.write(trainernames);
+				byte[] nicknames = readFile(FileFunctions
+						.openConfig("nicknames.txt"));
+				dos.writeInt(nicknames.length);
+				dos.write(nicknames);
 				dos.close();
 				JOptionPane.showMessageDialog(this, "Preset file saved to\n"
 						+ fh.getAbsolutePath());
