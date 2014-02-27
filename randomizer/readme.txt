@@ -1,5 +1,5 @@
-Universal Pokemon Randomizer 1.2.0a
-by Dabomstew, 2012-13
+Universal Pokemon Randomizer 1.5.0
+by Dabomstew, 2012-14
 
 Homepage: http://pokehacks.dabomstew.com/randomizer/index.php
 Source: https://code.google.com/p/universal-pokemon-randomizer/
@@ -71,6 +71,10 @@ of it if you haven't played Pokemon games much before.
     particularly significant.
   * The items that it is possible for Pokemon to hold in the wild, and in
     certain situations the items that Pokemon given to you are holding.
+  * The Pokemon that are traded to you by in-game NPCs (as opposed to
+    trades with real people)
+  * The items you pick up off the ground, from either item balls or
+    hidden spots.
   
 How To Use
 ----------
@@ -90,7 +94,7 @@ randomized, then save the randomized ROM.
 Games/ROMs supported
 --------------------
 
-Version 1.2.0 supports the following official ROMs:
+Version 1.5.0 supports the following official ROMs:
 
   * Pokemon Red (any)
   * Pokemon Blue (any)
@@ -124,7 +128,7 @@ this randomizer is still targeted at English games - so users of foreign
 language games may still find that the functionality is a bit limited or
 small amounts of English text appear ingame where they did not before.
 
-Randomizing ROM hacks of the above games is not a supported feature, but may
+Randomizing ROM hacks of the above games isn't a supported feature yet, but may
 still be possible depending on the specifics of the hack itself. In general,
 the simpler a hack is, the more likely it will be able to be randomized.
 
@@ -146,10 +150,3 @@ Useful/Interesting Links
 ------------------------
 If you have bugs, suggestions, or other concerns to tell me, contact me at
 http://pokehacks.dabomstew.com/randomizer/comments.php
-
-To see Pokemon games (randomized with this randomizer, primarily) and others
-run quickly and/or raced live, check out my live stream at
-http://www.twitch.tv/dabomstew/new
-
-To check out Pokemon races along with many other games raced fast, visit the
-community at http://speedrunslive.com/
