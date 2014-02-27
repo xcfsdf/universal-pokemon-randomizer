@@ -194,7 +194,7 @@ public class UpdateFoundDialog extends javax.swing.JDialog {
 	}// GEN-LAST:event_downloadUpdateBtnActionPerformed
 
 	private void attemptOpenBrowser() {
-		String targetURL = "http://code.google.com/p/universal-pokemon-randomizer/downloads/list";
+		String targetURL = "http://pokehacks.dabomstew.com/randomizer/downloads.php";
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop()
 				: null;
 
