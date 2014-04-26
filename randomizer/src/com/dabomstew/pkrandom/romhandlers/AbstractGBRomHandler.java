@@ -38,6 +38,10 @@ public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 			return false;
 		}
 		byte[] loaded = loadFile(filename);
+		if(loaded.length == 0) {
+			// nope
+			return false;
+		}
 		return detectRom(loaded);
 	}
 

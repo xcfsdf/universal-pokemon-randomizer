@@ -1,4 +1,4 @@
-Universal Pokemon Randomizer 1.5.0
+Universal Pokemon Randomizer 1.6.0
 by Dabomstew, 2012-14
 
 Homepage: http://pokehacks.dabomstew.com/randomizer/index.php
@@ -94,7 +94,7 @@ randomized, then save the randomized ROM.
 Games/ROMs supported
 --------------------
 
-Version 1.5.0 supports the following official ROMs:
+Version 1.6.0 supports the following official ROMs:
 
   * Pokemon Red (any)
   * Pokemon Blue (any)

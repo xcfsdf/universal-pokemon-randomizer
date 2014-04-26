@@ -1,4 +1,4 @@
-package dsfunctions;
+package com.dabomstew.pkrandom.newnds;
 
 /*----------------------------------------------------------------------------*/
 /*--  CRC16.java - crc16 calculator for NDS checksums                       --*/
@@ -20,15 +20,6 @@ package dsfunctions;
 /*--  You should have received a copy of the GNU General Public License     --*/
 /*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
 /*----------------------------------------------------------------------------*/
-
-/*
- Code from "Nintendo DS rom tool"
- by Rafael Vuijk (aka DarkFader), Dave Murphy, Alexei Karpenko
-
- Ported to Java for this use by Stewart Marshall, under the terms of the GPL:
-
-
- */
 
 public class CRC16 {
 	private static final int[] table = { 0x0000, 0xC0C1, 0xC181, 0x0140,

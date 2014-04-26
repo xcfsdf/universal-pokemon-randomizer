@@ -165,31 +165,27 @@ public class UpdateFoundDialog extends javax.swing.JDialog {
 	}// </editor-fold>//GEN-END:initComponents
 
 	private void downloadUpdateBtnActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_downloadUpdateBtnActionPerformed
-		if (FileFunctions.internalConfig) {
+		// External: download delta file
+		String deltaFile = "delta_" + RandomizerGUI.UPDATE_VERSION + "_"
+				+ targetVersion + ".zip";
+		try {
+			byte[] zip = FileFunctions
+					.downloadFile("http://pokehacks.dabomstew.com/randomizer/autoupdate/"
+							+ deltaFile);
+			extract(zip, new File("./"));
+			JOptionPane
+					.showMessageDialog(
+							this,
+							"Update complete - the randomizer will now close.\n"
+									+ "You should now re-open the program and begin using the new version.");
+			System.exit(0);
+		} catch (IOException ex) {
+			JOptionPane
+					.showMessageDialog(
+							this,
+							"Automatic update not available.\n"
+									+ "You will now be taken to the website to download it manually.");
 			attemptOpenBrowser();
-		} else {
-			// External: download delta file
-			String deltaFile = "delta_" + RandomizerGUI.UPDATE_VERSION + "_"
-					+ targetVersion + ".zip";
-			try {
-				byte[] zip = FileFunctions
-						.downloadFile("http://pokehacks.dabomstew.com/randomizer/autoupdate/"
-								+ deltaFile);
-				extract(zip, new File("./"));
-				JOptionPane
-						.showMessageDialog(
-								this,
-								"Update complete - the randomizer will now close.\n"
-										+ "You should now re-open the program and begin using the new version.");
-				System.exit(0);
-			} catch (IOException ex) {
-				JOptionPane
-						.showMessageDialog(
-								this,
-								"Automatic update not available.\n"
-										+ "You will now be taken to the website to download it manually.");
-				attemptOpenBrowser();
-			}
 		}
 	}// GEN-LAST:event_downloadUpdateBtnActionPerformed
 

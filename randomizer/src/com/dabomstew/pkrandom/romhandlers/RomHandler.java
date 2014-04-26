@@ -29,6 +29,7 @@ import java.util.Map;
 
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.GenRestrictions;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
@@ -60,6 +61,11 @@ public interface RomHandler {
 	// Get a List of Pokemon objects in this game.
 	// 0 = null 1-whatever = the Pokemon.
 	public List<Pokemon> getPokemon();
+
+	// Setup Gen Restrictions.
+	public void setPokemonPool(GenRestrictions restrictions);
+
+	public void removeEvosForPokemonPool();
 
 	// Randomizer: Starters
 	// Get starters, they should be ordered with Pokemon
@@ -105,7 +111,15 @@ public interface RomHandler {
 	// Update all moves to gen5 definitions as much as possible
 	// e.g. change typing, power, accuracy, but don't try to
 	// stuff around with effects.
-	public void applyMoveUpdates();
+	public void updateMovesToGen5();
+
+	// same for gen6
+	public void updateMovesToGen6();
+
+	// stuff for printing move changes
+	public void initMoveUpdates();
+
+	public void printMoveUpdates();
 
 	// return all the moves valid in this game.
 	public List<Move> getMoves();
@@ -133,7 +147,8 @@ public interface RomHandler {
 	public void area1to1Encounters(boolean useTimeOfDay, boolean catchEmAll,
 			boolean typeThemed, boolean usePowerLevels, boolean noLegendaries);
 
-	public void game1to1Encounters(boolean useTimeOfDay, boolean usePowerLevels, boolean noLegendaries);
+	public void game1to1Encounters(boolean useTimeOfDay,
+			boolean usePowerLevels, boolean noLegendaries);
 
 	public boolean hasTimeBasedEncounters();
 
@@ -146,11 +161,11 @@ public interface RomHandler {
 
 	public void randomizeTrainerPokes(boolean rivalCarriesStarter,
 			boolean usePowerLevels, boolean noLegendaries,
-			boolean noEarlyShedinja);
+			boolean noEarlyWonderGuard);
 
 	public void typeThemeTrainerPokes(boolean rivalCarriesStarter,
 			boolean usePowerLevels, boolean weightByFrequency,
-			boolean noLegendaries, boolean noEarlyShedinja);
+			boolean noLegendaries, boolean noEarlyWonderGuard);
 
 	public boolean typeInGame(Type type);
 
@@ -160,8 +175,9 @@ public interface RomHandler {
 
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets);
 
-	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken);
-	
+	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken,
+			boolean forceFourStartingMoves);
+
 	public void metronomeOnlyMode();
 
 	// Randomizer: static pokemon (except starters)
@@ -282,55 +298,60 @@ public interface RomHandler {
 	public void setStarterHeldItems(List<Integer> items);
 
 	public void randomizeStarterHeldItems();
-	
+
 	// Field Items
-	
+
 	// TMs on the field
-	
+
 	public List<Integer> getRequiredFieldTMs();
-	
+
 	public List<Integer> getCurrentFieldTMs();
-	
+
 	public void setFieldTMs(List<Integer> fieldTMs);
-	
+
 	// Everything else
-	
+
 	public List<Integer> getRegularFieldItems();
-	
+
 	public void setRegularFieldItems(List<Integer> items);
-	
+
 	// Randomizer methods
-	
+
 	public void shuffleFieldItems();
-	
+
 	public void randomizeFieldItems();
-	
+
 	// Trades
-	
+
 	public List<IngameTrade> getIngameTrades();
-	
+
 	public void setIngameTrades(List<IngameTrade> trades);
-	
+
 	public void randomizeIngameTrades(boolean randomizeRequest,
 			byte[] presetNicknames, boolean randomNickname,
-			byte[] presetTrainerNames, boolean randomOT, boolean randomStats, boolean randomItem);
-	
+			byte[] presetTrainerNames, boolean randomOT, boolean randomStats,
+			boolean randomItem);
+
 	public boolean hasDVs();
-	
+
 	public int maxTradeNicknameLength();
-	
+
 	public int maxTradeOTNameLength();
-	
+
+	// Evos
+
+	public void removeTradeEvolutions(boolean changeMoveEvos);
+
+	// stats stuff
+	public void minimumCatchRate(int rateNonLegendary, int rateLegendary);
+
+	public void standardizeEXPCurves();
 
 	// Misc
 
 	public void applyCamelCaseNames();
 
-	public void removeTradeEvolutions();
-
 	public boolean isYellow();
-
-	public void minimumCatchRate(int rate);
 
 	public String getROMName();
 
@@ -346,12 +367,22 @@ public interface RomHandler {
 
 	public int internalStringLength(String string);
 
-	public boolean hasBWEXPPatch();
-
-	public void applyBWEXPPatch();
+	public int codeTweaksAvailable();
 
 	public List<Integer> getGameBreakingMoves();
 
 	public void applySignature();
+
+	public boolean isROMHack();
+
+	public int generationOfPokemon();
+
+	// code tweaks
+
+	public void applyBWEXPPatch();
+
+	public void applyXAccNerfPatch();
+
+	public void applyCritRatePatch();
 
 }

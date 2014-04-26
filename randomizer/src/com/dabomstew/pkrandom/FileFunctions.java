@@ -8,11 +8,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 
 public class FileFunctions {
-
-	public static final boolean internalConfig = false;
 
 	public static File fixFilename(File original, String defaultExtension) {
 		return fixFilename(original, defaultExtension, null);
@@ -47,30 +46,36 @@ public class FileFunctions {
 				+ filename);
 	}
 
+	private static List<String> overrideFiles = Arrays.asList(new String[] {
+			"trainerclasses.txt", "trainernames.txt", "nicknames.txt" });
+
 	public static boolean configExists(String filename) {
-		if (internalConfig) {
-			return FileFunctions.class
-					.getResource("/com/dabomstew/pkrandom/config/" + filename) != null;
-		} else {
-			File fh = new File("./config/" + filename);
-			return fh.exists() && fh.canRead();
+		if (overrideFiles.contains(filename)) {
+			File fh = new File("./" + filename);
+			if (fh.exists() && fh.canRead()) {
+				return true;
+			}
 		}
+		return FileFunctions.class
+				.getResource("/com/dabomstew/pkrandom/config/" + filename) != null;
 	}
 
 	public static InputStream openConfig(String filename)
 			throws FileNotFoundException {
-		if (internalConfig) {
-			return FileFunctions.class
-					.getResourceAsStream("/com/dabomstew/pkrandom/config/"
-							+ filename);
-		} else {
-			return new FileInputStream("./config/" + filename);
+		if (overrideFiles.contains(filename)) {
+			File fh = new File("./" + filename);
+			if (fh.exists() && fh.canRead()) {
+				return new FileInputStream(fh);
+			}
 		}
+		return FileFunctions.class
+				.getResourceAsStream("/com/dabomstew/pkrandom/config/"
+						+ filename);
 	}
 
-	public static byte[] getXPPatchFile(String filename) throws IOException {
+	public static byte[] getCodeTweakFile(String filename) throws IOException {
 		InputStream is = FileFunctions.class
-				.getResourceAsStream("/com/dabomstew/pkrandom/xppatches/"
+				.getResourceAsStream("/com/dabomstew/pkrandom/patches/"
 						+ filename);
 		byte[] buf = new byte[is.available()];
 		is.read(buf);
@@ -90,5 +95,83 @@ public class FileFunctions {
 		in.close();
 		byte[] output = out.toByteArray();
 		return output;
+	}
+
+	public static void applyPatch(byte[] rom, String patchName)
+			throws IOException {
+		byte[] patch = getCodeTweakFile(patchName + ".ips");
+		// check sig
+		int patchlen = patch.length;
+		if (patchlen < 8 || patch[0] != 'P' || patch[1] != 'A'
+				|| patch[2] != 'T' || patch[3] != 'C' || patch[4] != 'H') {
+			System.out.println("not a valid IPS file");
+			return;
+		}
+
+		// records
+		int offset = 5;
+		while (offset + 2 < patchlen) {
+			int writeOffset = readIPSOffset(patch, offset);
+			if (writeOffset == 0x454f46) {
+				// eof, done
+				System.out.println("patch successful");
+				return;
+			}
+			offset += 3;
+			if (offset + 1 >= patchlen) {
+				// error
+				System.out.println("abrupt ending to IPS file, entry cut off before size");
+				return;
+			}
+			int size = readIPSSize(patch, offset);
+			offset += 2;
+			if (size == 0) {
+				// RLE
+				if (offset + 1 >= patchlen) {
+					// error
+					System.out.println("abrupt ending to IPS file, entry cut off before RLE size");
+					return;
+				}
+				int rleSize = readIPSSize(patch, offset);
+				if(writeOffset + rleSize > rom.length) {
+					// error
+					System.out.println("trying to patch data past the end of the ROM file");
+					return;
+				}
+				offset += 2;
+				if (offset >= patchlen) {
+					// error
+					System.out.println("abrupt ending to IPS file, entry cut off before RLE byte");
+					return;
+				}
+				byte rleByte = patch[offset++];
+				for (int i = writeOffset; i < writeOffset + rleSize; i++) {
+					rom[i] = rleByte;
+				}
+			} else {
+				if (offset + size > patchlen) {
+					// error
+					System.out.println("abrupt ending to IPS file, entry cut off before end of data block");
+					return;
+				}
+				if(writeOffset + size > rom.length) {
+					// error
+					System.out.println("trying to patch data past the end of the ROM file");
+					return;
+				}
+				System.arraycopy(patch, offset, rom, writeOffset, size);
+				offset += size;
+			}
+		}
+		System.out.println("improperly terminated IPS file");
+	}
+
+	private static int readIPSOffset(byte[] data, int offset) {
+		return ((data[offset] & 0xFF) << 16) | ((data[offset + 1] & 0xFF) << 8)
+				| (data[offset + 2] & 0xFF);
+	}
+
+	private static int readIPSSize(byte[] data, int offset) {
+		return ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
 	}
 }
