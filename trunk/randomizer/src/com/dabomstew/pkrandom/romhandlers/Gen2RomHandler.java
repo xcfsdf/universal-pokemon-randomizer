@@ -36,12 +36,14 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+import com.dabomstew.pkrandom.CodeTweaks;
 import com.dabomstew.pkrandom.FileFunctions;
 import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
@@ -128,7 +130,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		private String extraTableFile;
 		private boolean isCrystal;
 		private int crcInHeader = -1;
-		private String expPatch;
+		private Map<String, String> codeTweaks = new HashMap<String, String>();
 		private List<TMTextEntry> tmTexts = new ArrayList<TMTextEntry>();
 		private Map<String, Integer> entries = new HashMap<String, Integer>();
 		private Map<String, int[]> arrayEntries = new HashMap<String, int[]>();
@@ -238,8 +240,8 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 							current.extraTableFile = r[1];
 						} else if (r[0].equals("CRCInHeader")) {
 							current.crcInHeader = parseRIInt(r[1]);
-						} else if (r[0].equals("BWXPPatch")) {
-							current.expPatch = r[1];
+						} else if (r[0].endsWith("Tweak")) {
+							current.codeTweaks.put(r[0], r[1]);
 						} else if (r[0].equals("CopyFrom")) {
 							for (RomEntry otherEntry : roms) {
 								if (r[1].equalsIgnoreCase(otherEntry.name)) {
@@ -344,6 +346,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 
 	// This ROM's data
 	private Pokemon[] pokes;
+	private List<Pokemon> pokemonList;
 	private RomEntry romEntry;
 	private Move[] moves;
 	private String[] tb;
@@ -382,7 +385,9 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		} else {
 			isVietCrystal = false;
 		}
+		havePatchedFleeing = false;
 		loadPokemonStats();
+		pokemonList = Arrays.asList(pokes);
 		loadMoves();
 		loadLandmarkNames();
 		preprocessMaps();
@@ -529,89 +534,6 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		}
 	}
 
-	public void applyMoveUpdates() {
-		log("--Move Updates--");
-		moves[13].setAccuracy(100); // Razor Wind => 100% accuracy (gen1/2)
-		log("Made Razor Wind have 100% accuracy");
-		moves[19].power = 90; // Fly => 90 power (gen1/2/3)
-		log("Made Fly have 90 power");
-		moves[20].setAccuracy(85); // Bind => 85% accuracy (gen1-4)
-		log("Made Bind have 85% accuracy");
-		moves[22].pp = 15; // Vine Whip => 15 pp (gen1/2/3)
-		log("Made Vine Whip have 15 PP");
-		moves[26].pp = 10;
-		moves[26].power = 100; // Jump Kick => 10 pp, 100 power (gen1-4)
-		log("Made Jump kick have 10 PP and 100 power");
-		moves[33].power = 50; // Tackle => 50 power, 100% accuracy
-		moves[33].setAccuracy(100); // (gen1-4)
-		log("Made Tackle have 50 power and 100% accuracy");
-		moves[35].setAccuracy(90); // Wrap => 90% accuracy (gen1-4)
-		log("Made Wrap have 90% accuracy");
-		moves[37].pp = 10;
-		moves[37].power = 120; // Thrash => 120 power, 10pp (gen1-4)
-		log("Made Thrash have 10 PP and 120 power");
-		moves[50].setAccuracy(100); // Disable => 100% accuracy (gen1-4)
-		log("Made Disable have 100% accuracy");
-		// Move 67, Low Kick, has weight-based power in gen3+
-		moves[71].pp = 25; // Absorb => 25pp (gen1/2/3)
-		log("Made Absorb have 25 PP");
-		moves[72].pp = 15; // Mega Drain => 15pp (gen1/2/3)
-		log("Made Mega Drain have 15 PP");
-		moves[80].pp = 10;
-		moves[80].power = 120; // Petal Dance => 120power, 10pp (gen1-4)
-		log("Made Petal Dance have 10 PP and 120 power");
-		moves[83].setAccuracy(85);
-		moves[83].power = 35; // Fire Spin => 35 power, 85% acc (gen1-4)
-		log("Made Fire Spin have 35 power and 85% accuracy");
-		moves[91].power = 80; // Dig => 80 power (gen1/2/3)
-		log("Made Dig have 80 power");
-		moves[92].setAccuracy(90); // Toxic => 90% accuracy (gen1-4)
-		log("Made Toxic have 90% accuracy");
-		// move 95, Hypnosis, needs 60% accuracy in DP (its correct here)
-		moves[105].pp = 10; // Recover => 10pp (gen1/2/3)
-		log("Made Recover have 10 PP");
-		moves[128].setAccuracy(85); // Clamp => 85% acc (gen1-4)
-		log("Made Clamp have 85% accuracy");
-		moves[136].pp = 10;
-		moves[136].power = 130; // HJKick => 130 power, 10pp (gen1-4)
-		log("Made Hi-Jump Kick have 130 power and 10 PP");
-		moves[137].setAccuracy(90); // Glare => 90% acc (gen1-4)
-		log("Made Glare have 90% accuracy");
-		moves[139].setAccuracy(80); // Poison Gas => 80% acc (gen1-4)
-		log("Made Poison Gas have 80% accuracy");
-		moves[148].setAccuracy(100); // Flash => 100% acc (gen1/2/3)
-		log("Made Flash have 100% accuracy");
-		moves[152].setAccuracy(90); // Crabhammer => 90% acc (gen1-4)
-		log("Made Crabhammer have 90% accuracy");
-		// GEN2+ moves only from here
-		moves[174].type = Type.GHOST; // Curse => GHOST (gen2-4)
-		log("Made Curse Ghost type");
-		moves[178].setAccuracy(100); // Cotton Spore => 100% acc (gen2-4)
-		log("Made Cotton Spore have 100% accuracy");
-		moves[184].setAccuracy(100); // Scary Face => 100% acc (gen2-4)
-		log("Made Scary Face have 100% accuracy");
-		moves[198].setAccuracy(90); // Bone Rush => 90% acc (gen2-4)
-		log("Made Bone Rush have 90% accuracy");
-		moves[200].power = 120; // Outrage => 120 power (gen2-3)
-		log("Made Outrage have 120 power");
-		moves[202].pp = 10; // Giga Drain => 10pp (gen2-3)
-		moves[202].power = 75; // Giga Drain => 75 power (gen2-4)
-		log("Made Giga Drain have 10 PP and 75 power");
-		moves[210].power = 20; // Fury Cutter => 20 power (gen2-4)
-		log("Made Fury Cutter have 20 power");
-		// Future Sight => 10 pp, 100 power, 100% acc (gen2-4)
-		moves[248].pp = 10;
-		moves[248].power = 100;
-		moves[248].setAccuracy(100);
-		log("Made Future Sight have 10 PP, 100 power and 100% accuracy");
-		moves[249].power = 40; // Rock Smash => 40 power (gen2-3)
-		log("Made Rock Smash have 40 power");
-		moves[250].power = 35;
-		moves[250].setAccuracy(85); // Whirlpool => 35 pow, 85% acc (gen2-4)
-		log("Made Whirlpool have 35 power and 85% accuracy");
-		logBlankLine();
-	}
-
 	public List<Move> getMoves() {
 		return Arrays.asList(moves);
 	}
@@ -631,11 +553,12 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 			pkmn.secondaryType = null;
 		}
 		pkmn.catchRate = rom[offset + 9] & 0xFF;
-
 		pkmn.guaranteedHeldItem = -1;
 		pkmn.commonHeldItem = rom[offset + 11] & 0xFF;
 		pkmn.rareHeldItem = rom[offset + 12] & 0xFF;
 		pkmn.darkGrassHeldItem = -1;
+		pkmn.growthCurve = ExpCurve.fromByte(rom[offset + 22]);
+		
 	}
 
 	private void saveBasicPokeStats(Pokemon pkmn, int offset) {
@@ -655,6 +578,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 
 		rom[offset + 11] = (byte) pkmn.commonHeldItem;
 		rom[offset + 12] = (byte) pkmn.rareHeldItem;
+		rom[offset + 22] = pkmn.growthCurve.toByte();
 	}
 
 	private String[] readPokemonNames() {
@@ -886,11 +810,6 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		for (int i = 1; i <= 251; i++) {
 			pokes[i].shuffleStats();
 		}
-	}
-
-	@Override
-	public Pokemon randomPokemon() {
-		return pokes[(int) (RandomSource.random() * 251 + 1)];
 	}
 
 	@Override
@@ -1487,7 +1406,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 
 	@Override
 	public List<Pokemon> getPokemon() {
-		return Arrays.asList(pokes);
+		return pokemonList;
 	}
 
 	@Override
@@ -1539,8 +1458,8 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 			}
 			realPointer++;
 			while (rom[realPointer] != 0 && movenum < ourMoves.size()) {
-				rom[realPointer] = (byte) ourMoves.get(movenum).level;
-				rom[realPointer + 1] = (byte) ourMoves.get(movenum).move;
+				rom[realPointer] = (byte) (ourMoves.get(movenum).level);
+				rom[realPointer + 1] = (byte) (ourMoves.get(movenum).move);
 				realPointer += 2;
 				movenum++;
 			}
@@ -1856,8 +1775,9 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	}
 
 	@Override
-	public void removeTradeEvolutions() {
+	public void removeTradeEvolutions(boolean changeMoveEvos) {
 		// Evolution data is stored before learnmoves.
+		// no move evos, so no need to check for those
 		int pointersOffset = romEntry.getValue("PokemonMovesetsTableOffset");
 		log("--Removing Trade Evolutions--");
 		for (int i = 1; i <= 251; i++) {
@@ -1877,33 +1797,34 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 				if (rom[realPointer] == 5) {
 					realPointer += 4;
 				} else if (rom[realPointer] == 3) {
+					int evolvingTo = rom[realPointer + 2] & 0xFF;
 					// What to do?
 					if (i == 79) {
 						// Slowpoke: Make water stone => Slowking
-						log("Made Slowpoke evolve into Slowking using a Water Stone");
 						rom[realPointer] = 2;
-						rom[realPointer + 1] = 0x18;
+						rom[realPointer + 1] = 24;
+						logEvoChangeStone(pokes[i].name,
+								pokes[evolvingTo].name, itemNames[24]);
 					} else if (i == 117) {
 						// Seadra: level 40
-						log("Made Seadra evolve into Kingdra at level 40");
 						rom[realPointer] = 1;
 						rom[realPointer + 1] = 40;
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 40);
 					} else if (i == 61 || (rom[realPointer + 1] & 0xFF) == 0xFF) {
 						// Poliwhirl or any of the original 4 trade evos
 						// Level 37
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[rom[realPointer + 2] & 0xFF].name
-								+ " at level 37");
 						rom[realPointer] = 1;
 						rom[realPointer + 1] = 37;
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 37);
 					} else {
 						// A new trade evo of a single stage Pokemon
 						// level 30
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[rom[realPointer + 2] & 0xFF].name
-								+ " at level 30");
 						rom[realPointer] = 1;
 						rom[realPointer + 1] = 30;
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 30);
 					}
 					// Regardless of whatever we did, advance past it
 					realPointer += 3;
@@ -2112,76 +2033,25 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	}
 
 	@Override
-	public boolean hasBWEXPPatch() {
-		return romEntry.expPatch != null;
+	public int codeTweaksAvailable() {
+		int available = 0;
+		if (romEntry.codeTweaks.get("BWXPTweak") != null) {
+			available |= CodeTweaks.BW_EXP_PATCH;
+		}
+		return available;
 	}
 
 	@Override
 	public void applyBWEXPPatch() {
-		if (romEntry.expPatch == null) {
+		String patchName = romEntry.codeTweaks.get("BWXPTweak");
+		if (patchName == null) {
 			return;
 		}
 
-		if (romEntry.expPatch.equals("gsEN")) {
-			// jump for XP addition
-			writeHexString("C3EE6C", 0x3ED44);
-			// jump for # of party members
-			writeHexString("C3007F", 0x3EF0D);
-			// # of party members
-			writeHexString("EAFBD0FE02D8EA51D1C3136F", 0x3FF00);
-			// display of EXP num
-			writeHexString("F1D038", 0x191E29);
-			writeHexString("F1D038", 0x191E3F);
-			// cut down EXP text to fit with 8 nums
-			writeHexString("E758", 0x191E31);
-			writeHexString("E758", 0x191E47);
+		try {
+			FileFunctions.applyPatch(rom, patchName);
+		} catch (IOException e) {
 
-			// main code
-			try {
-				byte[] patchboot = FileFunctions
-						.getXPPatchFile("gs_patch_boot.bin");
-				System.arraycopy(patchboot, 0, rom, 0x3ECE1, patchboot.length);
-				byte[] patchmain = FileFunctions
-						.getXPPatchFile("gs_patch_main.bin");
-				System.arraycopy(patchmain, 0, rom, 0x16AB00, patchmain.length);
-			} catch (IOException e) {
-				return;
-			}
-		} else if (romEntry.expPatch.equals("crystalEN")) {
-			// jump for XP addition
-			writeHexString("C3BB6E", 0x3EF11);
-			// jump for # of party members
-			writeHexString("C3007F", 0x3F0E4);
-			// # of party members
-			writeHexString("EA12D2FE02D8EA65D2C3EA70", 0x3FF00);
-			// display of EXP num
-			writeHexString("08D238", 0x1C02B7);
-			writeHexString("08D238", 0x1C02CD);
-			// cut down EXP text to fit with 8 nums
-			writeHexString("E758", 0x1C02BF);
-			writeHexString("E758", 0x1C02D5);
-
-			// main code
-			try {
-				byte[] patchboot = FileFunctions
-						.getXPPatchFile("crystal_patch_boot.bin");
-				System.arraycopy(patchboot, 0, rom, 0x3EEAE, patchboot.length);
-				byte[] patchmain = FileFunctions
-						.getXPPatchFile("crystal_patch_main.bin");
-				System.arraycopy(patchmain, 0, rom, 0x16AB00, patchmain.length);
-			} catch (IOException e) {
-				return;
-			}
-		}
-	}
-
-	private void writeHexString(String hexString, int offset) {
-		if (hexString.length() % 2 != 0) {
-			return; // error
-		}
-		for (int i = 0; i < hexString.length() / 2; i++) {
-			rom[offset + i] = (byte) Integer.parseInt(
-					hexString.substring(i * 2, i * 2 + 2), 16);
 		}
 	}
 
@@ -2525,4 +2395,51 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		return true;
 	}
 
+	@Override
+	public int generationOfPokemon() {
+		return 2;
+	}
+
+	@Override
+	public void removeEvosForPokemonPool() {
+		List<Pokemon> pokemonIncluded = this.mainPokemonList;
+		int pointersOffset = romEntry.getValue("PokemonMovesetsTableOffset");
+		for (int i = 1; i <= 251; i++) {
+			int pointer = readWord(pointersOffset + (i - 1) * 2);
+			int msPointer = calculateOffset(bankOf(pointersOffset), pointer);
+			int realPointer = msPointer;
+			Pokemon pkmn = pokes[i];
+			boolean includedPkmn = pokemonIncluded.contains(pkmn);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			// Process evolution data
+			while (rom[realPointer] != 0) {
+				int method = rom[realPointer];
+				Pokemon otherPoke = pokes[rom[realPointer + 2
+						+ (method == 5 ? 1 : 0)] & 0xFF];
+				if (includedPkmn && pokemonIncluded.contains(otherPoke)) {
+					// keep this evolution
+					baos.write(rom, realPointer, (method == 5) ? 4 : 3);
+				}
+				if (method == 5) {
+					realPointer += 4;
+				} else {
+					realPointer += 3;
+				}
+			}
+			int moveCount = 0;
+			// write an end to the new data as well
+			baos.write(0);
+			realPointer++;
+			int startOfMoves = realPointer;
+			while (rom[realPointer] != 0) {
+				moveCount++;
+				realPointer += 2;
+			}
+			baos.write(rom, startOfMoves, moveCount * 2);
+			baos.write(0);
+			// now we have the adjusted data, write it back
+			byte[] adjusted = baos.toByteArray();
+			System.arraycopy(adjusted, 0, rom, msPointer, adjusted.length);
+		}
+	}
 }

@@ -23,31 +23,18 @@ package com.dabomstew.pkrandom.romhandlers;
 /*--  You should have received a copy of the GNU General Public License     --*/
 /*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
 /*----------------------------------------------------------------------------*/
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.dabomstew.pkrandom.RomFunctions;
+import com.dabomstew.pkrandom.newnds.NDSRom;
 import com.dabomstew.pkrandom.pokemon.Type;
-
-import cuecompressors.BLZCoder;
-import dsfunctions.DSFunctions;
 
 public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 
 	protected String dataFolder;
-
-	private boolean sigMode;
-	private int szOffset;
-	private int szMode = 0;
-	private boolean compressFlag;
+	private NDSRom baseRom;
 
 	@Override
 	public boolean detectRom(String filename) {
@@ -67,96 +54,23 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 
 	protected abstract boolean detectNDSRom(String ndsCode);
 
-	private static final byte[] arm9sig = new byte[] { 0x21, 0x06, (byte) 0xC0,
-			(byte) 0xDE };
-	private byte[] storedSig;
-	private static final byte[] arm90sig = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0 };
 
 	@Override
 	public boolean loadRom(String filename) {
 		if (!detectRom(filename)) {
 			return false;
 		}
-		// Make our data folder
-		File f = new File(filename);
-		String fn = f.getName();
-		dataFolder = "tmp_" + fn.substring(0, fn.lastIndexOf('.'));
-		// remove nonsensical chars
-		dataFolder = dataFolder.replaceAll("[^A-Za-z0-9_]+", "");
-		File df = new File("./" + dataFolder);
-		df.mkdir();
+		// Load inner rom
 		try {
-			DSFunctions.extract(filename, dataFolder);
-		} catch (Exception e) {
+			baseRom = new NDSRom(filename);
+		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
-		}
-		try {
-			byte[] arm9 = readFile("arm9.bin");
-			sigMode = false;
-			int arm9length = arm9.length;
-			// Extract garbage "signatures" at the end of arm9
-			storedSig = new byte[0];
-			while (sigtail(arm9, arm9length - 12, arm9sig)
-					|| sigtail(arm9, arm9length - 12, arm90sig)) {
-				sigMode = true;
-				byte[] tempSig = new byte[12 + storedSig.length];
-				if (storedSig.length > 0) {
-					System.arraycopy(storedSig, 0, tempSig, 12,
-							storedSig.length);
-				}
-				System.arraycopy(arm9, arm9length - 12, tempSig, 0, 12);
-				arm9length -= 12;
-				storedSig = tempSig;
-			}
-			compressFlag = false;
-			szOffset = 0;
-			if (((int) arm9[arm9length - 5]) >= 0x08
-					&& ((int) arm9[arm9length - 5]) <= 0x0B) {
-				int compSize = read3byte(arm9, arm9length - 8);
-				if (compSize > (arm9length * 9 / 10)
-						&& compSize < (arm9length * 11 / 10)) {
-					compressFlag = true;
-					byte[] compLength = get3byte(arm9length);
-					List<Integer> foundOffsets = RomFunctions.search(arm9,
-							compLength);
-					if (foundOffsets.size() == 1) {
-						szMode = 1;
-						szOffset = foundOffsets.get(0);
-					} else {
-						byte[] compLength2 = get3byte(arm9length + 0x4000);
-						List<Integer> foundOffsets2 = RomFunctions.search(arm9,
-								compLength2);
-						if (foundOffsets2.size() == 1) {
-							szMode = 2;
-							szOffset = foundOffsets2.get(0);
-						} else {
-						}
-					}
-				}
-			}
-
-			// Save?
-			if (arm9length != arm9.length) {
-				writeFile("arm9.bin", arm9, 0, arm9length);
-			}
-
-			// Compression?
-			if (compressFlag) {
-				BLZCoder.main(new String[] { "-d", dataFolder + "/arm9.bin" });
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		loadedROM();
 		return true;
 	}
 
-	private int read3byte(byte[] arm9, int offset) {
-		return (arm9[offset] & 0xFF) | ((arm9[offset + 1] & 0xFF) << 8)
-				| ((arm9[offset + 2] & 0xFF) << 16);
-	}
 
 	protected byte[] get3byte(int amount) {
 		byte[] ret = new byte[3];
@@ -166,14 +80,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		return ret;
 	}
 
-	private boolean sigtail(byte[] arm9, int offset, byte[] sig) {
-		for (int i = 0; i < sig.length; i++) {
-			if (arm9[offset + i] != sig[i]) {
-				return false;
-			}
-		}
-		return true;
-	}
 
 	protected abstract void loadedROM();
 
@@ -182,40 +88,17 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	@Override
 	public boolean saveRom(String filename) {
 		savingROM();
-		// Recompress ARM9
 		try {
-			if (compressFlag) {
-				BLZCoder.main(new String[] { "-en9", dataFolder + "/arm9.bin" });
-			}
-			byte[] arm9 = readFile("arm9.bin");
-			boolean madeChanges = false;
-			if (compressFlag && szOffset > 0) {
-				madeChanges = true;
-				int newValue = szMode == 1 ? arm9.length : arm9.length + 0x4000;
-				byte[] newCompLength = get3byte(newValue);
-				System.arraycopy(newCompLength, 0, arm9, szOffset, 3);
-			}
-			if (sigMode) {
-				madeChanges = true;
-				byte[] newarm9 = new byte[arm9.length + storedSig.length];
-				System.arraycopy(arm9, 0, newarm9, 0, arm9.length);
-				System.arraycopy(storedSig, 0, newarm9, arm9.length,
-						storedSig.length);
-				arm9 = newarm9;
-			}
-
-			if (madeChanges) {
-				writeFile("arm9.bin", arm9);
-			}
+			baseRom.saveTo(filename);
 		} catch (Exception e) {
-			return false;
-		}
-		try {
-			DSFunctions.create(filename, dataFolder);
-		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 		return true;
+	}
+	
+	public void closeInnerRom() throws IOException {
+		baseRom.closeROM();
 	}
 
 	@Override
@@ -223,31 +106,8 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		return false;
 	}
 
-	public List<String> runProgram(String command) throws IOException,
-			InterruptedException {
-		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(command);
-
-		BufferedReader input = new BufferedReader(new InputStreamReader(
-				pr.getInputStream()));
-		String line = null;
-		List<String> returned = new ArrayList<String>();
-
-		while ((line = input.readLine()) != null) {
-			returned.add(line);
-		}
-
-		pr.waitFor();
-		return returned;
-	}
-
 	public NARCContents readNARC(String subpath) throws IOException {
-		File fh = new File("./" + dataFolder + "/root/" + subpath);
-		if (!fh.exists() || !fh.canRead() || !fh.isFile()) {
-			return null;
-		}
-		Map<String, byte[]> frames = readNitroFrames("./" + dataFolder
-				+ "/root/" + subpath);
+		Map<String, byte[]> frames = readNitroFrames(subpath);
 		if (!frames.containsKey("FATB") || !frames.containsKey("FNTB")
 				|| !frames.containsKey("FIMG")) {
 			System.err.println("Not a valid narc file");
@@ -297,7 +157,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	}
 
 	public void writeNARC(String subpath, NARCContents narc) throws IOException {
-		File fh = new File("./" + dataFolder + "/root/" + subpath);
 		// Get bytes required for FIMG frame
 		int bytesRequired = 0;
 		for (byte[] file : narc.files) {
@@ -386,17 +245,12 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 				fntbFrame.length);
 		System.arraycopy(fimgFrame, 0, nitroFile, 16 + fatbFrame.length
 				+ fntbFrame.length, fimgFrame.length);
-		FileOutputStream fos = new FileOutputStream(fh);
-		fos.write(nitroFile);
-		fos.close();
+		this.writeFile(subpath, nitroFile);
 	}
 
 	private Map<String, byte[]> readNitroFrames(String filename)
 			throws IOException {
-		FileInputStream fis = new FileInputStream(filename);
-		byte[] wholeFile = new byte[fis.available()];
-		fis.read(wholeFile);
-		fis.close();
+		byte[] wholeFile = this.readFile(filename);
 
 		// Read the number of frames
 		int frameCount = readWord(wholeFile, 0x0E);
@@ -456,12 +310,7 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 	}
 
 	protected byte[] readFile(String location) throws IOException {
-		FileInputStream fis = new FileInputStream("./" + dataFolder + "/"
-				+ location);
-		byte[] file = new byte[fis.available()];
-		fis.read(file);
-		fis.close();
-		return file;
+		return baseRom.getFile(location);
 	}
 
 	protected void writeFile(String location, byte[] data) throws IOException {
@@ -470,10 +319,28 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 
 	protected void writeFile(String location, byte[] data, int offset,
 			int length) throws IOException {
-		FileOutputStream fos = new FileOutputStream("./" + dataFolder + "/"
-				+ location);
-		fos.write(data, offset, length);
-		fos.close();
+		if(offset != 0 || length != data.length){
+			byte[] newData = new byte[length];
+			System.arraycopy(data, offset, newData, 0, length);
+			data = newData;
+		}
+		baseRom.writeFile(location, data);
+	}
+	
+	protected byte[] readARM9() throws IOException {
+		return baseRom.getARM9();
+	}
+	
+	protected void writeARM9(byte[] data) throws IOException {
+		baseRom.writeARM9(data);
+	}
+	
+	protected byte[] readOverlay(int number) throws IOException {
+		return baseRom.getOverlay(number);
+	}
+	
+	protected void writeOverlay(int number, byte[] data) throws IOException {
+		baseRom.writeOverlay(number, data);
 	}
 
 	protected void readByteIntoFlags(byte[] data, boolean[] flags,

@@ -35,12 +35,13 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
 
+import com.dabomstew.pkrandom.CodeTweaks;
 import com.dabomstew.pkrandom.FileFunctions;
-import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
@@ -147,7 +148,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		private String extraTableFile;
 		private boolean isYellow;
 		private int crcInHeader = -1;
-		private String expPatch;
+		private Map<String, String> codeTweaks = new HashMap<String, String>();
 		private List<TMTextEntry> tmTexts = new ArrayList<TMTextEntry>();
 		private Map<String, Integer> entries = new HashMap<String, Integer>();
 		private Map<String, int[]> arrayEntries = new HashMap<String, int[]>();
@@ -259,8 +260,8 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 							current.extraTableFile = r[1];
 						} else if (r[0].equals("CRCInHeader")) {
 							current.crcInHeader = parseRIInt(r[1]);
-						} else if (r[0].equals("BWXPPatch")) {
-							current.expPatch = r[1];
+						} else if (r[0].endsWith("Tweak")) {
+							current.codeTweaks.put(r[0], r[1]);
 						} else if (r[0].equals("ExtraTypes")) {
 							// remove the containers
 							r[1] = r[1].substring(1, r[1].length() - 1);
@@ -372,6 +373,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 
 	// This ROM's data
 	private Pokemon[] pokes;
+	private List<Pokemon> pokemonList;
 	private RomEntry romEntry;
 	private Move[] moves;
 	private String[] tb;
@@ -380,10 +382,11 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	private String[] itemNames;
 	private String[] mapNames;
 	private SubMap[] maps;
+	private boolean xAccNerfed;
 
 	@Override
 	public boolean detectRom(byte[] rom) {
-		if (rom.length > 2097152) {
+		if (rom.length < 524288 || rom.length > 2097152) {
 			return false; // size check
 		}
 		return checkRomEntry(rom) != null; // so it's OK if it's a valid ROM
@@ -399,6 +402,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		tb = new String[256];
 		d = new HashMap<String, Byte>();
 		maps = new SubMap[256];
+		xAccNerfed = false;
 		clearTextTables();
 		readTextTable("gameboy_jap");
 		if (romEntry.extraTableFile != null
@@ -407,6 +411,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		}
 		loadPokedexOrder();
 		loadPokemonStats();
+		pokemonList = Arrays.asList(pokes);
 		loadMoves();
 		preloadMaps();
 		loadItemNames();
@@ -565,84 +570,6 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		}
 	}
 
-	public void applyMoveUpdates() {
-		log("--Move Updates--");
-		moves[2].type = Type.FIGHTING; // Karate Chop => FIGHTING (gen1)
-		log("Made Karate Chop Fighting type");
-		moves[13].setAccuracy(100); // Razor Wind => 100% accuracy (gen1/2)
-		log("Made Razor Wind have 100% accuracy");
-		moves[16].type = Type.FLYING; // Gust => FLYING (gen1)
-		log("Made Gust Flying type");
-		moves[17].power = 60; // Wing Attack => 60 power (gen1)
-		log("Made Wing Attack have 60 power");
-		moves[19].power = 90; // Fly => 90 power (gen1/2/3)
-		log("Made Fly have 90 power");
-		moves[20].setAccuracy(85); // Bind => 85% accuracy (gen1-4)
-		log("Made Bind have 85% accuracy");
-		moves[22].pp = 15; // Vine Whip => 15 pp (gen1/2/3)
-		log("Made Vine Whip have 15 PP");
-		moves[26].pp = 10;
-		moves[26].power = 100; // Jump Kick => 10 pp, 100 power (gen1-4)
-		log("Made Jump kick have 10 PP and 100 power");
-		moves[28].type = Type.GROUND; // Sand Attack => GROUND (gen1)
-		log("Made Sand Attack Ground type");
-		moves[33].power = 50; // Tackle => 50 power, 100% accuracy
-		moves[33].setAccuracy(100); // (gen1-4)
-		log("Made Tackle have 50 power and 100% accuracy");
-		moves[35].setAccuracy(90); // Wrap => 90% accuracy (gen1-4)
-		log("Made Wrap have 90% accuracy");
-		moves[37].pp = 10;
-		moves[37].power = 120; // Thrash => 120 power, 10pp (gen1-4)
-		log("Made Thrash have 10 PP and 120 power");
-		moves[38].power = 120; // Double-Edge => 120 power (gen1)
-		log("Made Double-Edge have 120 power");
-		// Move 44, Bite, becomes dark (but doesn't exist anyway)
-		moves[50].setAccuracy(100); // Disable => 100% accuracy (gen1-4)
-		log("Made Disable have 100% accuracy");
-		moves[59].setAccuracy(70); // Blizzard => 70% accuracy (gen1)
-		log("Made Blizzard have 70% accuracy");
-		// Move 67, Low Kick, has weight-based power in gen3+
-		moves[67].setAccuracy(100); // Low Kick => 100% accuracy (gen1)
-		log("Made Low Kick have 100% accuracy");
-		moves[71].pp = 25; // Absorb => 25pp (gen1/2/3)
-		log("Made Absorb have 25 PP");
-		moves[72].pp = 15; // Mega Drain => 15pp (gen1/2/3)
-		log("Made Mega Drain have 15 PP");
-		moves[80].pp = 10;
-		moves[80].power = 120; // Petal Dance => 120power, 10pp (gen1-4)
-		log("Made Petal Dance have 10 PP and 120 power");
-		moves[83].setAccuracy(85);
-		moves[83].power = 35; // Fire Spin => 35 power, 85% acc (gen1-4)
-		log("Made Fire Spin have 35 power and 85% accuracy");
-		moves[88].setAccuracy(90); // Rock Throw => 90% accuracy (gen1)
-		log("Made Rock Throw have 90% accuracy");
-		moves[91].power = 80; // Dig => 80 power (gen1/2/3)
-		log("Made Dig have 80 power");
-		moves[92].setAccuracy(90); // Toxic => 90% accuracy (gen1-4)
-		log("Made Toxic have 90% accuracy");
-		// move 95, Hypnosis, needs 60% accuracy in DP (its correct here)
-		moves[105].pp = 10; // Recover => 10pp (gen1/2/3)
-		log("Made Recover have 10 PP");
-		moves[120].power = 200; // SelfDestruct => 200power (gen1)
-		log("Made SelfDestruct have 200 power");
-		moves[128].setAccuracy(85); // Clamp => 85% acc (gen1-4)
-		log("Made Clamp have 85% accuracy");
-		moves[136].pp = 10;
-		moves[136].power = 130; // HJKick => 130 power, 10pp (gen1-4)
-		log("Made Hi-Jump Kick have 130 power and 10 PP");
-		moves[137].setAccuracy(90); // Glare => 90% acc (gen1-4)
-		log("Made Glare have 90% accuracy");
-		moves[139].setAccuracy(80); // Poison Gas => 80% acc (gen1-4)
-		log("Made Poison Gas have 80% accuracy");
-		moves[148].setAccuracy(100); // Flash => 100% acc (gen1/2/3)
-		log("Made Flash have 100% accuracy");
-		moves[152].setAccuracy(90); // Crabhammer => 90% acc (gen1-4)
-		log("Made Crabhammer have 90% accuracy");
-		moves[153].power = 250; // Explosion => 250 power (gen1)
-		log("Made Explosion have 250 power");
-		logBlankLine();
-	}
-
 	public List<Move> getMoves() {
 		return Arrays.asList(moves);
 	}
@@ -708,6 +635,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 		}
 
 		pkmn.catchRate = rom[offset + 8] & 0xFF;
+		pkmn.growthCurve = ExpCurve.fromByte(rom[offset + 19]);
 
 		pkmn.guaranteedHeldItem = -1;
 		pkmn.commonHeldItem = -1;
@@ -728,6 +656,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 			rom[offset + 7] = typeToByte(pkmn.secondaryType);
 		}
 		rom[offset + 8] = (byte) pkmn.catchRate;
+		rom[offset + 19] = pkmn.growthCurve.toByte();
 	}
 
 	private String[] readPokemonNames() {
@@ -1038,11 +967,6 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	}
 
 	@Override
-	public Pokemon randomPokemon() {
-		return pokes[(int) (RandomSource.random() * pokedexCount + 1)];
-	}
-
-	@Override
 	public List<EncounterSet> getEncounters(boolean useTimeOfDay) {
 		List<EncounterSet> encounters = new ArrayList<EncounterSet>();
 
@@ -1253,7 +1177,7 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 
 	@Override
 	public List<Pokemon> getPokemon() {
-		return Arrays.asList(pokes);
+		return pokemonList;
 	}
 
 	public List<Trainer> getTrainers() {
@@ -1951,9 +1875,10 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	}
 
 	@Override
-	public void removeTradeEvolutions() {
+	public void removeTradeEvolutions(boolean changeMoveEvos) {
 		// Gen 1: evolution data is right before moveset data
 		// So use those pointers
+		// no move evos, so no need to check for those
 		int pointersOffset = romEntry.getValue("PokemonMovesetsTableOffset");
 		int pkmnCount = romEntry.getValue("InternalPokemonCount");
 		log("--Removing Trade Evolutions--");
@@ -1972,12 +1897,11 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 						realPointer += 4;
 					} else if (rom[realPointer] == 3) {
 						int otherPoke = pokeRBYToNumTable[rom[realPointer + 2] & 0xFF];
-						log("Made " + pokes[pokeRBYToNumTable[i]].name
-								+ " evolve into " + pokes[otherPoke].name
-								+ " at level 37");
 						// Trade evo
 						rom[realPointer] = 1;
 						rom[realPointer + 1] = 37;
+						logEvoChangeLevel(pokes[pokeRBYToNumTable[i]].name,
+								pokes[otherPoke].name, 37);
 						realPointer += 3;
 					}
 				}
@@ -2139,83 +2063,68 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	}
 
 	@Override
-	public boolean hasBWEXPPatch() {
-		return romEntry.expPatch != null;
+	public int codeTweaksAvailable() {
+		int available = 0;
+		if (romEntry.codeTweaks.get("BWXPTweak") != null) {
+			available |= CodeTweaks.BW_EXP_PATCH;
+		}
+		if (romEntry.codeTweaks.get("XAccNerfTweak") != null) {
+			available |= CodeTweaks.NERF_X_ACCURACY;
+		}
+		if (romEntry.codeTweaks.get("CritRateTweak") != null) {
+			available |= CodeTweaks.FIX_CRIT_RATE;
+		}
+		return available;
 	}
 
 	@Override
 	public void applyBWEXPPatch() {
-		if (romEntry.expPatch == null) {
-			return;
-		}
-
-		if (romEntry.expPatch.equals("rbEN")) {
-			// jump for main routine
-			writeHexString("C3006B", 0x552A1);
-			// jump for # of party members
-			writeHexString("C30071", 0x5547D);
-			// # of party members
-			writeHexString("EAFECFFE02D8EA1ED1C38354", 0x57100);
-			// display of EXP num
-			writeHexString("EDCF38", 0x89BEF);
-			// cut down EXP text to fit with 8 nums
-			writeHexString("E758", 0x89BF7);
-
-			// main code
-			try {
-				byte[] patch = FileFunctions
-						.getXPPatchFile("redblue_patch_main.bin");
-				System.arraycopy(patch, 0, rom, 0x56B00, patch.length);
-			} catch (IOException e) {
-				return;
-			}
-		} else if (romEntry.expPatch.equals("yellowEN")) {
-			// jump for main routine
-			writeHexString("C3006B", 0x552B0);
-			// jump for # of party members
-			writeHexString("C30071", 0x5548C);
-			// # of party members
-			writeHexString("EAFDCFFE02D8EA1DD1C39254", 0x57100);
-			// display of EXP num
-			writeHexString("ECCF38", 0x9FAD9);
-			// cut down EXP text to fit with 8 nums
-			writeHexString("E758", 0x9FAE1);
-
-			// main code
-			try {
-				byte[] patch = FileFunctions
-						.getXPPatchFile("yellow_patch_main.bin");
-				System.arraycopy(patch, 0, rom, 0x56B00, patch.length);
-			} catch (IOException e) {
-				return;
-			}
-		}
+		genericIPSPatch("BWXPTweak");
 	}
 
-	private void writeHexString(String hexString, int offset) {
-		if (hexString.length() % 2 != 0) {
-			return; // error
+	@Override
+	public void applyXAccNerfPatch() {
+		xAccNerfed = genericIPSPatch("XAccNerfTweak");
+	}
+
+	@Override
+	public void applyCritRatePatch() {
+		genericIPSPatch("CritRateTweak");
+	}
+
+	private boolean genericIPSPatch(String ctName) {
+		String patchName = romEntry.codeTweaks.get(ctName);
+		if (patchName == null) {
+			return false;
 		}
-		for (int i = 0; i < hexString.length() / 2; i++) {
-			rom[offset + i] = (byte) Integer.parseInt(
-					hexString.substring(i * 2, i * 2 + 2), 16);
+
+		try {
+			FileFunctions.applyPatch(rom, patchName);
+			return true;
+		} catch (IOException e) {
+			return false;
 		}
 	}
 
 	@Override
 	public List<Integer> getGameBreakingMoves() {
 		// Sonicboom & drage & OHKO moves
-		return Arrays.asList(49, 82, 32, 90, 12);
+		// 160 add spore
+		// also remove OHKO if xacc nerfed
+		if (xAccNerfed) {
+			return Arrays.asList(49, 82, 147);
+		} else {
+			return Arrays.asList(49, 82, 32, 90, 12, 147);
+		}
 	}
 
 	@Override
 	public void applySignature() {
-		if (!romEntry.isYellow) {
-			// First off, intro Pokemon
-			int introPokemon = pokeNumToRBYTable[this.randomPokemon().number];
-			rom[romEntry.getValue("IntroPokemonOffset")] = (byte) introPokemon;
-			rom[romEntry.getValue("IntroCryOffset")] = (byte) introPokemon;
-		}
+		// First off, intro Pokemon
+		// 160 add yellow intro random
+		int introPokemon = pokeNumToRBYTable[this.randomPokemon().number];
+		rom[romEntry.getValue("IntroPokemonOffset")] = (byte) introPokemon;
+		rom[romEntry.getValue("IntroCryOffset")] = (byte) introPokemon;
 
 	}
 
@@ -2611,5 +2520,15 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	@Override
 	public boolean hasDVs() {
 		return true;
+	}
+
+	@Override
+	public int generationOfPokemon() {
+		return 1;
+	}
+
+	@Override
+	public void removeEvosForPokemonPool() {
+		// gen1 doesn't have this functionality anyway
 	}
 }

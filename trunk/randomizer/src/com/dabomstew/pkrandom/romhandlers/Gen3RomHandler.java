@@ -42,6 +42,7 @@ import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
@@ -383,6 +384,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 	// This ROM's data
 	private Pokemon[] pokes;
+	private List<Pokemon> pokemonList;
 	private Move[] moves;
 	private RomEntry romEntry;
 	private boolean havePatchedObedience;
@@ -458,6 +460,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 		loadTextTable(romEntry.tableFile);
 		loadPokemonStats();
+		pokemonList = Arrays.asList(pokes);
 		loadMoves();
 
 		// Get wild Pokemon offset
@@ -522,7 +525,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 					* 0x1C);
 		}
 	}
-	
+
 	private void loadMoves() {
 		moves = new Move[355];
 		int offs = romEntry.getValue("MoveData");
@@ -560,103 +563,6 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		}
 	}
 
-	public void applyMoveUpdates() {
-		log("--Move Updates--");
-		moves[19].power = 90; // Fly => 90 power (gen1/2/3)
-		log("Made Fly have 90 power");
-		moves[20].setAccuracy(85); // Bind => 85% accuracy (gen1-4)
-		log("Made Bind have 85% accuracy");
-		moves[22].pp = 15; // Vine Whip => 15 pp (gen1/2/3)
-		log("Made Vine Whip have 15 PP");
-		moves[26].pp = 10;
-		moves[26].power = 100; // Jump Kick => 10 pp, 100 power (gen1-4)
-		log("Made Jump kick have 10 PP and 100 power");
-		moves[33].power = 50; // Tackle => 50 power, 100% accuracy
-		moves[33].setAccuracy(100); // (gen1-4)
-		log("Made Tackle have 50 power and 100% accuracy");
-		moves[35].setAccuracy(90); // Wrap => 90% accuracy (gen1-4)
-		log("Made Wrap have 90% accuracy");
-		moves[37].pp = 10;
-		moves[37].power = 120; // Thrash => 120 power, 10pp (gen1-4)
-		log("Made Thrash have 10 PP and 120 power");
-		moves[50].setAccuracy(100); // Disable => 100% accuracy (gen1-4)
-		log("Made Disable have 100% accuracy");
-		moves[71].pp = 25; // Absorb => 25pp (gen1/2/3)
-		log("Made Absorb have 25 PP");
-		moves[72].pp = 15; // Mega Drain => 15pp (gen1/2/3)
-		log("Made Mega Drain have 15 PP");
-		moves[80].pp = 10;
-		moves[80].power = 120; // Petal Dance => 120power, 10pp (gen1-4)
-		log("Made Petal Dance have 10 PP and 120 power");
-		moves[83].setAccuracy(85);
-		moves[83].power = 35; // Fire Spin => 35 power, 85% acc (gen1-4)
-		log("Made Fire Spin have 35 power and 85% accuracy");
-		moves[91].power = 80; // Dig => 80 power (gen1/2/3)
-		log("Made Dig have 80 power");
-		moves[92].setAccuracy(90); // Toxic => 90% accuracy (gen1-4)
-		log("Made Toxic have 90% accuracy");
-		// move 95, Hypnosis, needs 60% accuracy in DP (its correct here)
-		moves[105].pp = 10; // Recover => 10pp (gen1/2/3)
-		log("Made Recover have 10 PP");
-		moves[128].setAccuracy(85); // Clamp => 85% acc (gen1-4)
-		log("Made Clamp have 85% accuracy");
-		moves[136].pp = 10;
-		moves[136].power = 130; // HJKick => 130 power, 10pp (gen1-4)
-		log("Made Hi-Jump Kick have 130 power and 10 PP");
-		moves[137].setAccuracy(90); // Glare => 90% acc (gen1-4)
-		log("Made Glare have 90% accuracy");
-		moves[139].setAccuracy(80); // Poison Gas => 80% acc (gen1-4)
-		log("Made Poison Gas have 80% accuracy");
-		moves[148].setAccuracy(100); // Flash => 100% acc (gen1/2/3)
-		log("Made Flash have 100% accuracy");
-		moves[152].setAccuracy(90); // Crabhammer => 90% acc (gen1-4)
-		log("Made Crabhammer have 90% accuracy");
-		// GEN2+ moves only from here
-		moves[174].type = Type.GHOST; // Curse => GHOST (gen2-4)
-		log("Made Curse Ghost type");
-		moves[178].setAccuracy(100); // Cotton Spore => 100% acc (gen2-4)
-		log("Made Cotton Spore have 100% accuracy");
-		moves[184].setAccuracy(100); // Scary Face => 100% acc (gen2-4)
-		log("Made Scary Face have 100% accuracy");
-		moves[198].setAccuracy(90); // Bone Rush => 90% acc (gen2-4)
-		log("Made Bone Rush have 90% accuracy");
-		moves[200].power = 120; // Outrage => 120 power (gen2-3)
-		log("Made Outrage have 120 power");
-		moves[202].pp = 10; // Giga Drain => 10pp (gen2-3)
-		moves[202].power = 75; // Giga Drain => 75 power (gen2-4)
-		log("Made Giga Drain have 10 PP and 75 power");
-		moves[210].power = 20; // Fury Cutter => 20 power (gen2-4)
-		log("Made Fury Cutter have 20 power");
-		// Future Sight => 10 pp, 100 power, 100% acc (gen2-4)
-		moves[248].pp = 10;
-		moves[248].power = 100;
-		moves[248].setAccuracy(100);
-		log("Made Future Sight have 10 PP, 100 power and 100% accuracy");
-		moves[249].power = 40; // Rock Smash => 40 power (gen2-3)
-		log("Made Rock Smash have 40 power");
-		moves[250].power = 35;
-		moves[250].setAccuracy(85); // Whirlpool => 35 pow, 85% acc (gen2-4)
-		log("Made Whirlpool have 35 power and 85% accuracy");
-		// GEN3+ only moves from here
-		moves[253].power = 90; // Uproar => 90 power (gen3-4)
-		log("Made Uproar have 90 power");
-		moves[328].power = 35;
-		moves[328].setAccuracy(85); // Sand Tomb => 35 pow, 85% acc (gen3-4)
-		log("Made Sand Tomb have 35 power and 85% accuracy");
-		moves[331].power = 25; // Bullet Seed => 25 power (gen3-4)
-		log("Made Bullet Seed have 25 power");
-		moves[333].power = 25; // Icicle Spear => 25 power (gen3-4)
-		log("Made Icicle Spear have 25 power");
-		moves[343].power = 60; // Covet => 60 power (gen3-4)
-		log("Made Covet have 60 power");
-		moves[350].setAccuracy(90); // Rock Blast => 90% acc (gen3-4)
-		log("Made Rock Blast have 90% accuracy");
-		moves[353].power = 140; // Doom Desire => 140 pow, 100% acc
-		moves[353].setAccuracy(100); // (gen3-4)
-		log("Made Doom Desire have 140 power and 100% accuracy");
-		logBlankLine();
-	}
-
 	public List<Move> getMoves() {
 		return Arrays.asList(moves);
 	}
@@ -676,6 +582,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 			pkmn.secondaryType = null;
 		}
 		pkmn.catchRate = rom[offset + 8] & 0xFF;
+		pkmn.growthCurve = ExpCurve.fromByte(rom[offset + 19]);
 		// Abilities
 		pkmn.ability1 = rom[offset + 22] & 0xFF;
 		pkmn.ability2 = rom[offset + 23] & 0xFF;
@@ -711,6 +618,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 			rom[offset + 7] = typeToByte(pkmn.secondaryType);
 		}
 		rom[offset + 8] = (byte) pkmn.catchRate;
+		rom[offset + 19] = pkmn.growthCurve.toByte();
 
 		rom[offset + 22] = (byte) pkmn.ability1;
 		if (pkmn.ability2 == 0) {
@@ -1036,11 +944,6 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		for (int i = 1; i <= 386; i++) {
 			pokes[i].shuffleStats();
 		}
-	}
-
-	@Override
-	public Pokemon randomPokemon() {
-		return pokes[(int) (RandomSource.random() * 386 + 1)];
 	}
 
 	@Override
@@ -1573,7 +1476,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 	@Override
 	public List<Pokemon> getPokemon() {
-		return Arrays.asList(pokes);
+		return pokemonList;
 	}
 
 	@Override
@@ -1617,10 +1520,15 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 			}
 			Pokemon pkmn = pokes[poke3GIndexToNum(i)];
 			List<MoveLearnt> moves = movesets.get(pkmn);
-			Iterator<MoveLearnt> moveI = moves.iterator();
-			while ((rom[moveDataLoc] & 0xFF) != 0xFF
-					|| (rom[moveDataLoc + 1] & 0xFF) != 0xFF && moveI.hasNext()) {
-				MoveLearnt ml = moveI.next();
+			int mloc = moveDataLoc;
+			while ((rom[mloc] & 0xFF) != 0xFF || (rom[mloc + 1] & 0xFF) != 0xFF) {
+				mloc += 2;
+			}
+			int currentMoveCount = (mloc - moveDataLoc);
+			int newMoveCount = moves.size();
+			int looplimit = Math.min(currentMoveCount, newMoveCount);
+			for (int mv = 0; mv < looplimit; mv++) {
+				MoveLearnt ml = moves.get(mv);
 				rom[moveDataLoc] = (byte) (ml.move & 0xFF);
 				int levelPart = (ml.level << 1) & 0xFE;
 				if (ml.move > 255) {
@@ -1629,7 +1537,11 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 				rom[moveDataLoc + 1] = (byte) levelPart;
 				moveDataLoc += 2;
 			}
-			movesets.put(pkmn, moves);
+			if (looplimit < currentMoveCount) {
+				// need a new terminator
+				rom[moveDataLoc] = (byte) 0xFF;
+				rom[moveDataLoc + 1] = (byte) 0xFF;
+			}
 		}
 
 	}
@@ -2101,7 +2013,6 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 
 	@Override
 	public List<Evolution> getEvolutions() {
-		// TODO temp
 		int baseOffset = romEntry.getValue("PokemonEvolutions");
 		List<Evolution> evos = new ArrayList<Evolution>();
 		List<Evolution> evosForThisPoke = new ArrayList<Evolution>();
@@ -2133,7 +2044,8 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 	}
 
 	@Override
-	public void removeTradeEvolutions() {
+	public void removeTradeEvolutions(boolean changeMoveEvos) {
+		// no move evos, so no need to check for those
 		int baseOffset = romEntry.getValue("PokemonEvolutions");
 		log("--Removing Trade Evolutions--");
 		for (int i = 1; i <= 386; i++) {
@@ -2161,53 +2073,73 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 				int method = readWord(evoOffset + j * 8);
 				int evolvingTo = poke3GIndexToNum(readWord(evoOffset + j * 8
 						+ 4));
+				// Not trades, but impossible without trading
+				if (method == 2 && romEntry.romType == RomType_FRLG) {
+					// happiness day change to Sun Stone
+					writeWord(evoOffset + j * 8, 7);
+					writeWord(evoOffset + j * 8 + 2, 93);
+					logEvoChangeStone(pokes[i].name, pokes[evolvingTo].name,
+							itemNames[93]);
+				}
+				if (method == 3 && romEntry.romType == RomType_FRLG) {
+					// happiness night change to Moon Stone
+					writeWord(evoOffset + j * 8, 7);
+					writeWord(evoOffset + j * 8 + 2, 94);
+					logEvoChangeStone(pokes[i].name, pokes[evolvingTo].name,
+							itemNames[94]);
+				}
+				if (method == 15 && romEntry.romType == RomType_FRLG) {
+					// beauty change to level 35
+					writeWord(evoOffset + j * 8, 4);
+					writeWord(evoOffset + j * 8 + 2, 35);
+					logEvoChangeLevel(pokes[i].name, pokes[evolvingTo].name, 35);
+				}
+				// Pure Trade
 				if (method == 5) {
 					// Haunter, Machoke, Kadabra, Graveler
 					// Make it into level 37, we're done.
-					log("Made " + pokes[i].name + " evolve into "
-							+ pokes[evolvingTo].name + " at level 37");
 					writeWord(evoOffset + j * 8, 4);
 					writeWord(evoOffset + j * 8 + 2, 37);
-				} else if (method == 6) {
-
+					logEvoChangeLevel(pokes[i].name, pokes[evolvingTo].name, 37);
+				}
+				// Trade w/ Held Item
+				if (method == 6) {
 					if (i == 61) {
 						// Poliwhirl: Lv 37
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[evolvingTo].name + " at level 37");
 						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 37);
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 37);
 					} else if (i == 79) {
 						// Slowpoke: Water Stone
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[evolvingTo].name
-								+ " using a Water Stone");
 						writeWord(evoOffset + j * 8, 7);
 						writeWord(evoOffset + j * 8 + 2, 97);
+						logEvoChangeStone(pokes[i].name,
+								pokes[evolvingTo].name, itemNames[97]);
 					} else if (i == 117) {
 						// Seadra: Lv 40
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[evolvingTo].name + " at level 40");
 						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 40);
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 40);
 					} else if (i == 366 && evolvingTo == 367) {
 						// Clamperl -> Huntail: Lv30
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[evolvingTo].name + " at level 30");
 						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 30);
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 30);
 					} else if (i == 366 && evolvingTo == 368) {
 						// Clamperl -> Gorebyss: Water Stone
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[evolvingTo].name
-								+ " using a Water Stone");
 						writeWord(evoOffset + j * 8, 7);
 						writeWord(evoOffset + j * 8 + 2, 97);
+						logEvoChangeStone(pokes[i].name,
+								pokes[evolvingTo].name, itemNames[97]);
 					} else {
 						// Onix, Scyther or Porygon: Lv30
-						log("Made " + pokes[i].name + " evolve into "
-								+ pokes[evolvingTo].name + " at level 30");
 						writeWord(evoOffset + j * 8, 4);
 						writeWord(evoOffset + j * 8 + 2, 30);
+						logEvoChangeLevel(pokes[i].name,
+								pokes[evolvingTo].name, 30);
 					}
 				}
 			}
@@ -2430,8 +2362,8 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 				int eventOffset = readPointer(mhOffset + 4);
 
 				int pCount = rom[eventOffset] & 0xFF;
-				//int wCount = rom[eventOffset + 1] & 0xFF;
-				//int scCount = rom[eventOffset + 2] & 0xFF;
+				// int wCount = rom[eventOffset + 1] & 0xFF;
+				// int scCount = rom[eventOffset + 2] & 0xFF;
 				int spCount = rom[eventOffset + 3] & 0xFF;
 
 				if (pCount > 0) {
@@ -2669,6 +2601,36 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 	@Override
 	public boolean hasDVs() {
 		return false;
+	}
+
+	@Override
+	public int generationOfPokemon() {
+		return 3;
+	}
+
+	@Override
+	public void removeEvosForPokemonPool() {
+		List<Pokemon> pokemonIncluded = this.mainPokemonList;
+		int baseOffset = romEntry.getValue("PokemonEvolutions");
+		for (int i = 1; i <= 386; i++) {
+			boolean included = pokemonIncluded.contains(pokes[i]);
+			int idx = pokeNumTo3GIndex(i);
+			int evoOffset = baseOffset + (idx - 1) * 0x28;
+			for (int j = 0; j < 5; j++) {
+				int method = readWord(evoOffset + j * 8);
+				int evolvingTo = readWord(evoOffset + j * 8 + 4);
+				if (method >= 1 && method <= 15 && evolvingTo >= 1
+						&& evolvingTo <= 411) {
+					Pokemon evolvingInto = pokes[poke3GIndexToNum(evolvingTo)];
+					if (!included || !pokemonIncluded.contains(evolvingInto)) {
+						// remove this evolution
+						writeWord(evoOffset + j * 8, 0);
+						writeWord(evoOffset + j * 8 + 2, 0);
+						writeWord(evoOffset + j * 8 + 4, 0);
+					}
+				}
+			}
+		}
 	}
 
 }

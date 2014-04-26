@@ -53,6 +53,20 @@ public class RomFunctions {
 		bannedForDamagingMove[387] = true; // Last Resort
 		bannedForDamagingMove[389] = true; // Sucker Punch
 
+		// new 160
+		bannedForDamagingMove[132] = true; // Constrict, overly weak
+		bannedForDamagingMove[99] = true; // Rage, lock-in in gen1
+		bannedForDamagingMove[205] = true; // Rollout, lock-in
+		bannedForDamagingMove[301] = true; // Ice Ball, Rollout clone
+		
+		// make sure these cant roll
+		bannedForDamagingMove[39] = true; // Sonicboom
+		bannedForDamagingMove[82] = true; // Dragon Rage
+		bannedForDamagingMove[32] = true; // Horn Drill
+		bannedForDamagingMove[12] = true; // Guillotine
+		bannedForDamagingMove[90] = true; // Fissure
+		bannedForDamagingMove[329] = true; // Sheer Cold
+
 	}
 
 	public static Set<Pokemon> getBasicOrNoCopyPokemon(RomHandler baseRom) {

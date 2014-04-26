@@ -55,9 +55,15 @@ public class BLZCoder {
 	private boolean arm9;
 
 	public BLZCoder(String[] args) {
+		
 		int cmd, mode = 0, arg;
 
 		Title();
+		
+		if (args == null) {
+			// going to be used internally
+			return;
+		}
 
 		if (args.length < 1) {
 			Usage();
@@ -122,29 +128,6 @@ public class BLZCoder {
 		System.exit(0);
 	}
 
-	private int[] Load(String filename, int min, int max) {
-		try {
-			FileInputStream fis = new FileInputStream(filename);
-			int fs = fis.available();
-			if (fs < min || fs > max) {
-				fis.close();
-				EXIT("\nFile size error\n");
-				return null;
-			}
-			byte[] fbOrig = new byte[fs + 3];
-			fis.read(fbOrig, 0, fs);
-			fis.close();
-			int[] fb = new int[fs + 3];
-			for (int i = 0; i < fs; i++) {
-				fb[i] = fbOrig[i] & 0xFF;
-			}
-			return fb;
-		} catch (IOException e) {
-			EXIT("\nFile read error\n");
-			return null;
-		}
-	}
-
 	private void Save(String filename, int[] buffer, int length) {
 		try {
 			FileOutputStream fos = new FileOutputStream(filename);
@@ -161,15 +144,50 @@ public class BLZCoder {
 	}
 
 	private void BLZ_Decode(String filename) {
+		try {
+			System.out.printf("- decoding '%s'", filename);
+			long startTime = System.currentTimeMillis();
+			FileInputStream fis = new FileInputStream(filename);
+			byte[] buf = new byte[fis.available()];
+			fis.read(buf);
+			fis.close();
+			BLZResult result = BLZ_Decode(buf);
+			if (result != null)
+				Save(filename, result.buffer, result.length);
+			System.out.print(" - done, time="
+					+ (System.currentTimeMillis() - startTime) + "ms");
+			System.out.print("\n");
+		} catch (IOException e) {
+			EXIT("\nFile read error\n");
+		}
+	}
+
+	public byte[] BLZ_DecodePub(byte[] data, String reference) {
+		System.out.printf("- decoding '%s' (memory)", reference);
+		long startTime = System.currentTimeMillis();
+		BLZResult result = BLZ_Decode(data);
+		System.out.print(" - done, time="
+				+ (System.currentTimeMillis() - startTime) + "ms");
+		System.out.print("\n");
+		if (result != null) {
+			byte[] retbuf = new byte[result.length];
+			for (int i = 0; i < result.length; i++) {
+				retbuf[i] = (byte) result.buffer[i];
+			}
+			result = null;
+			return retbuf;
+		} else {
+			return null;
+		}
+	}
+
+	private BLZResult BLZ_Decode(byte[] data) {
 		int[] pak_buffer, raw_buffer;
 		int pak, raw, pak_end, raw_end;
 		int pak_len, raw_len, len, pos, inc_len, hdr_len, enc_len, dec_len;
 		int flags = 0, mask;
-		long startTime = System.currentTimeMillis();
 
-		System.out.printf("- decoding '%s'", filename);
-
-		pak_buffer = Load(filename, BLZ_MINIM, BLZ_MAXIM);
+		pak_buffer = prepareData(data);
 		pak_len = pak_buffer.length - 3;
 
 		inc_len = readUnsigned(pak_buffer, pak_len - 4);
@@ -182,16 +200,16 @@ public class BLZCoder {
 		} else {
 			if (pak_len < 8) {
 				EXIT("\nFile has a bad header\n");
-				return;
+				return null;
 			}
 			hdr_len = pak_buffer[pak_len - 5];
 			if (hdr_len < 8 || hdr_len > 0xB) {
 				EXIT("\nBad header length\n");
-				return;
+				return null;
 			}
 			if (pak_len <= hdr_len) {
 				EXIT("\nBad length\n");
-				return;
+				return null;
 			}
 			enc_len = readUnsigned(pak_buffer, pak_len - 8) & 0x00FFFFFF;
 			dec_len = pak_len - enc_len;
@@ -199,7 +217,7 @@ public class BLZCoder {
 			raw_len = dec_len + enc_len + inc_len;
 			if (raw_len > RAW_MAXIM) {
 				EXIT("\nBad decoded length\n");
-				return;
+				return null;
 			}
 		}
 
@@ -259,12 +277,17 @@ public class BLZCoder {
 			System.out.print(", WARNING: unexpected end of encoded file!");
 		}
 
-		Save(filename, raw_buffer, raw_len);
+		return new BLZResult(raw_buffer, raw_len);
 
-		System.out.print(" - done, time="
-				+ (System.currentTimeMillis() - startTime) + "ms");
+	}
 
-		System.out.print("\n");
+	private int[] prepareData(byte[] data) {
+		int fs = data.length;
+		int[] fb = new int[fs + 3];
+		for (int i = 0; i < fs; i++) {
+			fb[i] = data[i] & 0xFF;
+		}
+		return fb;
 	}
 
 	private int readUnsigned(int[] buffer, int offset) {
@@ -283,14 +306,53 @@ public class BLZCoder {
 	private int new_len;
 
 	private void BLZ_Encode(String filename, int mode) {
+		try {
+			System.out.printf("- encoding '%s'", filename);
+			long startTime = System.currentTimeMillis();
+			FileInputStream fis = new FileInputStream(filename);
+			byte[] buf = new byte[fis.available()];
+			fis.read(buf);
+			fis.close();
+			BLZResult result = BLZ_Encode(buf, mode);
+			if (result != null)
+				Save(filename, result.buffer, result.length);
+			System.out.print(" - done, time="
+					+ (System.currentTimeMillis() - startTime) + "ms");
+			System.out.print("\n");
+		} catch (IOException e) {
+			EXIT("\nFile read error\n");
+		}
+	}
+
+	public byte[] BLZ_EncodePub(byte[] data, boolean arm9, boolean best,
+			String reference) {
+		int mode = best ? BLZ_BEST : BLZ_NORMAL;
+		this.arm9 = arm9;
+		System.out.printf("- encoding '%s' (memory)", reference);
+		long startTime = System.currentTimeMillis();
+		BLZResult result = BLZ_Encode(data, mode);
+		System.out.print(" - done, time="
+				+ (System.currentTimeMillis() - startTime) + "ms");
+		System.out.print("\n");
+		if (result != null) {
+			byte[] retbuf = new byte[result.length];
+			for (int i = 0; i < result.length; i++) {
+				retbuf[i] = (byte) result.buffer[i];
+			}
+			result = null;
+			return retbuf;
+		} else {
+			return null;
+		}
+	}
+
+	private BLZResult BLZ_Encode(byte[] data, int mode) {
 		int[] raw_buffer, pak_buffer, new_buffer;
 		int raw_len, pak_len;
-		long startTime = System.currentTimeMillis();
+
 		new_len = 0;
 
-		System.out.printf("- encoding '%s'", filename);
-
-		raw_buffer = Load(filename, RAW_MINIM, RAW_MAXIM);
+		raw_buffer = prepareData(data);
 		raw_len = raw_buffer.length - 3;
 
 		pak_buffer = null;
@@ -302,13 +364,7 @@ public class BLZCoder {
 			pak_buffer = new_buffer;
 			pak_len = new_len;
 		}
-
-		Save(filename, pak_buffer, pak_len);
-
-		System.out.print(" - done, time="
-				+ (System.currentTimeMillis() - startTime) + "ms");
-
-		System.out.print("\n");
+		return new BLZResult(pak_buffer, pak_len);
 	}
 
 	private int[] BLZ_Code(int[] raw_buffer, int raw_len, int best) {
@@ -493,6 +549,16 @@ public class BLZCoder {
 			}
 		}
 		return new SearchPair(l, p);
+	}
+
+	private class BLZResult {
+		public BLZResult(int[] raw_buffer, int raw_len) {
+			this.buffer = raw_buffer;
+			this.length = raw_len;
+		}
+
+		int[] buffer;
+		int length;
 	}
 
 	private void BLZ_Invert(int[] buffer, int offset, int length) {

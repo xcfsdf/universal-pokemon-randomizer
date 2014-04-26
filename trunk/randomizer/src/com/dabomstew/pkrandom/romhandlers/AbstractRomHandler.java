@@ -50,6 +50,8 @@ import com.dabomstew.pkrandom.gui.RandomizerGUI;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.ExpCurve;
+import com.dabomstew.pkrandom.pokemon.GenRestrictions;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
 import com.dabomstew.pkrandom.pokemon.Move;
@@ -65,12 +67,130 @@ public abstract class AbstractRomHandler implements RomHandler {
 	private static final String tclassesFile = "trainerclasses.txt";
 	private static final String nnamesFile = "nicknames.txt";
 
+	private boolean restrictionsSet;
+	protected List<Pokemon> mainPokemonList;
+	protected List<Pokemon> noLegendaryList, onlyLegendaryList;
+
 	/* Constructor */
 
 	public AbstractRomHandler() {
 	}
 
 	/* Public Methods, implemented here for all gens */
+
+	protected void checkPokemonRestrictions() {
+		if (!restrictionsSet) {
+			setPokemonPool(null);
+		}
+	}
+
+	public void setPokemonPool(GenRestrictions restrictions) {
+		restrictionsSet = true;
+		mainPokemonList = this.allPokemonWithoutNull();
+		if (restrictions != null) {
+			mainPokemonList = new ArrayList<Pokemon>();
+			List<Pokemon> allPokemon = this.getPokemon();
+			List<Evolution> evos = this.getEvolutions();
+
+			if (restrictions.allow_gen1) {
+				addPokesFromRange(mainPokemonList, allPokemon, 1, 151);
+				if (restrictions.assoc_g1_g2 && allPokemon.size() > 251) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 1, 151,
+							152, 251);
+				}
+				if (restrictions.assoc_g1_g4 && allPokemon.size() > 493) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 1, 151,
+							387, 493);
+				}
+			}
+
+			if (restrictions.allow_gen2 && allPokemon.size() > 251) {
+				addPokesFromRange(mainPokemonList, allPokemon, 152, 251);
+				if (restrictions.assoc_g2_g1) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 152,
+							251, 1, 151);
+				}
+				if (restrictions.assoc_g2_g3 && allPokemon.size() > 386) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 152,
+							251, 252, 386);
+				}
+				if (restrictions.assoc_g2_g4 && allPokemon.size() > 493) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 152,
+							251, 387, 493);
+				}
+			}
+
+			if (restrictions.allow_gen3 && allPokemon.size() > 386) {
+				addPokesFromRange(mainPokemonList, allPokemon, 252, 386);
+				if (restrictions.assoc_g3_g2) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 252,
+							386, 152, 251);
+				}
+				if (restrictions.assoc_g3_g4 && allPokemon.size() > 493) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 252,
+							386, 387, 493);
+				}
+			}
+
+			if (restrictions.allow_gen4 && allPokemon.size() > 493) {
+				addPokesFromRange(mainPokemonList, allPokemon, 387, 493);
+				if (restrictions.assoc_g4_g1) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 387,
+							493, 1, 151);
+				}
+				if (restrictions.assoc_g4_g2) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 387,
+							493, 152, 251);
+				}
+				if (restrictions.assoc_g4_g3) {
+					addEvosFromRange(mainPokemonList, allPokemon, evos, 387,
+							493, 252, 386);
+				}
+			}
+
+			if (restrictions.allow_gen5 && allPokemon.size() > 649) {
+				addPokesFromRange(mainPokemonList, allPokemon, 494, 649);
+			}
+		}
+
+		noLegendaryList = new ArrayList<Pokemon>();
+		onlyLegendaryList = new ArrayList<Pokemon>();
+
+		for (Pokemon p : mainPokemonList) {
+			if (p.isLegendary()) {
+				onlyLegendaryList.add(p);
+			} else {
+				noLegendaryList.add(p);
+			}
+		}
+	}
+
+	private void addPokesFromRange(List<Pokemon> pokemonPool,
+			List<Pokemon> allPokemon, int range_min, int range_max) {
+		for (int i = range_min; i <= range_max; i++) {
+			if (!pokemonPool.contains(allPokemon.get(i))) {
+				pokemonPool.add(allPokemon.get(i));
+			}
+		}
+	}
+
+	private void addEvosFromRange(List<Pokemon> pokemonPool,
+			List<Pokemon> allPokemon, List<Evolution> evos, int first_min,
+			int first_max, int second_min, int second_max) {
+		for (Evolution e : evos) {
+			Pokemon potential = null;
+			if ((e.from >= first_min && e.from <= first_max
+					&& e.to >= second_min && e.to <= second_max)) {
+				potential = allPokemon.get(e.to);
+			} else if ((e.from >= second_min && e.from <= second_max
+					&& e.to >= first_min && e.to <= first_max)) {
+				potential = allPokemon.get(e.from);
+			}
+			if (potential != null && !pokemonPool.contains(potential)) {
+				pokemonPool.add(potential);
+			}
+		}
+	}
 
 	@Override
 	public void randomizePokemonStats(boolean evolutionSanity) {
@@ -89,21 +209,22 @@ public abstract class AbstractRomHandler implements RomHandler {
 				if (evo.carryStats) {
 					Stack<Evolution> currentStack = new Stack<Evolution>();
 					Evolution current = evo;
-					while(current != null) {
+					while (current != null) {
 						Evolution last = current;
 						currentStack.push(last);
 						current = null;
-						for(Evolution evo2 : evolutions) {
-							if(last.from == evo2.to && evo2.carryStats) {
+						for (Evolution evo2 : evolutions) {
+							if (last.from == evo2.to && evo2.carryStats) {
 								current = evo2;
 								break;
 							}
 						}
 					}
 					// now we have a stack of evolutions
-					while(!currentStack.isEmpty()) {
+					while (!currentStack.isEmpty()) {
 						Evolution useEvo = currentStack.pop();
-						useEvo.carryStats = false; // so we don't waste time later
+						useEvo.carryStats = false; // so we don't waste time
+													// later
 						Pokemon to = allPokes.get(useEvo.to);
 						Pokemon from = allPokes.get(useEvo.from);
 						to.copyRandomizedStatsUpEvolution(from);
@@ -133,15 +254,29 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void minimumCatchRate(int rate) {
+	public void minimumCatchRate(int rateNonLegendary, int rateLegendary) {
 		List<Pokemon> pokes = getPokemon();
 		for (Pokemon pkmn : pokes) {
-			if (pkmn == null || pkmn.catchRate >= rate) {
+			if (pkmn == null) {
 				continue;
 			}
-			pkmn.catchRate = rate;
+			int minCatchRate = pkmn.isLegendary() ? rateLegendary
+					: rateNonLegendary;
+			pkmn.catchRate = Math.max(pkmn.catchRate, minCatchRate);
 		}
 
+	}
+
+	@Override
+	public void standardizeEXPCurves() {
+		List<Pokemon> pokes = getPokemon();
+		for (Pokemon pkmn : pokes) {
+			if (pkmn == null) {
+				continue;
+			}
+			pkmn.growthCurve = pkmn.isLegendary() ? ExpCurve.SLOW
+					: ExpCurve.MEDIUM_FAST;
+		}
 	}
 
 	@Override
@@ -250,33 +385,38 @@ public abstract class AbstractRomHandler implements RomHandler {
 				continue;
 			}
 
-			// Pick first ability
-			pk.ability1 = RandomSource.nextInt(maxAbility) + 1;
-			// Wonder guard block
-			if (!allowWonderGuard) {
-				while (pk.ability1 == WONDER_GUARD_INDEX) {
-					pk.ability1 = RandomSource.nextInt(maxAbility) + 1;
+			// Wonder Guard?
+			if (pk.ability1 != WONDER_GUARD_INDEX
+					&& pk.ability2 != WONDER_GUARD_INDEX
+					&& pk.ability3 != WONDER_GUARD_INDEX) {
+				// Pick first ability
+				pk.ability1 = RandomSource.nextInt(maxAbility) + 1;
+				// Wonder guard block
+				if (!allowWonderGuard) {
+					while (pk.ability1 == WONDER_GUARD_INDEX) {
+						pk.ability1 = RandomSource.nextInt(maxAbility) + 1;
+					}
 				}
-			}
 
-			// Second ability?
-			if (RandomSource.nextDouble() < 0.5) {
-				// Yes, second ability
-				pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
-				// Wonder guard? Also block first ability from reappearing
-				if (allowWonderGuard) {
-					while (pk.ability2 == pk.ability1) {
-						pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+				// Second ability?
+				if (RandomSource.nextDouble() < 0.5) {
+					// Yes, second ability
+					pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+					// Wonder guard? Also block first ability from reappearing
+					if (allowWonderGuard) {
+						while (pk.ability2 == pk.ability1) {
+							pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+						}
+					} else {
+						while (pk.ability2 == WONDER_GUARD_INDEX
+								|| pk.ability2 == pk.ability1) {
+							pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
+						}
 					}
 				} else {
-					while (pk.ability2 == WONDER_GUARD_INDEX
-							|| pk.ability2 == pk.ability1) {
-						pk.ability2 = RandomSource.nextInt(maxAbility) + 1;
-					}
+					// Nope
+					pk.ability2 = 0;
 				}
-			} else {
-				// Nope
-				pk.ability2 = 0;
 			}
 		}
 
@@ -287,47 +427,46 @@ public abstract class AbstractRomHandler implements RomHandler {
 				if (pk == null) {
 					continue;
 				}
-				pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
-				// Wonder guard? Also block other abilities from reappearing
-				if (allowWonderGuard) {
-					while (pk.ability3 == pk.ability1
-							|| pk.ability3 == pk.ability2) {
-						pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
-					}
-				} else {
-					while (pk.ability3 == WONDER_GUARD_INDEX
-							|| pk.ability3 == pk.ability1
-							|| pk.ability3 == pk.ability2) {
-						pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+				if (pk.ability1 != WONDER_GUARD_INDEX
+						&& pk.ability2 != WONDER_GUARD_INDEX
+						&& pk.ability3 != WONDER_GUARD_INDEX) {
+					pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+					// Wonder guard? Also block other abilities from reappearing
+					if (allowWonderGuard) {
+						while (pk.ability3 == pk.ability1
+								|| pk.ability3 == pk.ability2) {
+							pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+						}
+					} else {
+						while (pk.ability3 == WONDER_GUARD_INDEX
+								|| pk.ability3 == pk.ability1
+								|| pk.ability3 == pk.ability2) {
+							pk.ability3 = RandomSource.nextInt(maxAbility) + 1;
+						}
 					}
 				}
 			}
 		}
+	}
 
-		// Shedinja
-		// He's useless without Wonder Guard...
-		// + he exists in every game with abilities.
-		// Go fix him up.
-		Pokemon shedinja = allPokes.get(292);
-		shedinja.ability1 = 25;
-		shedinja.ability2 = 0;
-		shedinja.ability3 = 0;
+	public Pokemon randomPokemon() {
+		checkPokemonRestrictions();
+		return mainPokemonList
+				.get(RandomSource.nextInt(mainPokemonList.size()));
 	}
 
 	@Override
 	public Pokemon randomNonLegendaryPokemon() {
-		Pokemon pkmn;
-		while ((pkmn = randomPokemon()).isLegendary()) {
-		}
-		return pkmn;
+		checkPokemonRestrictions();
+		return noLegendaryList
+				.get(RandomSource.nextInt(noLegendaryList.size()));
 	}
 
 	@Override
 	public Pokemon randomLegendaryPokemon() {
-		Pokemon pkmn;
-		while (!(pkmn = randomPokemon()).isLegendary()) {
-		}
-		return pkmn;
+		checkPokemonRestrictions();
+		return onlyLegendaryList.get(RandomSource.nextInt(onlyLegendaryList
+				.size()));
 	}
 
 	private List<Pokemon> twoEvoPokes;
@@ -363,12 +502,14 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void randomEncounters(boolean useTimeOfDay, boolean catchEmAll,
 			boolean typeThemed, boolean usePowerLevels, boolean noLegendaries) {
+		checkPokemonRestrictions();
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
 		List<Pokemon> banned = this.bannedForWildEncounters();
 		// Assume EITHER catch em all OR type themed OR match strength for now
 		if (catchEmAll) {
-			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
-					: allPokemonWithoutNull();
+
+			List<Pokemon> allPokes = noLegendaries ? new ArrayList<Pokemon>(
+					noLegendaryList) : new ArrayList<Pokemon>(mainPokemonList);
 			allPokes.removeAll(banned);
 			for (EncounterSet area : currentEncounters) {
 				for (Encounter enc : area.encounters) {
@@ -379,8 +520,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 							&& hasBattleTrappingAbility(enc.pokemon)) {
 						// Skip past this Pokemon for now and just pick a random
 						// one
-						List<Pokemon> pickable = noLegendaries ? allNonLegendaries()
-								: allPokemonWithoutNull();
+						List<Pokemon> pickable = noLegendaries ? new ArrayList<Pokemon>(
+								noLegendaryList) : new ArrayList<Pokemon>(
+								mainPokemonList);
 						pickable.removeAll(banned);
 						if (pickable.size() == 0) {
 							JOptionPane.showMessageDialog(null,
@@ -396,8 +538,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 						allPokes.remove(picked);
 						if (allPokes.size() == 0) {
 							// Start again
-							allPokes = noLegendaries ? allNonLegendaries()
-									: allPokemonWithoutNull();
+							allPokes.addAll(noLegendaries ? noLegendaryList
+									: mainPokemonList);
 							allPokes.removeAll(banned);
 						}
 					}
@@ -424,8 +566,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 				}
 			}
 		} else if (usePowerLevels) {
-			List<Pokemon> allowedPokes = noLegendaries ? allNonLegendaries()
-					: allPokemonWithoutNull();
+			List<Pokemon> allowedPokes = noLegendaries ? new ArrayList<Pokemon>(
+					noLegendaryList) : new ArrayList<Pokemon>(mainPokemonList);
 			allowedPokes.removeAll(banned);
 			for (EncounterSet area : currentEncounters) {
 				for (Encounter enc : area.encounters) {
@@ -454,12 +596,13 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void area1to1Encounters(boolean useTimeOfDay, boolean catchEmAll,
 			boolean typeThemed, boolean usePowerLevels, boolean noLegendaries) {
+		checkPokemonRestrictions();
 		List<EncounterSet> currentEncounters = this.getEncounters(useTimeOfDay);
 		List<Pokemon> banned = this.bannedForWildEncounters();
 		// Assume EITHER catch em all OR type themed for now
 		if (catchEmAll) {
-			List<Pokemon> allPokes = noLegendaries ? allNonLegendaries()
-					: allPokemonWithoutNull();
+			List<Pokemon> allPokes = noLegendaries ? new ArrayList<Pokemon>(
+					noLegendaryList) : new ArrayList<Pokemon>(mainPokemonList);
 			allPokes.removeAll(banned);
 			for (EncounterSet area : currentEncounters) {
 				// Poke-set
@@ -473,8 +616,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 							&& hasBattleTrappingAbility(pickedMN)) {
 						// Skip past this Pokemon for now and just pick a random
 						// one
-						List<Pokemon> pickable = noLegendaries ? allNonLegendaries()
-								: allPokemonWithoutNull();
+						List<Pokemon> pickable = noLegendaries ? new ArrayList<Pokemon>(
+								noLegendaryList) : new ArrayList<Pokemon>(
+								mainPokemonList);
 						pickable.removeAll(banned);
 						if (pickable.size() == 0) {
 							JOptionPane.showMessageDialog(null,
@@ -491,8 +635,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 						allPokes.remove(picked);
 						if (allPokes.size() == 0) {
 							// Start again
-							allPokes = noLegendaries ? allNonLegendaries()
-									: allPokemonWithoutNull();
+							allPokes.addAll(noLegendaries ? noLegendaryList
+									: mainPokemonList);
 							allPokes.removeAll(banned);
 						}
 					}
@@ -529,8 +673,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 						pickable.removeAll(banned);
 						if (pickable.size() == 0) {
 							// Try all Pokemon instead
-							pickable = noLegendaries ? allNonLegendaries()
-									: allPokemonWithoutNull();
+							pickable = noLegendaries ? new ArrayList<Pokemon>(
+									noLegendaryList) : new ArrayList<Pokemon>(
+									mainPokemonList);
 							pickable.removeAll(banned);
 						}
 						if (pickable.size() == 0) {
@@ -560,8 +705,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 				}
 			}
 		} else if (usePowerLevels) {
-			List<Pokemon> allowedPokes = noLegendaries ? allNonLegendaries()
-					: allPokemonWithoutNull();
+			List<Pokemon> allowedPokes = noLegendaries ? new ArrayList<Pokemon>(
+					noLegendaryList) : new ArrayList<Pokemon>(mainPokemonList);
 			allowedPokes.removeAll(banned);
 			for (EncounterSet area : currentEncounters) {
 				// Poke-set
@@ -612,12 +757,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void game1to1Encounters(boolean useTimeOfDay,
 			boolean usePowerLevels, boolean noLegendaries) {
+		checkPokemonRestrictions();
 		// Build the full 1-to-1 map
 		Map<Pokemon, Pokemon> translateMap = new TreeMap<Pokemon, Pokemon>();
-		List<Pokemon> remainingLeft = noLegendaries ? allNonLegendaries()
-				: allPokemonWithoutNull();
-		List<Pokemon> remainingRight = noLegendaries ? allNonLegendaries()
-				: allPokemonWithoutNull();
+		List<Pokemon> remainingLeft = allPokemonWithoutNull();
+		List<Pokemon> remainingRight = noLegendaries ? new ArrayList<Pokemon>(
+				noLegendaryList) : new ArrayList<Pokemon>(mainPokemonList);
 		List<Pokemon> banned = this.bannedForWildEncounters();
 		// Banned pokemon should be mapped to themselves
 		for (Pokemon bannedPK : banned) {
@@ -654,6 +799,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 				remainingRight.remove(pickedRight);
 				translateMap.put(pickedLeftP, pickedRightP);
 			}
+			if (remainingRight.size() == 0) {
+				// restart
+				remainingRight.addAll(noLegendaries ? noLegendaryList
+						: mainPokemonList);
+				remainingRight.removeAll(banned);
+			}
 		}
 
 		// Map remaining to themselves just in case
@@ -673,8 +824,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 				if (area.battleTrappersBanned
 						&& hasBattleTrappingAbility(enc.pokemon)) {
 					// Ignore the map and put a random non-trapping Poke
-					List<Pokemon> pickable = noLegendaries ? allNonLegendaries()
-							: allPokemonWithoutNull();
+					List<Pokemon> pickable = noLegendaries ? new ArrayList<Pokemon>(
+							noLegendaryList) : new ArrayList<Pokemon>(
+							mainPokemonList);
 					pickable.removeAll(banned);
 					if (pickable.size() == 0) {
 						JOptionPane.showMessageDialog(null,
@@ -701,11 +853,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void randomizeTrainerPokes(boolean rivalCarriesStarter,
 			boolean usePowerLevels, boolean noLegendaries,
-			boolean noEarlyShedinja) {
+			boolean noEarlyWonderGuard) {
+		checkPokemonRestrictions();
 		List<Trainer> currentTrainers = this.getTrainers();
 		cachedReplacementLists = new TreeMap<Type, List<Pokemon>>();
-		cachedAllList = noLegendaries ? allNonLegendaries()
-				: allPokemonWithoutNull();
+		cachedAllList = noLegendaries ? new ArrayList<Pokemon>(noLegendaryList)
+				: new ArrayList<Pokemon>(mainPokemonList);
 
 		// Fully random is easy enough - randomize then worry about rival
 		// carrying starter at the end
@@ -714,9 +867,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 				continue; // skip
 			}
 			for (TrainerPokemon tp : t.pokemon) {
-				boolean shedAllowed = (!noEarlyShedinja) || tp.level >= 20;
+				boolean wgAllowed = (!noEarlyWonderGuard) || tp.level >= 20;
 				tp.pokemon = pickReplacement(tp.pokemon, usePowerLevels, null,
-						noLegendaries, shedAllowed);
+						noLegendaries, wgAllowed);
 			}
 		}
 
@@ -733,11 +886,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void typeThemeTrainerPokes(boolean rivalCarriesStarter,
 			boolean usePowerLevels, boolean weightByFrequency,
-			boolean noLegendaries, boolean noEarlyShedinja) {
+			boolean noLegendaries, boolean noEarlyWonderGuard) {
+		checkPokemonRestrictions();
 		List<Trainer> currentTrainers = this.getTrainers();
 		cachedReplacementLists = new TreeMap<Type, List<Pokemon>>();
-		cachedAllList = noLegendaries ? allNonLegendaries()
-				: allPokemonWithoutNull();
+		cachedAllList = noLegendaries ? new ArrayList<Pokemon>(noLegendaryList)
+				: new ArrayList<Pokemon>(mainPokemonList);
 		typeWeightings = new TreeMap<Type, Integer>();
 		totalTypeWeighting = 0;
 
@@ -799,9 +953,9 @@ public abstract class AbstractRomHandler implements RomHandler {
 			// Themed groups just have a theme, no special criteria
 			for (Trainer t : trainersInGroup) {
 				for (TrainerPokemon tp : t.pokemon) {
-					boolean shedAllowed = (!noEarlyShedinja) || tp.level >= 20;
+					boolean wgAllowed = (!noEarlyWonderGuard) || tp.level >= 20;
 					tp.pokemon = pickReplacement(tp.pokemon, usePowerLevels,
-							typeForGroup, noLegendaries, shedAllowed);
+							typeForGroup, noLegendaries, wgAllowed);
 				}
 			}
 		}
@@ -823,7 +977,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 					usedUberTypes.add(typeForTrainer);
 				}
 				for (TrainerPokemon tp : t.pokemon) {
-					boolean shedAllowed = (!noEarlyShedinja) || tp.level >= 20;
+					boolean shedAllowed = (!noEarlyWonderGuard)
+							|| tp.level >= 20;
 					tp.pokemon = pickReplacement(tp.pokemon, usePowerLevels,
 							typeForTrainer, noLegendaries, shedAllowed);
 				}
@@ -841,7 +996,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken) {
+	public void randomizeMovesLearnt(boolean typeThemed, boolean noBroken,
+			boolean forceFourStartingMoves) {
 		// Get current sets
 		Map<Pokemon, List<MoveLearnt>> movesets = this.getMovesLearnt();
 		List<Integer> hms = this.getHMMoves();
@@ -851,6 +1007,23 @@ public abstract class AbstractRomHandler implements RomHandler {
 		for (Pokemon pkmn : movesets.keySet()) {
 			Set<Integer> learnt = new TreeSet<Integer>();
 			List<MoveLearnt> moves = movesets.get(pkmn);
+			// 4 starting moves?
+			if (forceFourStartingMoves) {
+				int lv1count = 0;
+				for (MoveLearnt ml : moves) {
+					if (ml.level == 1) {
+						lv1count++;
+					}
+				}
+				if (lv1count < 4) {
+					for (int i = 0; i < 4 - lv1count; i++) {
+						MoveLearnt fakeLv1 = new MoveLearnt();
+						fakeLv1.level = 1;
+						fakeLv1.move = 0;
+						moves.add(0, fakeLv1);
+					}
+				}
+			}
 			// Last level 1 move should be replaced with a damaging one
 			int damagingMove = pickMove(pkmn, typeThemed, true, hms);
 			// Find last lv1 move
@@ -948,6 +1121,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public void randomizeStaticPokemon(boolean legendForLegend) {
 		// Load
+		checkPokemonRestrictions();
 		List<Pokemon> currentStaticPokemon = this.getStaticPokemon();
 		List<Pokemon> replacements = new ArrayList<Pokemon>();
 		List<Pokemon> banned = this.bannedForStaticPokemon();
@@ -1473,6 +1647,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 			byte[] presetNicknames, boolean randomNickname,
 			byte[] presetTrainerNames, boolean randomOT, boolean randomStats,
 			boolean randomItem) {
+		checkPokemonRestrictions();
 		// Process trainer names
 		List<String> singleTrainerNames = new ArrayList<String>();
 		// Check for the file
@@ -1581,8 +1756,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 				}
 				usedNicknames.add(nickname);
 				trade.nickname = nickname;
-			}
-			else if (trade.nickname.equalsIgnoreCase(oldgiven.name)) {
+			} else if (trade.nickname.equalsIgnoreCase(oldgiven.name)) {
 				// change the name for sanity
 				trade.nickname = trade.givenPokemon.name;
 			}
@@ -1623,6 +1797,464 @@ public abstract class AbstractRomHandler implements RomHandler {
 	@Override
 	public int maxTradeOTNameLength() {
 		return 7;
+	}
+
+	private Map<Integer, boolean[]> moveUpdates;
+
+	@Override
+	public void initMoveUpdates() {
+		moveUpdates = new TreeMap<Integer, boolean[]>();
+	}
+
+	@Override
+	public void printMoveUpdates() {
+		log("--Move Updates--");
+		List<Move> moves = this.getMoves();
+		for (int moveID : moveUpdates.keySet()) {
+			boolean[] changes = moveUpdates.get(moveID);
+			Move mv = moves.get(moveID);
+			List<String> nonTypeChanges = new ArrayList<String>();
+			if (changes[0]) {
+				nonTypeChanges.add(String.format("%d power", mv.power));
+			}
+			if (changes[1]) {
+				nonTypeChanges.add(String.format("%d PP", mv.pp));
+			}
+			if (changes[2]) {
+				nonTypeChanges.add(String.format("%.00f%% accuracy",
+						mv.hitratio));
+			}
+			String logStr = "Made " + mv.name;
+			// type or not?
+			if (changes[3]) {
+				logStr += " be " + mv.type + "-type";
+				if (nonTypeChanges.size() > 0) {
+					logStr += " and";
+				}
+			}
+			if (nonTypeChanges.size() > 0) {
+				logStr += " have ";
+				if (nonTypeChanges.size() == 3) {
+					logStr += nonTypeChanges.get(0) + ", "
+							+ nonTypeChanges.get(1) + " and "
+							+ nonTypeChanges.get(2);
+				} else if (nonTypeChanges.size() == 2) {
+					logStr += nonTypeChanges.get(0) + " and "
+							+ nonTypeChanges.get(1);
+				} else {
+					logStr += nonTypeChanges.get(0);
+				}
+			}
+			log(logStr);
+		}
+		logBlankLine();
+	}
+
+	@Override
+	public void updateMovesToGen5() {
+		List<Move> moves = this.getMoves();
+
+		// gen1
+		// Karate Chop => FIGHTING (gen1)
+		updateMoveType(moves, 2, Type.FIGHTING);
+		// Razor Wind => 100% accuracy (gen1/2)
+		updateMoveAccuracy(moves, 13, 100);
+		// Gust => FLYING (gen1)
+		updateMoveType(moves, 16, Type.FLYING);
+		// Wing Attack => 60 power (gen1)
+		updateMovePower(moves, 17, 60);
+		// Whirlwind => 100 accuracy
+		updateMoveAccuracy(moves, 18, 100);
+		// Fly => 90 power (gen1/2/3)
+		updateMovePower(moves, 19, 90);
+		// Bind => 85% accuracy (gen1-4)
+		updateMoveAccuracy(moves, 20, 85);
+		// Vine Whip => 15 pp (gen1/2/3)
+		updateMovePP(moves, 22, 15);
+		// Jump Kick => 10 pp, 100 power (gen1-4)
+		updateMovePP(moves, 26, 10);
+		updateMovePower(moves, 26, 100);
+		// Sand Attack => GROUND (gen1)
+		updateMoveType(moves, 28, Type.GROUND);
+		// Tackle => 50 power, 100% accuracy , gen1-4
+		updateMovePower(moves, 33, 50);
+		updateMoveAccuracy(moves, 33, 100);
+		// Wrap => 90% accuracy (gen1-4)
+		updateMoveAccuracy(moves, 35, 90);
+		// Thrash => 120 power, 10pp (gen1-4)
+		updateMovePP(moves, 37, 10);
+		updateMovePower(moves, 37, 120);
+		// Double-Edge => 120 power (gen1)
+		updateMovePower(moves, 38, 120);
+		// Move 44, Bite, becomes dark (but doesn't exist anyway)
+		// Disable => 100% accuracy (gen1-4)
+		updateMoveAccuracy(moves, 50, 100);
+		// Blizzard => 70% accuracy (gen1)
+		updateMoveAccuracy(moves, 59, 70);
+		// Move 67, Low Kick, has weight-based power in gen3+
+		// Low Kick => 100% accuracy (gen1)
+		updateMoveAccuracy(moves, 67, 100);
+		// Absorb => 25pp (gen1/2/3)
+		updateMovePP(moves, 71, 25);
+		// Mega Drain => 15pp (gen1/2/3)
+		updateMovePP(moves, 72, 15);
+		// Petal Dance => 120power, 10pp (gen1-4)
+		updateMovePP(moves, 80, 10);
+		updateMovePower(moves, 80, 120);
+		// Fire Spin => 35 power, 85% acc (gen1-4)
+		updateMoveAccuracy(moves, 83, 85);
+		updateMovePower(moves, 83, 35);
+		// Rock Throw => 90% accuracy (gen1)
+		updateMoveAccuracy(moves, 88, 90);
+		// Dig => 80 power (gen1/2/3)
+		updateMovePower(moves, 91, 80);
+		// Toxic => 90% accuracy (gen1-4)
+		updateMoveAccuracy(moves, 92, 90);
+		// Hypnosis => 60% accuracy
+		updateMoveAccuracy(moves, 95, 60);
+		// Recover => 10pp (gen1/2/3)
+		updateMovePP(moves, 105, 10);
+		// SelfDestruct => 200power (gen1)
+		updateMovePower(moves, 120, 200);
+		// Clamp => 85% acc (gen1-4)
+		updateMoveAccuracy(moves, 128, 85);
+		updateMovePP(moves, 128, 15);
+		// HJKick => 130 power, 10pp (gen1-4)
+		updateMovePP(moves, 136, 10);
+		updateMovePower(moves, 136, 130);
+		// Glare => 90% acc (gen1-4)
+		updateMoveAccuracy(moves, 137, 90);
+		// Poison Gas => 80% acc (gen1-4)
+		updateMoveAccuracy(moves, 139, 80);
+		// Flash => 100% acc (gen1/2/3)
+		updateMoveAccuracy(moves, 148, 100);
+		// Crabhammer => 90% acc (gen1-4)
+		updateMoveAccuracy(moves, 152, 90);
+		// Explosion => 250 power (gen1)
+		updateMovePower(moves, 153, 250);
+		// GEN2+ moves only from here
+		if (moves.size() >= 251) {
+			// Curse => GHOST (gen2-4)
+			updateMoveType(moves, 174, Type.GHOST);
+			// Cotton Spore => 100% acc (gen2-4)
+			updateMoveAccuracy(moves, 178, 100);
+			// Scary Face => 100% acc (gen2-4)
+			updateMoveAccuracy(moves, 184, 100);
+			// Zap Cannon => 120 power (gen2-3)
+			updateMovePower(moves, 192, 120);
+			// Bone Rush => 90% acc (gen2-4)
+			updateMoveAccuracy(moves, 198, 90);
+			// Outrage => 120 power (gen2-3)
+			updateMovePower(moves, 200, 120);
+			updateMovePP(moves, 200, 10);
+			// Giga Drain => 10pp (gen2-3), 75 power (gen2-4)
+			updateMovePP(moves, 202, 10);
+			updateMovePower(moves, 202, 75);
+			// Fury Cutter => 20 power (gen2-4)
+			updateMovePower(moves, 210, 20);
+			// Future Sight => 10 pp, 100 power, 100% acc (gen2-4)
+			updateMovePP(moves, 248, 10);
+			updateMovePower(moves, 248, 100);
+			updateMoveAccuracy(moves, 248, 100);
+			// Rock Smash => 40 power (gen2-3)
+			updateMovePower(moves, 249, 40);
+			// Whirlpool => 35 pow, 85% acc (gen2-4)
+			updateMovePower(moves, 250, 35);
+			updateMoveAccuracy(moves, 250, 85);
+		}
+		// GEN3+ only moves from here
+		if (moves.size() >= 354) {
+			// Uproar => 90 power (gen3-4)
+			updateMovePower(moves, 253, 90);
+			updateMovePP(moves, 254, 20);
+			updateMovePower(moves, 291, 80);
+			// Sand Tomb => 35 pow, 85% acc (gen3-4)
+			updateMovePower(moves, 328, 35);
+			updateMoveAccuracy(moves, 328, 85);
+			// Bullet Seed => 25 power (gen3-4)
+			updateMovePower(moves, 331, 25);
+			// Icicle Spear => 25 power (gen3-4)
+			updateMovePower(moves, 333, 25);
+			// Covet => 60 power (gen3-4)
+			updateMovePower(moves, 343, 60);
+			updateMovePower(moves, 348, 90);
+			// Rock Blast => 90% acc (gen3-4)
+			updateMoveAccuracy(moves, 350, 90);
+			// Doom Desire => 140 pow, 100% acc, gen3-4
+			updateMovePower(moves, 353, 140);
+			updateMoveAccuracy(moves, 353, 100);
+		}
+		// GEN4+ only moves from here
+		if (moves.size() >= 467) {
+			// Feint => 30 pow
+			updateMovePower(moves, 364, 30);
+			// Last Resort => 140 pow
+			updateMovePower(moves, 387, 140);
+			// Drain Punch => 10 pp, 75 pow
+			updateMovePP(moves, 409, 10);
+			updateMovePower(moves, 409, 75);
+			// Magma Storm => 75% acc
+			updateMoveAccuracy(moves, 463, 75);
+		}
+	}
+
+	@Override
+	public void updateMovesToGen6() {
+		List<Move> moves = this.getMoves();
+
+		// gen 1
+		// Swords Dance 20 PP
+		updateMovePP(moves, 14, 20);
+
+		// Vine Whip 25 PP, 45 Power
+		updateMovePP(moves, 22, 25);
+		updateMovePower(moves, 22, 45);
+
+		// Pin Missile 25 Power, 95% Accuracy
+		updateMovePower(moves, 42, 25);
+		updateMoveAccuracy(moves, 42, 95);
+
+		// Flamethrower 90 Power
+		updateMovePower(moves, 53, 90);
+
+		// Hydro Pump 110 Power
+		updateMovePower(moves, 56, 110);
+
+		// Surf 90 Power
+		updateMovePower(moves, 57, 90);
+
+		// Ice Beam 90 Power
+		updateMovePower(moves, 58, 90);
+
+		// Blizzard 110 Power
+		updateMovePower(moves, 59, 110);
+
+		// Growth 20 PP
+		updateMovePP(moves, 74, 20);
+
+		// Thunderbolt 90 Power
+		updateMovePower(moves, 85, 90);
+
+		// Thunder 110 Power
+		updateMovePower(moves, 87, 110);
+
+		// Minimize 10 PP
+		updateMovePP(moves, 107, 10);
+
+		// Barrier 20 PP
+		updateMovePP(moves, 112, 20);
+
+		// Lick 30 Power
+		updateMovePower(moves, 122, 30);
+
+		// Smog 30 Power
+		updateMovePower(moves, 123, 30);
+
+		// Fire Blast 110 Power
+		updateMovePower(moves, 126, 110);
+
+		// Skull Bash 10 PP, 130 Power
+		updateMovePP(moves, 130, 10);
+		updateMovePower(moves, 130, 130);
+
+		// Glare 100% Accuracy
+		updateMoveAccuracy(moves, 137, 100);
+
+		// Poison Gas 90% Accuracy
+		updateMoveAccuracy(moves, 139, 90);
+
+		// Bubble 40 Power
+		updateMovePower(moves, 145, 40);
+
+		// Psywave 100% Accuracy
+		updateMoveAccuracy(moves, 149, 100);
+
+		// Acid Armor 20 PP
+		updateMovePP(moves, 151, 20);
+
+		// Crabhammer 100 Power
+		updateMovePower(moves, 152, 100);
+
+		// Gen2+ only
+		if (moves.size() >= 251) {
+			// Thief 25 PP, 60 Power
+			updateMovePP(moves, 168, 25);
+			updateMovePower(moves, 168, 60);
+
+			// Snore 50 Power
+			updateMovePower(moves, 173, 50);
+
+			// Fury Cutter 40 Power
+			updateMovePower(moves, 210, 40);
+
+			// Future Sight 120 Power
+			updateMovePower(moves, 248, 120);
+		}
+
+		// Gen3+ only
+		if (moves.size() >= 354) {
+			// Heat Wave 95 Power
+			updateMovePower(moves, 257, 95);
+
+			// Will-o-Wisp 85% Accuracy
+			updateMoveAccuracy(moves, 261, 85);
+
+			// Smellingsalt 70 Power
+			updateMovePower(moves, 265, 70);
+
+			// Knock off 65 Power
+			updateMovePower(moves, 282, 65);
+
+			// Meteor Mash 90 Power, 90% Accuracy
+			updateMovePower(moves, 309, 90);
+			updateMoveAccuracy(moves, 309, 90);
+
+			// Air Cutter 60 Power
+			updateMovePower(moves, 314, 60);
+
+			// Overheat 130 Power
+			updateMovePower(moves, 315, 130);
+
+			// Rock Tomb 15 PP, 60 Power, 95% Accuracy
+			updateMovePP(moves, 317, 15);
+			updateMovePower(moves, 317, 60);
+			updateMoveAccuracy(moves, 317, 95);
+
+			// Extrasensory 20 PP
+			updateMovePP(moves, 326, 20);
+
+			// Muddy Water 90 Power
+			updateMovePower(moves, 330, 90);
+
+			// Covet 25 PP
+			updateMovePP(moves, 343, 25);
+		}
+
+		// Gen4+ only
+		if (moves.size() >= 467) {
+			// Wake-Up Slap 70 Power
+			updateMovePower(moves, 358, 70);
+
+			// Tailwind 15 PP
+			updateMovePP(moves, 366, 15);
+
+			// Assurance 60 Power
+			updateMovePower(moves, 372, 60);
+
+			// Psycho Shift 100% Accuracy
+			updateMoveAccuracy(moves, 375, 100);
+
+			// Aura Sphere 80 Power
+			updateMovePower(moves, 396, 80);
+
+			// Air Slash 15 PP
+			updateMovePP(moves, 403, 15);
+
+			// Dragon Pulse 85 Power
+			updateMovePower(moves, 406, 85);
+
+			// Power Gem 80 Power
+			updateMovePower(moves, 408, 80);
+
+			// Energy Ball 90 Power
+			updateMovePower(moves, 412, 90);
+
+			// Draco Meteor 130 Power
+			updateMovePower(moves, 434, 130);
+
+			// Leaf Storm 130 Power
+			updateMovePower(moves, 437, 130);
+
+			// Gunk Shot 80% Accuracy
+			updateMoveAccuracy(moves, 441, 80);
+
+			// Chatter 65 Power
+			updateMovePower(moves, 448, 65);
+
+			// Magma Storm 100 Power
+			updateMovePower(moves, 463, 100);
+		}
+
+		// Gen5+ only
+		if (moves.size() >= 559) {
+			// Storm Throw 60 Power
+			updateMovePower(moves, 480, 60);
+
+			// Synchronoise 120 Power
+			updateMovePower(moves, 485, 120);
+
+			// Low Sweep 65 Power
+			updateMovePower(moves, 490, 65);
+
+			// Hex 65 Power
+			updateMovePower(moves, 506, 65);
+
+			// Incinerate 60 Power
+			updateMovePower(moves, 510, 60);
+
+			// Pledges 80 Power
+			updateMovePower(moves, 518, 80);
+			updateMovePower(moves, 519, 80);
+			updateMovePower(moves, 520, 80);
+
+			// Struggle Bug 50 Power
+			updateMovePower(moves, 522, 50);
+
+			// Frost Breath 45 Power
+			// crits are 2x in these games
+			updateMovePower(moves, 524, 45);
+
+			// Sacred Sword 15 PP
+			updateMovePP(moves, 533, 15);
+
+			// Hurricane 110 Power
+			updateMovePower(moves, 542, 110);
+
+			// Techno Blast 120 Power
+			updateMovePower(moves, 546, 120);
+		}
+	}
+
+	private void updateMovePower(List<Move> moves, int moveNum, int power) {
+		Move mv = moves.get(moveNum);
+		if (mv.power != power) {
+			mv.power = power;
+			addMoveUpdate(moveNum, 0);
+		}
+	}
+
+	private void updateMovePP(List<Move> moves, int moveNum, int pp) {
+		Move mv = moves.get(moveNum);
+		if (mv.pp != pp) {
+			mv.pp = pp;
+			addMoveUpdate(moveNum, 1);
+		}
+	}
+
+	private void updateMoveAccuracy(List<Move> moves, int moveNum, int accuracy) {
+		Move mv = moves.get(moveNum);
+		if (Math.abs(mv.hitratio - accuracy) >= 1) {
+			mv.setAccuracy(accuracy);
+			addMoveUpdate(moveNum, 2);
+		}
+	}
+
+	private void updateMoveType(List<Move> moves, int moveNum, Type type) {
+		Move mv = moves.get(moveNum);
+		if (mv.type != type) {
+			mv.type = type;
+			addMoveUpdate(moveNum, 3);
+		}
+	}
+
+	private void addMoveUpdate(int moveNum, int updateType) {
+		if (!moveUpdates.containsKey(moveNum)) {
+			boolean[] updateField = new boolean[4];
+			updateField[updateType] = true;
+			moveUpdates.put(moveNum, updateField);
+		} else {
+			moveUpdates.get(moveNum)[updateType] = true;
+		}
 	}
 
 	private int pickMove(Pokemon pkmn, boolean typeThemed, boolean damaging,
@@ -1698,9 +2330,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	private List<Pokemon> pokemonOfType(Type type, boolean noLegendaries) {
-		List<Pokemon> allPokes = this.getPokemon();
 		List<Pokemon> typedPokes = new ArrayList<Pokemon>();
-		for (Pokemon pk : allPokes) {
+		for (Pokemon pk : mainPokemonList) {
 			if (pk != null && (!noLegendaries || !pk.isLegendary())) {
 				if (pk.primaryType == type || pk.secondaryType == type) {
 					typedPokes.add(pk);
@@ -1713,18 +2344,6 @@ public abstract class AbstractRomHandler implements RomHandler {
 	private List<Pokemon> allPokemonWithoutNull() {
 		List<Pokemon> allPokes = new ArrayList<Pokemon>(this.getPokemon());
 		allPokes.remove(0);
-		return allPokes;
-	}
-
-	private List<Pokemon> allNonLegendaries() {
-		List<Pokemon> allPokes = allPokemonWithoutNull();
-		Set<Pokemon> toRemove = new TreeSet<Pokemon>();
-		for (Pokemon pkmn : allPokes) {
-			if (pkmn.isLegendary()) {
-				toRemove.add(pkmn);
-			}
-		}
-		allPokes.removeAll(toRemove);
 		return allPokes;
 	}
 
@@ -1857,7 +2476,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 					int j = 1;
 					for (; j <= highestRivalNum / 2; j++) {
 						if (getLevelOfStarter(currentTrainers, prefix + j + "-"
-								+ i) >= 28) {
+								+ i) >= 30) {
 							break;
 						}
 						changeStarterWithTag(currentTrainers, prefix + j + "-"
@@ -1872,7 +2491,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 					int j = 1;
 					for (; j <= highestRivalNum; j++) {
 						if (getLevelOfStarter(currentTrainers, prefix + j + "-"
-								+ i) >= 18) {
+								+ i) >= 16) {
 							break;
 						}
 						changeStarterWithTag(currentTrainers, prefix + j + "-"
@@ -1902,12 +2521,16 @@ public abstract class AbstractRomHandler implements RomHandler {
 		for (Trainer t : currentTrainers) {
 			if (t.tag != null && t.tag.equals(tag)) {
 				// Bingo, get highest level
+				// last pokemon is given priority +2 but equal priority
+				// = first pokemon wins, so its effectively +1
 				// If it's tagged the same we can assume it's the same team
 				// just the opposite gender or something like that...
 				// So no need to check other trainers with same tag.
 				int highestLevel = t.pokemon.get(0).level;
-				for (int i = 1; i < t.pokemon.size(); i++) {
-					if (t.pokemon.get(i).level > highestLevel) {
+				int trainerPkmnCount = t.pokemon.size();
+				for (int i = 1; i < trainerPkmnCount; i++) {
+					int levelBonus = (i == trainerPkmnCount - 1) ? 2 : 0;
+					if (t.pokemon.get(i).level + levelBonus > highestLevel) {
 						highestLevel = t.pokemon.get(i).level;
 					}
 				}
@@ -1922,10 +2545,14 @@ public abstract class AbstractRomHandler implements RomHandler {
 		for (Trainer t : currentTrainers) {
 			if (t.tag != null && t.tag.equals(tag)) {
 				// Bingo
-				// CHANGE: change the highest level pokemon, not the last.
+				// Change the highest level pokemon, not the last.
+				// BUT: last gets +2 lvl priority (effectively +1)
+				// same as above, equal priority = earlier wins
 				TrainerPokemon bestPoke = t.pokemon.get(0);
-				for (int i = 1; i < t.pokemon.size(); i++) {
-					if (t.pokemon.get(i).level > bestPoke.level) {
+				int trainerPkmnCount = t.pokemon.size();
+				for (int i = 1; i < trainerPkmnCount; i++) {
+					int levelBonus = (i == trainerPkmnCount - 1) ? 2 : 0;
+					if (t.pokemon.get(i).level + levelBonus > bestPoke.level) {
 						bestPoke = t.pokemon.get(i);
 					}
 				}
@@ -1964,7 +2591,7 @@ public abstract class AbstractRomHandler implements RomHandler {
 	private List<Pokemon> cachedAllList;
 
 	private Pokemon pickReplacement(Pokemon current, boolean usePowerLevels,
-			Type type, boolean noLegendaries, boolean shedinjaAllowed) {
+			Type type, boolean noLegendaries, boolean wonderGuardAllowed) {
 		List<Pokemon> pickFrom = cachedAllList;
 		if (type != null) {
 			if (!cachedReplacementLists.containsKey(type)) {
@@ -1985,7 +2612,8 @@ public abstract class AbstractRomHandler implements RomHandler {
 				for (Pokemon pk : pickFrom) {
 					if (pk.bstForPowerLevels() >= minTarget
 							&& pk.bstForPowerLevels() <= maxTarget
-							&& (pk.number != 292 || shedinjaAllowed)) {
+							&& (wonderGuardAllowed || (pk.ability1 != WONDER_GUARD_INDEX
+									&& pk.ability2 != WONDER_GUARD_INDEX && pk.ability3 != WONDER_GUARD_INDEX))) {
 						canPick.add(pk);
 					}
 				}
@@ -1994,12 +2622,14 @@ public abstract class AbstractRomHandler implements RomHandler {
 			}
 			return canPick.get(RandomSource.nextInt(canPick.size()));
 		} else {
-			if (shedinjaAllowed) {
+			if (wonderGuardAllowed) {
 				return pickFrom.get(RandomSource.nextInt(pickFrom.size()));
 			} else {
 				Pokemon pk = pickFrom
 						.get(RandomSource.nextInt(pickFrom.size()));
-				while (pk.number == 292) {
+				while (pk.ability1 == WONDER_GUARD_INDEX
+						|| pk.ability2 == WONDER_GUARD_INDEX
+						|| pk.ability3 == WONDER_GUARD_INDEX) {
 					pk = pickFrom.get(RandomSource.nextInt(pickFrom.size()));
 				}
 				return pk;
@@ -2048,6 +2678,34 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	protected void logBlankLine() {
+		RandomizerGUI.verboseLog.println();
+	}
+
+	protected void logEvoChangeLevel(String pkFrom, String pkTo, int level) {
+		RandomizerGUI.verboseLog.printf("Made %s evolve into %s at level %d",
+				pkFrom, pkTo, level);
+		RandomizerGUI.verboseLog.println();
+	}
+
+	protected void logEvoChangeLevelWithItem(String pkFrom, String pkTo,
+			String itemName) {
+		RandomizerGUI.verboseLog.printf(
+				"Made %s evolve into %s by leveling up holding %s", pkFrom,
+				pkTo, itemName);
+		RandomizerGUI.verboseLog.println();
+	}
+
+	protected void logEvoChangeStone(String pkFrom, String pkTo, String itemName) {
+		RandomizerGUI.verboseLog.printf("Made %s evolve into %s using a %s",
+				pkFrom, pkTo, itemName);
+		RandomizerGUI.verboseLog.println();
+	}
+
+	protected void logEvoChangeLevelWithPkmn(String pkFrom, String pkTo,
+			String otherRequired) {
+		RandomizerGUI.verboseLog.printf(
+				"Made %s evolve into %s by leveling up with %s in the party",
+				pkFrom, pkTo, otherRequired);
 		RandomizerGUI.verboseLog.println();
 	}
 
@@ -2114,13 +2772,25 @@ public abstract class AbstractRomHandler implements RomHandler {
 	}
 
 	@Override
-	public boolean hasBWEXPPatch() {
-		// default: no
-		return false;
+	public int codeTweaksAvailable() {
+		// default: none
+		return 0;
 	}
 
 	@Override
 	public void applyBWEXPPatch() {
+		// default: do nothing
+
+	}
+
+	@Override
+	public void applyXAccNerfPatch() {
+		// default: do nothing
+
+	}
+
+	@Override
+	public void applyCritRatePatch() {
 		// default: do nothing
 
 	}
@@ -2141,6 +2811,12 @@ public abstract class AbstractRomHandler implements RomHandler {
 	public List<Integer> getGameBreakingMoves() {
 		// Sonicboom & drage
 		return Arrays.asList(49, 82);
+	}
+
+	@Override
+	public boolean isROMHack() {
+		// override until detection implemented
+		return false;
 	}
 
 }

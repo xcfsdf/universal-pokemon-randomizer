@@ -118,7 +118,7 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 			return false;
 		}
 		try {
-			name = RandomizerGUI.getValidRequiredROMName(
+			name = this.parentGUI.getValidRequiredROMName(
 					this.configStringField.getText(), trainerClasses,
 					trainerNames, nicknames);
 		} catch (InvalidSupplementFilesException ex) {
@@ -223,11 +223,11 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 		romFileChooser.setFileFilter(new ROMFilter());
 
 		setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-		setTitle("Use Preset");
+		setTitle("Use Premade Seed");
 		setModal(true);
 		setResizable(false);
 
-		presetFileLabel.setText("Preset File:");
+		presetFileLabel.setText("Seed File:");
 
 		presetFileField.setEditable(false);
 
@@ -431,7 +431,7 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 					dis.close();
 					JOptionPane
 							.showMessageDialog(this,
-									"This preset file is not for this version of the randomizer.");
+									"This seed file is not for this version of the randomizer.");
 					return;
 				}
 				long seed = dis.readLong();
@@ -462,12 +462,12 @@ public class PresetLoadDialog extends javax.swing.JDialog {
 					trainerClasses = null;
 					trainerNames = null;
 					JOptionPane.showMessageDialog(this,
-							"The preset file did not contain valid settings.");
+							"The seed file did not contain valid settings.");
 				}
 				dis.close();
 			} catch (IOException ex) {
 				JOptionPane.showMessageDialog(this,
-						"Could not load preset file.");
+						"Could not load seed file.");
 			}
 		}
 	}// GEN-LAST:event_presetFileButtonActionPerformed

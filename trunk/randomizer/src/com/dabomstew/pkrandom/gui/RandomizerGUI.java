@@ -31,10 +31,13 @@ package com.dabomstew.pkrandom.gui;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,16 +57,19 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.xml.bind.DatatypeConverter;
 
+import com.dabomstew.pkrandom.CodeTweaks;
 import com.dabomstew.pkrandom.FileFunctions;
 import com.dabomstew.pkrandom.RandomSource;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
+import com.dabomstew.pkrandom.pokemon.GenRestrictions;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.Move;
 import com.dabomstew.pkrandom.pokemon.MoveLearnt;
 import com.dabomstew.pkrandom.pokemon.Pokemon;
 import com.dabomstew.pkrandom.pokemon.Trainer;
 import com.dabomstew.pkrandom.pokemon.TrainerPokemon;
+import com.dabomstew.pkrandom.romhandlers.AbstractDSRomHandler;
 import com.dabomstew.pkrandom.romhandlers.Gen1RomHandler;
 import com.dabomstew.pkrandom.romhandlers.Gen2RomHandler;
 import com.dabomstew.pkrandom.romhandlers.Gen3RomHandler;
@@ -83,33 +89,223 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private static final long serialVersionUID = 637989089525556154L;
 	private RomHandler romHandler;
 	protected RomHandler[] checkHandlers;
-	public static final int PRESET_FILE_VERSION = 150;
-	public static final int UPDATE_VERSION = 1500;
+	public static final int PRESET_FILE_VERSION = 160;
+	public static final int UPDATE_VERSION = 1600;
 
 	public static PrintStream verboseLog = System.out;
 
-	public OperationDialog opDialog;
-	public boolean presetMode;
+	private OperationDialog opDialog;
+	private boolean presetMode;
+	private GenRestrictions currentRestrictions;
+	private int currentCodeTweaks;
 
+	private static String rootPath = "./";
+
+	// Settings
+	private boolean autoUpdateEnabled;
+	private boolean haveCheckedCustomNames;
+
+	java.util.ResourceBundle bundle;
+
+	/**
+	 * @param args
+	 *            the command line arguments
+	 */
+	public static void main(String args[]) {
+		boolean autoupdate = true;
+		for (String arg : args) {
+			if (arg.equalsIgnoreCase("--noupdate")) {
+				autoupdate = false;
+				break;
+			}
+		}
+		final boolean au = autoupdate;
+		try {
+			javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager
+					.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException ex) {
+			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
+					.log(java.util.logging.Level.SEVERE, null, ex);
+		} catch (InstantiationException ex) {
+			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
+					.log(java.util.logging.Level.SEVERE, null, ex);
+		} catch (IllegalAccessException ex) {
+			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
+					.log(java.util.logging.Level.SEVERE, null, ex);
+		} catch (javax.swing.UnsupportedLookAndFeelException ex) {
+			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
+					.log(java.util.logging.Level.SEVERE, null, ex);
+		}
+
+		/* Create and display the form */
+		java.awt.EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				new RandomizerGUI(au);
+			}
+		});
+	}
+
+	// constructor
 	/**
 	 * Creates new form RandomizerGUI
 	 * 
 	 * @param autoupdate
 	 */
 	public RandomizerGUI(boolean autoupdate) {
+
+		try {
+			URL location = RandomizerGUI.class.getProtectionDomain()
+					.getCodeSource().getLocation();
+			File fh = new File(java.net.URLDecoder.decode(location.getFile(),
+					"UTF-8")).getParentFile();
+			rootPath = fh.getAbsolutePath() + File.separator;
+		} catch (Exception e) {
+			rootPath = "./";
+		}
+
+		bundle = java.util.ResourceBundle
+				.getBundle("com/dabomstew/pkrandom/gui/Bundle"); // NOI18N
 		testForRequiredConfigs();
 		checkHandlers = new RomHandler[] { new Gen1RomHandler(),
 				new Gen2RomHandler(), new Gen3RomHandler(),
 				new Gen4RomHandler(), new Gen5RomHandler() };
 		initComponents();
 		initialiseState();
+		autoUpdateEnabled = true;
+		haveCheckedCustomNames = false;
+		attemptReadConfig();
+		if (!autoupdate) {
+			// override autoupdate
+			autoUpdateEnabled = false;
+		}
+		boolean canWrite = attemptWriteConfig();
+		if (!canWrite) {
+			JOptionPane.showMessageDialog(null,
+					bundle.getString("RandomizerGUI.cantWriteConfigFile"));
+			autoUpdateEnabled = false;
+		}
 		setLocationRelativeTo(null);
-		if (autoupdate) {
+		setVisible(true);
+		checkCustomNames();
+		if (autoUpdateEnabled) {
 			new UpdateCheckThread(this, false).start();
 		}
 	}
 
-	public void testForRequiredConfigs() {
+	// config-related stuff
+
+	private void checkCustomNames() {
+		String[] cnamefiles = new String[] { "trainerclasses.txt",
+				"trainernames.txt", "nicknames.txt" };
+		int[] defaultcsums = new int[] { -1442281799, -1499590809, 1641673648 };
+
+		boolean foundCustom = false;
+		for (int file = 0; file < 3; file++) {
+			File fh = new File("./config/" + cnamefiles[file]);
+			if (fh.exists() && fh.canRead()) {
+				try {
+					int crc = getFileChecksum(new FileInputStream(fh));
+					if (crc != defaultcsums[file]) {
+						foundCustom = true;
+						break;
+					}
+				} catch (FileNotFoundException e) {
+				}
+			}
+		}
+
+		if (foundCustom) {
+			int response = JOptionPane
+					.showConfirmDialog(
+							RandomizerGUI.this,
+							bundle.getString("RandomizerGUI.copyNameFilesDialog.text"),
+							bundle.getString("RandomizerGUI.copyNameFilesDialog.title"),
+							JOptionPane.YES_NO_OPTION);
+			boolean onefailed = false;
+			if (response == JOptionPane.YES_OPTION) {
+				for (String filename : cnamefiles) {
+					if (new File("./config/" + filename).canRead()) {
+						try {
+							FileInputStream fis = new FileInputStream(new File(
+									rootPath + "config/" + filename));
+							FileOutputStream fos = new FileOutputStream(
+									new File(rootPath + filename));
+							byte[] buf = new byte[1024];
+							int len;
+							while ((len = fis.read(buf)) > 0) {
+								fos.write(buf, 0, len);
+							}
+							fos.close();
+							fis.close();
+						} catch (IOException ex) {
+							onefailed = true;
+						}
+					}
+				}
+				if (onefailed) {
+					JOptionPane.showMessageDialog(this, bundle
+							.getString("RandomizerGUI.copyNameFilesFailed"));
+				}
+			}
+		}
+
+		haveCheckedCustomNames = true;
+		attemptWriteConfig();
+	}
+
+	private void attemptReadConfig() {
+		File fh = new File(rootPath + "config.ini");
+		if (!fh.exists() || !fh.canRead()) {
+			return;
+		}
+
+		try {
+			Scanner sc = new Scanner(fh, "UTF-8");
+			while (sc.hasNextLine()) {
+				String q = sc.nextLine().trim();
+				if (q.contains("//")) {
+					q = q.substring(0, q.indexOf("//")).trim();
+				}
+				if (!q.isEmpty()) {
+					String[] tokens = q.split("=", 2);
+					if (tokens.length == 2) {
+						String key = tokens[0].trim();
+						if (key.equalsIgnoreCase("autoupdate")) {
+							autoUpdateEnabled = Boolean.parseBoolean(tokens[1]
+									.trim());
+						} else if (key.equalsIgnoreCase("checkedcustomnames")) {
+							haveCheckedCustomNames = Boolean
+									.parseBoolean(tokens[1].trim());
+						}
+					}
+				}
+			}
+			sc.close();
+		} catch (IOException ex) {
+
+		}
+	}
+
+	private boolean attemptWriteConfig() {
+		File fh = new File(rootPath + "config.ini");
+		if (fh.exists() && !fh.canWrite()) {
+			return false;
+		}
+
+		try {
+			PrintStream ps = new PrintStream(new FileOutputStream(fh), true,
+					"UTF-8");
+			ps.println("autoupdate=" + autoUpdateEnabled);
+			ps.println("checkedcustomnames=" + haveCheckedCustomNames);
+			ps.close();
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+
+	}
+
+	private void testForRequiredConfigs() {
 		String[] required = new String[] { "gameboy_jap.tbl",
 				"rby_english.tbl", "rby_freger.tbl", "rby_espita.tbl",
 				"green_translation.tbl", "gsc_english.tbl", "gsc_freger.tbl",
@@ -120,24 +316,2177 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				"nicknames.txt" };
 		for (String filename : required) {
 			if (!FileFunctions.configExists(filename)) {
-				JOptionPane
-						.showMessageDialog(
-								null,
-								"The file "
-										+ filename
-										+ " is missing from the configuration and so this program cannot start.\n"
-										+ "Please make sure you extract the program from the ZIP file before running it.");
+				JOptionPane.showMessageDialog(null, String.format(
+						bundle.getString("RandomizerGUI.configFileMissing"),
+						filename));
 				System.exit(1);
 				return;
 			}
 		}
 	}
 
+	// form initial state
+
+	private void initialiseState() {
+		this.romHandler = null;
+		this.currentRestrictions = null;
+		this.currentCodeTweaks = 0;
+		updateCodeTweaksButtonText();
+		initialFormState();
+		this.romOpenChooser.setCurrentDirectory(new File(rootPath));
+		this.romSaveChooser.setCurrentDirectory(new File(rootPath));
+		if (new File(rootPath + "settings/").exists()) {
+			this.qsOpenChooser.setCurrentDirectory(new File(rootPath
+					+ "settings/"));
+			this.qsSaveChooser.setCurrentDirectory(new File(rootPath
+					+ "settings/"));
+		} else {
+			this.qsOpenChooser.setCurrentDirectory(new File(rootPath));
+			this.qsSaveChooser.setCurrentDirectory(new File(rootPath));
+		}
+	}
+
+	private void initialFormState() {
+		// Disable all rom components
+		this.goRemoveTradeEvosCheckBox.setEnabled(false);
+		this.goUpdateMovesCheckBox.setEnabled(false);
+		this.goUpdateMovesLegacyCheckBox.setEnabled(false);
+		this.goUpdateTypesCheckBox.setEnabled(false);
+		this.goLowerCaseNamesCheckBox.setEnabled(false);
+		this.goNationalDexCheckBox.setEnabled(false);
+
+		this.goRemoveTradeEvosCheckBox.setSelected(false);
+		this.goUpdateMovesCheckBox.setSelected(false);
+		this.goUpdateMovesLegacyCheckBox.setSelected(false);
+		this.goUpdateTypesCheckBox.setSelected(false);
+		this.goLowerCaseNamesCheckBox.setSelected(false);
+		this.goNationalDexCheckBox.setSelected(false);
+
+		this.goUpdateMovesLegacyCheckBox.setVisible(true);
+
+		this.codeTweaksCB.setEnabled(false);
+		this.codeTweaksCB.setSelected(false);
+		this.codeTweaksBtn.setEnabled(false);
+		this.codeTweaksBtn.setVisible(true);
+		this.codeTweaksCB.setVisible(true);
+		this.pokeLimitCB.setEnabled(false);
+		this.pokeLimitCB.setSelected(false);
+		this.pokeLimitBtn.setEnabled(false);
+		this.pokeLimitBtn.setVisible(true);
+		this.pokeLimitCB.setVisible(true);
+		this.raceModeCB.setEnabled(false);
+		this.raceModeCB.setSelected(false);
+		this.randomizeHollowsCB.setEnabled(false);
+		this.randomizeHollowsCB.setSelected(false);
+		this.brokenMovesCB.setEnabled(false);
+		this.brokenMovesCB.setSelected(false);
+
+		this.riRomNameLabel.setText(bundle
+				.getString("RandomizerGUI.noRomLoaded"));
+		this.riRomCodeLabel.setText("");
+		this.riRomSupportLabel.setText("");
+
+		this.loadQSButton.setEnabled(false);
+		this.saveQSButton.setEnabled(false);
+
+		this.pbsChangesUnchangedRB.setEnabled(false);
+		this.pbsChangesRandomEvosRB.setEnabled(false);
+		this.pbsChangesRandomTotalRB.setEnabled(false);
+		this.pbsChangesShuffleRB.setEnabled(false);
+		this.pbsChangesUnchangedRB.setSelected(true);
+		this.pbsStandardEXPCurvesCB.setEnabled(false);
+		this.pbsStandardEXPCurvesCB.setSelected(false);
+
+		this.abilitiesPanel.setVisible(true);
+		this.paUnchangedRB.setEnabled(false);
+		this.paRandomizeRB.setEnabled(false);
+		this.paWonderGuardCB.setEnabled(false);
+		this.paUnchangedRB.setSelected(true);
+		this.paWonderGuardCB.setSelected(false);
+
+		this.spCustomPoke1Chooser.setEnabled(false);
+		this.spCustomPoke2Chooser.setEnabled(false);
+		this.spCustomPoke3Chooser.setEnabled(false);
+		this.spCustomPoke1Chooser.setSelectedIndex(0);
+		this.spCustomPoke1Chooser.setModel(new DefaultComboBoxModel(
+				new String[] { "--" }));
+		this.spCustomPoke2Chooser.setSelectedIndex(0);
+		this.spCustomPoke2Chooser.setModel(new DefaultComboBoxModel(
+				new String[] { "--" }));
+		this.spCustomPoke3Chooser.setSelectedIndex(0);
+		this.spCustomPoke3Chooser.setModel(new DefaultComboBoxModel(
+				new String[] { "--" }));
+		this.spCustomRB.setEnabled(false);
+		this.spRandomRB.setEnabled(false);
+		this.spRandom2EvosRB.setEnabled(false);
+		this.spUnchangedRB.setEnabled(false);
+		this.spUnchangedRB.setSelected(true);
+		this.spHeldItemsCB.setEnabled(false);
+		this.spHeldItemsCB.setSelected(false);
+		this.spHeldItemsCB.setVisible(true);
+
+		this.pmsRandomTotalRB.setEnabled(false);
+		this.pmsRandomTypeRB.setEnabled(false);
+		this.pmsUnchangedRB.setEnabled(false);
+		this.pmsUnchangedRB.setSelected(true);
+		this.pmsMetronomeOnlyRB.setEnabled(false);
+		this.pmsGen14MovesCB.setEnabled(false);
+		this.pmsGen14MovesCB.setSelected(false);
+		this.pmsGen14MovesCB.setVisible(true);
+
+		this.ptRandomFollowEvosRB.setEnabled(false);
+		this.ptRandomTotalRB.setEnabled(false);
+		this.ptUnchangedRB.setEnabled(false);
+		this.ptUnchangedRB.setSelected(true);
+
+		this.tpPowerLevelsCB.setEnabled(false);
+		this.tpRandomRB.setEnabled(false);
+		this.tpRivalCarriesStarterCB.setEnabled(false);
+		this.tpTypeThemedRB.setEnabled(false);
+		this.tpTypeWeightingCB.setEnabled(false);
+		this.tpNoLegendariesCB.setEnabled(false);
+		this.tpNoEarlyShedinjaCB.setEnabled(false);
+		this.tpNoEarlyShedinjaCB.setVisible(true);
+		this.tpUnchangedRB.setEnabled(false);
+		this.tpUnchangedRB.setSelected(true);
+		this.tpPowerLevelsCB.setSelected(false);
+		this.tpRivalCarriesStarterCB.setSelected(false);
+		this.tpTypeWeightingCB.setSelected(false);
+		this.tpNoLegendariesCB.setSelected(false);
+		this.tpNoEarlyShedinjaCB.setSelected(false);
+
+		this.tnRandomizeCB.setEnabled(false);
+		this.tcnRandomizeCB.setEnabled(false);
+
+		this.tnRandomizeCB.setSelected(false);
+		this.tcnRandomizeCB.setSelected(false);
+
+		this.wpUnchangedRB.setEnabled(false);
+		this.wpRandomRB.setEnabled(false);
+		this.wpArea11RB.setEnabled(false);
+		this.wpGlobalRB.setEnabled(false);
+		this.wpUnchangedRB.setSelected(true);
+
+		this.wpARNoneRB.setEnabled(false);
+		this.wpARCatchEmAllRB.setEnabled(false);
+		this.wpARTypeThemedRB.setEnabled(false);
+		this.wpARSimilarStrengthRB.setEnabled(false);
+		this.wpARNoneRB.setSelected(true);
+
+		this.wpUseTimeCB.setEnabled(false);
+		this.wpUseTimeCB.setVisible(true);
+		this.wpUseTimeCB.setSelected(false);
+
+		this.wpNoLegendariesCB.setEnabled(false);
+		this.wpNoLegendariesCB.setSelected(false);
+
+		this.wpCatchRateCB.setEnabled(false);
+		this.wpCatchRateCB.setSelected(false);
+
+		this.wpHeldItemsCB.setEnabled(false);
+		this.wpHeldItemsCB.setSelected(false);
+		this.wpHeldItemsCB.setVisible(true);
+
+		this.stpRandomL4LRB.setEnabled(false);
+		this.stpRandomTotalRB.setEnabled(false);
+		this.stpUnchangedRB.setEnabled(false);
+		this.stpUnchangedRB.setSelected(true);
+
+		this.tmmRandomRB.setEnabled(false);
+		this.tmmUnchangedRB.setEnabled(false);
+		this.tmmUnchangedRB.setSelected(true);
+
+		this.thcRandomTotalRB.setEnabled(false);
+		this.thcRandomTypeRB.setEnabled(false);
+		this.thcUnchangedRB.setEnabled(false);
+		this.thcUnchangedRB.setSelected(true);
+
+		this.mtmRandomRB.setEnabled(false);
+		this.mtmUnchangedRB.setEnabled(false);
+		this.mtmUnchangedRB.setSelected(true);
+
+		this.mtcRandomTotalRB.setEnabled(false);
+		this.mtcRandomTypeRB.setEnabled(false);
+		this.mtcUnchangedRB.setEnabled(false);
+		this.mtcUnchangedRB.setSelected(true);
+
+		this.mtMovesPanel.setVisible(true);
+		this.mtCompatPanel.setVisible(true);
+		this.mtNoExistLabel.setVisible(false);
+
+		this.igtUnchangedRB.setEnabled(false);
+		this.igtGivenOnlyRB.setEnabled(false);
+		this.igtBothRB.setEnabled(false);
+		this.igtUnchangedRB.setSelected(true);
+
+		this.igtRandomItemCB.setEnabled(false);
+		this.igtRandomItemCB.setSelected(false);
+		this.igtRandomItemCB.setVisible(true);
+
+		this.igtRandomIVsCB.setEnabled(false);
+		this.igtRandomIVsCB.setSelected(false);
+		this.igtRandomIVsCB.setVisible(true);
+
+		this.igtRandomOTCB.setEnabled(false);
+		this.igtRandomOTCB.setSelected(false);
+		this.igtRandomOTCB.setVisible(true);
+
+		this.igtRandomNicknameCB.setEnabled(false);
+		this.igtRandomNicknameCB.setSelected(false);
+
+		this.fiUnchangedRB.setEnabled(false);
+		this.fiShuffleRB.setEnabled(false);
+		this.fiRandomRB.setEnabled(false);
+		this.fiUnchangedRB.setSelected(true);
+
+	}
+
+	// rom loading
+
+	private void loadROM() {
+		romOpenChooser.setSelectedFile(null);
+		int returnVal = romOpenChooser.showOpenDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			final File fh = romOpenChooser.getSelectedFile();
+			for (RomHandler rh : checkHandlers) {
+				if (rh.detectRom(fh.getAbsolutePath())) {
+					this.romHandler = rh;
+					opDialog = new OperationDialog(
+							bundle.getString("RandomizerGUI.loadingText"),
+							this, true);
+					Thread t = new Thread() {
+						@Override
+						public void run() {
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									opDialog.setVisible(true);
+								}
+							});
+							try {
+								RandomizerGUI.this.romHandler.loadRom(fh
+										.getAbsolutePath());
+							} catch (Exception ex) {
+								long time = System.currentTimeMillis();
+								try {
+									String errlog = "error_" + time + ".txt";
+									PrintStream ps = new PrintStream(
+											new FileOutputStream(errlog));
+									PrintStream e1 = System.err;
+									System.setErr(ps);
+									ex.printStackTrace();
+									verboseLog.close();
+									System.setErr(e1);
+									ps.close();
+									JOptionPane
+											.showMessageDialog(
+													RandomizerGUI.this,
+													String.format(
+															bundle.getString("RandomizerGUI.loadFailed"),
+															errlog));
+								} catch (Exception logex) {
+									JOptionPane
+											.showMessageDialog(
+													RandomizerGUI.this,
+													bundle.getString("RandomizerGUI.loadFailedNoLog"));
+									verboseLog.close();
+								}
+							}
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									RandomizerGUI.this.opDialog
+											.setVisible(false);
+									RandomizerGUI.this.initialFormState();
+									RandomizerGUI.this.romLoaded();
+								}
+							});
+						}
+					};
+					t.start();
+
+					return;
+				}
+			}
+			JOptionPane.showMessageDialog(this, String.format(
+					bundle.getString("RandomizerGUI.unsupportedRom"),
+					fh.getName()));
+		}
+
+	}
+
+	private void romLoaded() {
+		try {
+			this.currentRestrictions = null;
+			this.currentCodeTweaks = 0;
+			updateCodeTweaksButtonText();
+			this.riRomNameLabel.setText(this.romHandler.getROMName());
+			this.riRomCodeLabel.setText(this.romHandler.getROMCode());
+			this.riRomSupportLabel.setText(bundle
+					.getString("RandomizerGUI.romSupportPrefix")
+					+ " "
+					+ this.romHandler.getSupportLevel());
+			this.goUpdateMovesCheckBox.setSelected(false);
+			if (romHandler instanceof Gen1RomHandler) {
+				this.goUpdateTypesCheckBox.setEnabled(true);
+			}
+			this.goUpdateMovesCheckBox.setSelected(false);
+			this.goUpdateMovesCheckBox.setEnabled(true);
+			this.goUpdateMovesLegacyCheckBox.setSelected(false);
+			this.goUpdateMovesLegacyCheckBox.setEnabled(false);
+			this.goUpdateMovesLegacyCheckBox
+					.setVisible(!(romHandler instanceof Gen5RomHandler));
+			this.goRemoveTradeEvosCheckBox.setSelected(false);
+			this.goRemoveTradeEvosCheckBox.setEnabled(true);
+			if (!(romHandler instanceof Gen5RomHandler)
+					&& !(romHandler instanceof Gen4RomHandler)) {
+				this.goLowerCaseNamesCheckBox.setSelected(false);
+				this.goLowerCaseNamesCheckBox.setEnabled(true);
+			}
+			if (romHandler instanceof Gen3RomHandler) {
+				this.goNationalDexCheckBox.setSelected(false);
+				this.goNationalDexCheckBox.setEnabled(true);
+			}
+			this.raceModeCB.setSelected(false);
+			this.raceModeCB.setEnabled(true);
+
+			this.codeTweaksCB.setSelected(false);
+			this.codeTweaksCB.setEnabled(romHandler.codeTweaksAvailable() != 0);
+			this.codeTweaksBtn.setEnabled(false);
+			this.codeTweaksBtn
+					.setVisible(romHandler.codeTweaksAvailable() != 0);
+			this.codeTweaksCB.setVisible(romHandler.codeTweaksAvailable() != 0);
+
+			this.pokeLimitCB.setSelected(false);
+			this.pokeLimitBtn.setEnabled(false);
+			this.pokeLimitCB
+					.setEnabled(!(romHandler instanceof Gen1RomHandler));
+			this.pokeLimitCB
+					.setVisible(!(romHandler instanceof Gen1RomHandler));
+			this.pokeLimitBtn
+					.setVisible(!(romHandler instanceof Gen1RomHandler));
+
+			this.randomizeHollowsCB.setSelected(false);
+			this.randomizeHollowsCB.setEnabled(romHandler
+					.hasHiddenHollowPokemon());
+
+			this.brokenMovesCB.setSelected(false);
+			this.brokenMovesCB.setEnabled(true);
+
+			this.loadQSButton.setEnabled(true);
+			this.saveQSButton.setEnabled(true);
+
+			this.pbsChangesUnchangedRB.setEnabled(true);
+			this.pbsChangesUnchangedRB.setSelected(true);
+			this.pbsChangesRandomEvosRB.setEnabled(true);
+			this.pbsChangesRandomTotalRB.setEnabled(true);
+			this.pbsChangesShuffleRB.setEnabled(true);
+
+			this.pbsStandardEXPCurvesCB.setEnabled(true);
+			this.pbsStandardEXPCurvesCB.setSelected(false);
+
+			if (romHandler.abilitiesPerPokemon() > 0) {
+				this.paUnchangedRB.setEnabled(true);
+				this.paUnchangedRB.setSelected(true);
+				this.paRandomizeRB.setEnabled(true);
+				this.paWonderGuardCB.setEnabled(false);
+			} else {
+				this.abilitiesPanel.setVisible(false);
+			}
+
+			this.spUnchangedRB.setEnabled(true);
+			this.spUnchangedRB.setSelected(true);
+
+			this.spCustomPoke3Chooser.setVisible(true);
+			if (romHandler.canChangeStarters()) {
+				this.spCustomRB.setEnabled(true);
+				this.spRandomRB.setEnabled(true);
+				this.spRandom2EvosRB.setEnabled(true);
+				if (romHandler.isYellow()) {
+					this.spCustomPoke3Chooser.setVisible(false);
+				}
+				populateDropdowns();
+			}
+
+			this.spHeldItemsCB.setSelected(false);
+			boolean hasStarterHeldItems = (romHandler instanceof Gen2RomHandler || romHandler instanceof Gen3RomHandler);
+			this.spHeldItemsCB.setEnabled(hasStarterHeldItems);
+			this.spHeldItemsCB.setVisible(hasStarterHeldItems);
+
+			this.pmsRandomTotalRB.setEnabled(true);
+			this.pmsRandomTypeRB.setEnabled(true);
+			this.pmsUnchangedRB.setEnabled(true);
+			this.pmsUnchangedRB.setSelected(true);
+			this.pmsMetronomeOnlyRB.setEnabled(true);
+
+			if (romHandler instanceof Gen1RomHandler) {
+				this.pmsGen14MovesCB.setVisible(true);
+			} else {
+				this.pmsGen14MovesCB.setVisible(false);
+			}
+
+			this.ptRandomFollowEvosRB.setEnabled(true);
+			this.ptRandomTotalRB.setEnabled(true);
+			this.ptUnchangedRB.setEnabled(true);
+			this.ptUnchangedRB.setSelected(true);
+
+			this.tpRandomRB.setEnabled(true);
+			this.tpTypeThemedRB.setEnabled(true);
+			this.tpUnchangedRB.setEnabled(true);
+			this.tpUnchangedRB.setSelected(true);
+			this.tnRandomizeCB.setEnabled(true);
+			this.tcnRandomizeCB.setEnabled(true);
+
+			if (romHandler instanceof Gen1RomHandler
+					|| romHandler instanceof Gen2RomHandler) {
+				this.tpNoEarlyShedinjaCB.setVisible(false);
+			} else {
+				this.tpNoEarlyShedinjaCB.setVisible(true);
+			}
+			this.tpNoEarlyShedinjaCB.setSelected(false);
+
+			this.wpArea11RB.setEnabled(true);
+			this.wpGlobalRB.setEnabled(true);
+			this.wpRandomRB.setEnabled(true);
+			this.wpUnchangedRB.setEnabled(true);
+			this.wpUnchangedRB.setSelected(true);
+			this.wpUseTimeCB.setEnabled(false);
+			this.wpNoLegendariesCB.setEnabled(false);
+			if (!romHandler.hasTimeBasedEncounters()) {
+				this.wpUseTimeCB.setVisible(false);
+			}
+			this.wpCatchRateCB.setEnabled(true);
+
+			this.wpHeldItemsCB.setSelected(false);
+			this.wpHeldItemsCB.setEnabled(true);
+			if (romHandler instanceof Gen1RomHandler) {
+				this.wpHeldItemsCB.setVisible(false);
+			}
+
+			this.stpUnchangedRB.setEnabled(true);
+			if (this.romHandler.canChangeStaticPokemon()) {
+				this.stpRandomL4LRB.setEnabled(true);
+				this.stpRandomTotalRB.setEnabled(true);
+
+			}
+
+			this.tmmRandomRB.setEnabled(true);
+			this.tmmUnchangedRB.setEnabled(true);
+
+			this.thcRandomTotalRB.setEnabled(true);
+			this.thcRandomTypeRB.setEnabled(true);
+			this.thcUnchangedRB.setEnabled(true);
+
+			if (this.romHandler.hasMoveTutors()) {
+				this.mtmRandomRB.setEnabled(true);
+				this.mtmUnchangedRB.setEnabled(true);
+
+				this.mtcRandomTotalRB.setEnabled(true);
+				this.mtcRandomTypeRB.setEnabled(true);
+				this.mtcUnchangedRB.setEnabled(true);
+			} else {
+				this.mtCompatPanel.setVisible(false);
+				this.mtMovesPanel.setVisible(false);
+				this.mtNoExistLabel.setVisible(true);
+			}
+
+			this.igtUnchangedRB.setEnabled(true);
+			this.igtBothRB.setEnabled(true);
+			this.igtGivenOnlyRB.setEnabled(true);
+
+			if (this.romHandler instanceof Gen1RomHandler) {
+				this.igtRandomItemCB.setVisible(false);
+				this.igtRandomIVsCB.setVisible(false);
+				this.igtRandomOTCB.setVisible(false);
+			}
+
+			this.fiUnchangedRB.setEnabled(true);
+			this.fiRandomRB.setEnabled(true);
+			this.fiShuffleRB.setEnabled(true);
+
+			if (this.romHandler instanceof AbstractDSRomHandler) {
+				((AbstractDSRomHandler) this.romHandler).closeInnerRom();
+			}
+		} catch (Exception ex) {
+			long time = System.currentTimeMillis();
+			try {
+				String errlog = "error_" + time + ".txt";
+				PrintStream ps = new PrintStream(new FileOutputStream(errlog));
+				PrintStream e1 = System.err;
+				System.setErr(ps);
+				ex.printStackTrace();
+				System.setErr(e1);
+				ps.close();
+				JOptionPane
+						.showMessageDialog(
+								RandomizerGUI.this,
+								String.format(
+										bundle.getString("RandomizerGUI.processFailed"),
+										errlog));
+			} catch (Exception logex) {
+				JOptionPane.showMessageDialog(RandomizerGUI.this,
+						bundle.getString("RandomizerGUI.processFailedNoLog"));
+			}
+		}
+	}
+
+	private void populateDropdowns() {
+		List<Pokemon> currentStarters = romHandler.getStarters();
+		List<Pokemon> allPokes = romHandler.getPokemon();
+		String[] pokeNames = new String[allPokes.size() - 1];
+		for (int i = 1; i < allPokes.size(); i++) {
+			pokeNames[i - 1] = allPokes.get(i).name;
+		}
+		this.spCustomPoke1Chooser.setModel(new DefaultComboBoxModel(pokeNames));
+		this.spCustomPoke1Chooser
+				.setSelectedIndex(currentStarters.get(0).number - 1);
+		this.spCustomPoke2Chooser.setModel(new DefaultComboBoxModel(pokeNames));
+		this.spCustomPoke2Chooser
+				.setSelectedIndex(currentStarters.get(1).number - 1);
+		if (!romHandler.isYellow()) {
+			this.spCustomPoke3Chooser.setModel(new DefaultComboBoxModel(
+					pokeNames));
+			this.spCustomPoke3Chooser
+					.setSelectedIndex(currentStarters.get(2).number - 1);
+		}
+	}
+
+	private void enableOrDisableSubControls() {
+		// This isn't for a new ROM being loaded (that's romLoaded)
+		// This is just for when a radio button gets selected or state is loaded
+		// and we need to enable/disable secondary controls
+		// e.g. wild pokemon / trainer pokemon "modifier"
+		// and the 3 starter pokemon dropdowns
+
+		if (this.goUpdateMovesCheckBox.isSelected()
+				&& !(romHandler instanceof Gen5RomHandler)) {
+			this.goUpdateMovesLegacyCheckBox.setEnabled(true);
+		} else {
+			this.goUpdateMovesLegacyCheckBox.setEnabled(false);
+			this.goUpdateMovesLegacyCheckBox.setSelected(false);
+		}
+
+		this.codeTweaksBtn.setEnabled(this.codeTweaksCB.isSelected());
+		updateCodeTweaksButtonText();
+		this.pokeLimitBtn.setEnabled(this.pokeLimitCB.isSelected());
+
+		if (this.spCustomRB.isSelected()) {
+			this.spCustomPoke1Chooser.setEnabled(true);
+			this.spCustomPoke2Chooser.setEnabled(true);
+			this.spCustomPoke3Chooser.setEnabled(true);
+		} else {
+			this.spCustomPoke1Chooser.setEnabled(false);
+			this.spCustomPoke2Chooser.setEnabled(false);
+			this.spCustomPoke3Chooser.setEnabled(false);
+		}
+
+		if (this.paRandomizeRB.isSelected()) {
+			this.paWonderGuardCB.setEnabled(true);
+		} else {
+			this.paWonderGuardCB.setEnabled(false);
+			this.paWonderGuardCB.setSelected(false);
+		}
+
+		if (this.tpUnchangedRB.isSelected()) {
+			this.tpPowerLevelsCB.setEnabled(false);
+			this.tpRivalCarriesStarterCB.setEnabled(false);
+			this.tpNoLegendariesCB.setEnabled(false);
+			this.tpNoEarlyShedinjaCB.setEnabled(false);
+			this.tpNoEarlyShedinjaCB.setSelected(false);
+		} else {
+			this.tpPowerLevelsCB.setEnabled(true);
+			this.tpRivalCarriesStarterCB.setEnabled(true);
+			this.tpNoLegendariesCB.setEnabled(true);
+			this.tpNoEarlyShedinjaCB.setEnabled(true);
+		}
+
+		if (this.tpTypeThemedRB.isSelected()) {
+			this.tpTypeWeightingCB.setEnabled(true);
+		} else {
+			this.tpTypeWeightingCB.setEnabled(false);
+		}
+
+		if (this.wpArea11RB.isSelected() || this.wpRandomRB.isSelected()) {
+			this.wpARNoneRB.setEnabled(true);
+			this.wpARSimilarStrengthRB.setEnabled(true);
+			this.wpARCatchEmAllRB.setEnabled(true);
+			this.wpARTypeThemedRB.setEnabled(true);
+		} else if (this.wpGlobalRB.isSelected()) {
+			if (this.wpARCatchEmAllRB.isSelected()
+					|| this.wpARTypeThemedRB.isSelected()) {
+				this.wpARNoneRB.setSelected(true);
+			}
+			this.wpARNoneRB.setEnabled(true);
+			this.wpARSimilarStrengthRB.setEnabled(true);
+			this.wpARCatchEmAllRB.setEnabled(false);
+			this.wpARTypeThemedRB.setEnabled(false);
+		} else {
+			this.wpARNoneRB.setEnabled(false);
+			this.wpARSimilarStrengthRB.setEnabled(false);
+			this.wpARCatchEmAllRB.setEnabled(false);
+			this.wpARTypeThemedRB.setEnabled(false);
+			this.wpARNoneRB.setSelected(true);
+		}
+
+		if (this.wpUnchangedRB.isSelected()) {
+			this.wpUseTimeCB.setEnabled(false);
+			this.wpNoLegendariesCB.setEnabled(false);
+		} else {
+			this.wpUseTimeCB.setEnabled(true);
+			this.wpNoLegendariesCB.setEnabled(true);
+		}
+
+		if (this.igtUnchangedRB.isSelected()) {
+			this.igtRandomItemCB.setEnabled(false);
+			this.igtRandomIVsCB.setEnabled(false);
+			this.igtRandomNicknameCB.setEnabled(false);
+			this.igtRandomOTCB.setEnabled(false);
+		} else {
+			this.igtRandomItemCB.setEnabled(true);
+			this.igtRandomIVsCB.setEnabled(true);
+			this.igtRandomNicknameCB.setEnabled(true);
+			this.igtRandomOTCB.setEnabled(true);
+		}
+
+		if (this.pmsMetronomeOnlyRB.isSelected()) {
+			this.tmmUnchangedRB.setEnabled(false);
+			this.tmmRandomRB.setEnabled(false);
+			this.tmmUnchangedRB.setSelected(true);
+
+			this.mtmUnchangedRB.setEnabled(false);
+			this.mtmRandomRB.setEnabled(false);
+			this.mtmUnchangedRB.setSelected(true);
+		} else {
+			this.tmmUnchangedRB.setEnabled(true);
+			this.tmmRandomRB.setEnabled(true);
+
+			this.mtmUnchangedRB.setEnabled(true);
+			this.mtmRandomRB.setEnabled(true);
+		}
+
+		if (this.pmsMetronomeOnlyRB.isSelected()
+				|| this.pmsUnchangedRB.isSelected()) {
+			this.pmsGen14MovesCB.setEnabled(false);
+			this.pmsGen14MovesCB.setSelected(false);
+		} else {
+			this.pmsGen14MovesCB.setEnabled(true);
+		}
+	}
+
+	private void saveROM() {
+		if (romHandler == null) {
+			return; // none loaded
+		}
+		if (raceModeCB.isSelected() && tpUnchangedRB.isSelected()
+				&& wpUnchangedRB.isSelected()) {
+			JOptionPane.showMessageDialog(this,
+					bundle.getString("RandomizerGUI.raceModeRequirements"));
+			return;
+		}
+		if (pokeLimitCB.isSelected()
+				&& (this.currentRestrictions == null || this.currentRestrictions
+						.nothingSelected())) {
+			JOptionPane.showMessageDialog(this,
+					bundle.getString("RandomizerGUI.pokeLimitNotChosen"));
+			return;
+		}
+		romSaveChooser.setSelectedFile(null);
+		int returnVal = romSaveChooser.showSaveDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File fh = romSaveChooser.getSelectedFile();
+			// Fix or add extension
+			List<String> extensions = new ArrayList<String>(Arrays.asList(
+					"sgb", "gbc", "gba", "nds"));
+			extensions.remove(this.romHandler.getDefaultExtension());
+			fh = FileFunctions.fixFilename(fh,
+					this.romHandler.getDefaultExtension(), extensions);
+			// Get a seed
+			long seed = RandomSource.pickSeed();
+			// Apply it
+			RandomSource.seed(seed);
+			presetMode = false;
+			performRandomization(fh.getAbsolutePath(), seed, null, null, null);
+		}
+	}
+
+	private String getConfigString() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+		baos.write(makeByteSelected(this.goLowerCaseNamesCheckBox,
+				this.goNationalDexCheckBox, this.goRemoveTradeEvosCheckBox,
+				this.goUpdateMovesCheckBox, this.goUpdateMovesLegacyCheckBox,
+				this.goUpdateTypesCheckBox, this.tnRandomizeCB,
+				this.tcnRandomizeCB));
+
+		baos.write(makeByteSelected(this.pbsChangesRandomEvosRB,
+				this.pbsChangesRandomTotalRB, this.pbsChangesShuffleRB,
+				this.pbsChangesUnchangedRB, this.paUnchangedRB,
+				this.paRandomizeRB, this.paWonderGuardCB,
+				this.pbsStandardEXPCurvesCB));
+
+		baos.write(makeByteSelected(this.ptRandomFollowEvosRB,
+				this.ptRandomTotalRB, this.ptUnchangedRB, this.codeTweaksCB,
+				this.raceModeCB, this.randomizeHollowsCB, this.brokenMovesCB,
+				this.pokeLimitCB));
+
+		baos.write(makeByteSelected(this.spCustomRB, this.spRandomRB,
+				this.spUnchangedRB, this.spRandom2EvosRB, this.spHeldItemsCB));
+
+		// @4
+		writePokemonIndex(baos, this.spCustomPoke1Chooser);
+		writePokemonIndex(baos, this.spCustomPoke2Chooser);
+		writePokemonIndex(baos, this.spCustomPoke3Chooser);
+
+		// 10
+		baos.write(makeByteSelected(this.pmsRandomTotalRB,
+				this.pmsRandomTypeRB, this.pmsUnchangedRB,
+				this.pmsMetronomeOnlyRB, this.pmsGen14MovesCB));
+
+		// changed 160
+		baos.write(makeByteSelected(this.tpPowerLevelsCB, this.tpRandomRB,
+				this.tpRivalCarriesStarterCB, this.tpTypeThemedRB,
+				this.tpTypeWeightingCB, this.tpUnchangedRB,
+				this.tpNoLegendariesCB, this.tpNoEarlyShedinjaCB));
+
+		baos.write(makeByteSelected(this.wpARCatchEmAllRB, this.wpArea11RB,
+				this.wpARNoneRB, this.wpARTypeThemedRB, this.wpGlobalRB,
+				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB));
+
+		baos.write(makeByteSelected(this.wpCatchRateCB, this.wpNoLegendariesCB));
+
+		baos.write(makeByteSelected(this.stpUnchangedRB, this.stpRandomL4LRB,
+				this.stpRandomTotalRB));
+
+		baos.write(makeByteSelected(this.thcRandomTotalRB,
+				this.thcRandomTypeRB, this.thcUnchangedRB, this.tmmRandomRB,
+				this.tmmUnchangedRB));
+
+		baos.write(makeByteSelected(this.mtcRandomTotalRB,
+				this.mtcRandomTypeRB, this.mtcUnchangedRB, this.mtmRandomRB,
+				this.mtmUnchangedRB));
+
+		// new 150
+		baos.write(makeByteSelected(this.igtBothRB, this.igtGivenOnlyRB,
+				this.igtRandomItemCB, this.igtRandomIVsCB,
+				this.igtRandomNicknameCB, this.igtRandomOTCB,
+				this.igtUnchangedRB));
+
+		baos.write(makeByteSelected(this.fiRandomRB, this.fiShuffleRB,
+				this.fiUnchangedRB));
+
+		// @ 19
+		try {
+			if (currentRestrictions != null) {
+				writeFullInt(baos, currentRestrictions.toInt());
+			} else {
+				writeFullInt(baos, 0);
+			}
+		} catch (IOException e) {
+		}
+
+		// @ 23
+		try {
+			writeFullInt(baos, currentCodeTweaks);
+		} catch (IOException e) {
+
+		}
+
+		try {
+			byte[] romName = romHandler.getROMName().getBytes("US-ASCII");
+			baos.write(romName.length);
+			baos.write(romName);
+		} catch (UnsupportedEncodingException e) {
+			baos.write(0);
+		} catch (IOException e) {
+			baos.write(0);
+		}
+
+		byte[] current = baos.toByteArray();
+		CRC32 checksum = new CRC32();
+		checksum.update(current);
+
+		try {
+			writeFullInt(baos, (int) checksum.getValue());
+			writeFullInt(baos, getFileChecksum("trainerclasses.txt"));
+			writeFullInt(baos, getFileChecksum("trainernames.txt"));
+			writeFullInt(baos, getFileChecksum("nicknames.txt"));
+		} catch (IOException e) {
+		}
+
+		return DatatypeConverter.printBase64Binary(baos.toByteArray());
+	}
+
+	private static int getFileChecksum(String filename) {
+		try {
+			return getFileChecksum(FileFunctions.openConfig(filename));
+		} catch (IOException e) {
+			return 0;
+		}
+	}
+
+	private static int getFileChecksum(InputStream stream) {
+		try {
+			Scanner sc = new Scanner(stream, "UTF-8");
+			CRC32 checksum = new CRC32();
+			while (sc.hasNextLine()) {
+				String line = sc.nextLine().trim();
+				if (!line.isEmpty()) {
+					checksum.update(line.getBytes("UTF-8"));
+				}
+			}
+			sc.close();
+			return (int) checksum.getValue();
+		} catch (IOException e) {
+			return 0;
+		}
+
+	}
+
+	public String getValidRequiredROMName(String config, byte[] trainerClasses,
+			byte[] trainerNames, byte[] nicknames)
+			throws UnsupportedEncodingException,
+			InvalidSupplementFilesException {
+		byte[] data = DatatypeConverter.parseBase64Binary(config);
+
+		if (data.length < 44) {
+			return null; // too short
+		}
+
+		// Check the checksum
+		ByteBuffer buf = ByteBuffer.allocate(4).put(data, data.length - 16, 4);
+		buf.rewind();
+		int crc = buf.getInt();
+
+		CRC32 checksum = new CRC32();
+		checksum.update(data, 0, data.length - 16);
+		if ((int) checksum.getValue() != crc) {
+			return null; // checksum failure
+		}
+
+		// Check the trainerclass & trainernames crc
+		if (trainerClasses == null
+				&& !checkOtherCRC(data, 0, 6, "trainerclasses.txt",
+						data.length - 12)) {
+			JOptionPane.showMessageDialog(null,
+					bundle.getString("RandomizerGUI.presetFailTrainerClasses"));
+			throw new InvalidSupplementFilesException();
+		}
+		if (trainerNames == null
+				&& (!checkOtherCRC(data, 0, 5, "trainernames.txt",
+						data.length - 8) || !checkOtherCRC(data, 16, 5,
+						"trainernames.txt", data.length - 8))) {
+			JOptionPane.showMessageDialog(null,
+					bundle.getString("RandomizerGUI.presetFailTrainerNames"));
+			throw new InvalidSupplementFilesException();
+		}
+		if (nicknames == null
+				&& !checkOtherCRC(data, 16, 4, "nicknames.txt", data.length - 4)) {
+			JOptionPane.showMessageDialog(null,
+					bundle.getString("RandomizerGUI.presetFailNicknames"));
+			throw new InvalidSupplementFilesException();
+		}
+
+		int nameLength = data[27] & 0xFF;
+		if (data.length != 44 + nameLength) {
+			return null; // not valid length
+		}
+		String name = new String(data, 28, nameLength, "US-ASCII");
+		return name;
+	}
+
+	private boolean restoreFrom(String config) {
+		// Need to add enables
+		byte[] data = DatatypeConverter.parseBase64Binary(config);
+
+		// Check the checksum
+		ByteBuffer buf = ByteBuffer.allocate(4).put(data, data.length - 16, 4);
+		buf.rewind();
+		int crc = buf.getInt();
+
+		CRC32 checksum = new CRC32();
+		checksum.update(data, 0, data.length - 16);
+
+		if ((int) checksum.getValue() != crc) {
+			return false; // checksum failure
+		}
+
+		// Restore the actual controls
+		restoreStates(data[0], this.goLowerCaseNamesCheckBox,
+				this.goNationalDexCheckBox, this.goRemoveTradeEvosCheckBox,
+				this.goUpdateMovesCheckBox, this.goUpdateMovesLegacyCheckBox,
+				this.goUpdateTypesCheckBox, this.tnRandomizeCB,
+				this.tcnRandomizeCB);
+
+		// sanity override
+		if (this.goUpdateMovesLegacyCheckBox.isSelected()
+				&& (romHandler instanceof Gen5RomHandler)) {
+			// they probably don't want moves updated actually
+			this.goUpdateMovesLegacyCheckBox.setSelected(false);
+			this.goUpdateMovesCheckBox.setSelected(false);
+		}
+
+		restoreStates(data[1], this.pbsChangesRandomEvosRB,
+				this.pbsChangesRandomTotalRB, this.pbsChangesShuffleRB,
+				this.pbsChangesUnchangedRB, this.paUnchangedRB,
+				this.paRandomizeRB, this.paWonderGuardCB,
+				this.pbsStandardEXPCurvesCB);
+
+		restoreStates(data[2], this.ptRandomFollowEvosRB, this.ptRandomTotalRB,
+				this.ptUnchangedRB, this.codeTweaksCB, this.raceModeCB,
+				this.randomizeHollowsCB, this.brokenMovesCB, this.pokeLimitCB);
+
+		restoreStates(data[3], this.spCustomRB, this.spRandomRB,
+				this.spUnchangedRB, this.spRandom2EvosRB, this.spHeldItemsCB);
+
+		restoreSelectedIndex(data, 4, this.spCustomPoke1Chooser);
+		restoreSelectedIndex(data, 6, this.spCustomPoke2Chooser);
+		restoreSelectedIndex(data, 8, this.spCustomPoke3Chooser);
+
+		restoreStates(data[10], this.pmsRandomTotalRB, this.pmsRandomTypeRB,
+				this.pmsUnchangedRB, this.pmsMetronomeOnlyRB,
+				this.pmsGen14MovesCB);
+
+		// changed 160
+		restoreStates(data[11], this.tpPowerLevelsCB, this.tpRandomRB,
+				this.tpRivalCarriesStarterCB, this.tpTypeThemedRB,
+				this.tpTypeWeightingCB, this.tpUnchangedRB,
+				this.tpNoLegendariesCB, this.tpNoEarlyShedinjaCB);
+
+		restoreStates(data[12], this.wpARCatchEmAllRB, this.wpArea11RB,
+				this.wpARNoneRB, this.wpARTypeThemedRB, this.wpGlobalRB,
+				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB);
+
+		restoreStates(data[13], this.wpCatchRateCB, this.wpNoLegendariesCB);
+
+		restoreStates(data[14], this.stpUnchangedRB, this.stpRandomL4LRB,
+				this.stpRandomTotalRB);
+
+		restoreStates(data[15], this.thcRandomTotalRB, this.thcRandomTypeRB,
+				this.thcUnchangedRB, this.tmmRandomRB, this.tmmUnchangedRB);
+		restoreStates(data[16], this.mtcRandomTotalRB, this.mtcRandomTypeRB,
+				this.mtcUnchangedRB, this.mtmRandomRB, this.mtmUnchangedRB);
+
+		// new 150
+		restoreStates(data[17], this.igtBothRB, this.igtGivenOnlyRB,
+				this.igtRandomItemCB, this.igtRandomIVsCB,
+				this.igtRandomNicknameCB, this.igtRandomOTCB,
+				this.igtUnchangedRB);
+		restoreStates(data[18], this.fiRandomRB, this.fiShuffleRB,
+				this.fiUnchangedRB);
+
+		// gen restrictions
+		int genlim = readFullInt(data, 19);
+		if (genlim == 0) {
+			this.currentRestrictions = null;
+		} else {
+			this.currentRestrictions = new GenRestrictions(genlim);
+			this.currentRestrictions.limitToGen(this.romHandler
+					.generationOfPokemon());
+		}
+
+		int codetweaks = readFullInt(data, 23);
+		this.currentCodeTweaks = codetweaks
+				& this.romHandler.codeTweaksAvailable();
+		updateCodeTweaksButtonText();
+		// Sanity override
+		if (this.currentCodeTweaks == 0) {
+			this.codeTweaksCB.setSelected(false);
+		}
+
+		this.enableOrDisableSubControls();
+
+		// Name data is ignored here - we should've used it earlier.
+		return true;
+	}
+
+	private void performRandomization(final String filename, final long seed,
+			byte[] trainerClasses, byte[] trainerNames, byte[] nicknames) {
+
+		final boolean raceMode = raceModeCB.isSelected();
+		int checkValue = 0;
+		final long startTime = System.currentTimeMillis();
+		// Setup verbose log
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		String nl = System.getProperty("line.separator");
+		try {
+			verboseLog = new PrintStream(baos, false, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			verboseLog = new PrintStream(baos);
+		}
+		try {
+			// limit pokemon?
+			if (this.pokeLimitCB.isSelected()) {
+				romHandler.setPokemonPool(currentRestrictions);
+				romHandler.removeEvosForPokemonPool();
+			}
+
+			// Update type effectiveness in RBY?
+			if (romHandler instanceof Gen1RomHandler
+					&& this.goUpdateTypesCheckBox.isSelected()) {
+				romHandler.fixTypeEffectiveness();
+			}
+
+			// Move updates
+			if (this.goUpdateMovesCheckBox.isSelected()) {
+				romHandler.initMoveUpdates();
+				if (!(romHandler instanceof Gen5RomHandler)) {
+					romHandler.updateMovesToGen5();
+				}
+				if (!this.goUpdateMovesLegacyCheckBox.isSelected()) {
+					romHandler.updateMovesToGen6();
+				}
+				romHandler.printMoveUpdates();
+			}
+
+			List<Move> moves = romHandler.getMoves();
+
+			// Trade evolutions removal
+			if (this.goRemoveTradeEvosCheckBox.isSelected()) {
+				romHandler.removeTradeEvolutions(!this.pmsUnchangedRB
+						.isSelected());
+			}
+
+			// Camel case?
+			if (!(romHandler instanceof Gen5RomHandler)
+					&& !(romHandler instanceof Gen4RomHandler)
+					&& this.goLowerCaseNamesCheckBox.isSelected()) {
+				romHandler.applyCamelCaseNames();
+			}
+
+			// National dex gen3?
+			if (romHandler instanceof Gen3RomHandler
+					&& this.goNationalDexCheckBox.isSelected()) {
+				romHandler.patchForNationalDex();
+			}
+
+			// Code Tweaks?
+			if (romHandler.codeTweaksAvailable() != 0) {
+				int ctavailable = romHandler.codeTweaksAvailable();
+				if ((ctavailable & CodeTweaks.BW_EXP_PATCH) > 0
+						&& (currentCodeTweaks & CodeTweaks.BW_EXP_PATCH) > 0) {
+					romHandler.applyBWEXPPatch();
+				}
+
+				if ((ctavailable & CodeTweaks.FIX_CRIT_RATE) > 0
+						&& (currentCodeTweaks & CodeTweaks.FIX_CRIT_RATE) > 0) {
+					romHandler.applyCritRatePatch();
+				}
+
+				if ((ctavailable & CodeTweaks.NERF_X_ACCURACY) > 0
+						&& (currentCodeTweaks & CodeTweaks.NERF_X_ACCURACY) > 0) {
+					romHandler.applyXAccNerfPatch();
+				}
+			}
+
+			// Hollows?
+			if (romHandler.hasHiddenHollowPokemon()
+					&& this.randomizeHollowsCB.isSelected()) {
+				romHandler.randomizeHiddenHollowPokemon();
+			}
+
+			List<Pokemon> allPokes = romHandler.getPokemon();
+
+			// Base stats changing
+			if (this.pbsChangesShuffleRB.isSelected()) {
+				romHandler.shufflePokemonStats();
+			} else if (this.pbsChangesRandomEvosRB.isSelected()) {
+				romHandler.randomizePokemonStats(true);
+			} else if (this.pbsChangesRandomTotalRB.isSelected()) {
+				romHandler.randomizePokemonStats(false);
+			}
+
+			if (this.pbsStandardEXPCurvesCB.isSelected()) {
+				romHandler.standardizeEXPCurves();
+			}
+
+			// Abilities? (new 1.0.2)
+			if (this.romHandler.abilitiesPerPokemon() > 0
+					&& this.paRandomizeRB.isSelected()) {
+				romHandler
+						.randomizeAbilities(this.paWonderGuardCB.isSelected());
+			}
+
+			// Pokemon Types
+			if (this.ptRandomFollowEvosRB.isSelected()) {
+				romHandler.randomizePokemonTypes(true);
+			} else if (this.ptRandomTotalRB.isSelected()) {
+				romHandler.randomizePokemonTypes(false);
+			}
+
+			// Wild Held Items?
+			String[] itemNames = romHandler.getItemNames();
+			if (this.wpHeldItemsCB.isSelected()) {
+				romHandler.randomizeWildHeldItems();
+			}
+
+			// Log base stats & types if changed at all
+			if (this.pbsChangesUnchangedRB.isSelected()
+					&& this.ptUnchangedRB.isSelected()
+					&& this.paUnchangedRB.isSelected()
+					&& this.wpHeldItemsCB.isSelected() == false) {
+				verboseLog.println("Pokemon base stats & type: unchanged" + nl);
+			} else {
+				verboseLog.println("--Pokemon Base Stats & Types--");
+				if (romHandler instanceof Gen1RomHandler) {
+					verboseLog
+							.println("NUM|NAME      |TYPE             |  HP| ATK| DEF| SPE|SPEC");
+					for (Pokemon pkmn : allPokes) {
+						if (pkmn != null) {
+							String typeString = pkmn.primaryType == null ? "NULL"
+									: pkmn.primaryType.toString();
+							if (pkmn.secondaryType != null) {
+								typeString += "/"
+										+ (pkmn.secondaryType == null ? "NULL"
+												: pkmn.secondaryType.toString());
+							}
+							verboseLog.printf(
+									"%3d|%-10s|%-17s|%4d|%4d|%4d|%4d|%4d" + nl,
+									pkmn.number, pkmn.name, typeString,
+									pkmn.hp, pkmn.attack, pkmn.defense,
+									pkmn.speed, pkmn.special);
+						}
+
+					}
+				} else {
+					verboseLog
+							.print("NUM|NAME      |TYPE             |  HP| ATK| DEF| SPE|SATK|SDEF");
+					int abils = romHandler.abilitiesPerPokemon();
+					for (int i = 0; i < abils; i++) {
+						verboseLog.print("|ABILITY" + (i + 1) + "    ");
+					}
+					verboseLog.print("|ITEM");
+					verboseLog.println();
+					for (Pokemon pkmn : allPokes) {
+						if (pkmn != null) {
+							String typeString = pkmn.primaryType.toString();
+							if (pkmn.secondaryType != null) {
+								typeString += "/"
+										+ pkmn.secondaryType.toString();
+							}
+							verboseLog.printf(
+									"%3d|%-10s|%-17s|%4d|%4d|%4d|%4d|%4d|%4d",
+									pkmn.number, pkmn.name, typeString,
+									pkmn.hp, pkmn.attack, pkmn.defense,
+									pkmn.speed, pkmn.spatk, pkmn.spdef);
+							if (abils > 0) {
+								verboseLog.printf("|%-12s|%-12s",
+										romHandler.abilityName(pkmn.ability1),
+										romHandler.abilityName(pkmn.ability2));
+								if (abils > 2) {
+									verboseLog.printf("|%-12s", romHandler
+											.abilityName(pkmn.ability3));
+								}
+							}
+							verboseLog.print("|");
+							if (pkmn.guaranteedHeldItem > 0) {
+								verboseLog
+										.print(itemNames[pkmn.guaranteedHeldItem]
+												+ " (100%)");
+							} else {
+								int itemCount = 0;
+								if (pkmn.commonHeldItem > 0) {
+									itemCount++;
+									verboseLog
+											.print(itemNames[pkmn.commonHeldItem]
+													+ " (common)");
+								}
+								if (pkmn.rareHeldItem > 0) {
+									if (itemCount > 0) {
+										verboseLog.print(", ");
+									}
+									itemCount++;
+									verboseLog
+											.print(itemNames[pkmn.rareHeldItem]
+													+ " (rare)");
+								}
+								if (pkmn.darkGrassHeldItem > 0) {
+									if (itemCount > 0) {
+										verboseLog.print(", ");
+									}
+									itemCount++;
+									verboseLog
+											.print(itemNames[pkmn.darkGrassHeldItem]
+													+ " (dark grass only)");
+								}
+							}
+							verboseLog.println();
+						}
+
+					}
+				}
+				if (raceMode) {
+					for (Pokemon pkmn : allPokes) {
+						if (pkmn != null) {
+							checkValue = addToCV(checkValue, pkmn.hp,
+									pkmn.attack, pkmn.defense, pkmn.speed,
+									pkmn.spatk, pkmn.spdef, pkmn.ability1,
+									pkmn.ability2, pkmn.ability3);
+						}
+					}
+				}
+				verboseLog.println();
+			}
+
+			// Starter Pokemon
+			// Applied after type to update the strings correctly based on new
+			// types
+			if (romHandler.canChangeStarters()) {
+				if (this.spCustomRB.isSelected()) {
+					verboseLog.println("--Custom Starters--");
+					Pokemon pkmn1 = allPokes.get(this.spCustomPoke1Chooser
+							.getSelectedIndex() + 1);
+					verboseLog.println("Set starter 1 to " + pkmn1.name);
+					Pokemon pkmn2 = allPokes.get(this.spCustomPoke2Chooser
+							.getSelectedIndex() + 1);
+					verboseLog.println("Set starter 2 to " + pkmn2.name);
+					if (romHandler.isYellow()) {
+						romHandler.setStarters(Arrays.asList(pkmn1, pkmn2));
+					} else {
+						Pokemon pkmn3 = allPokes.get(this.spCustomPoke3Chooser
+								.getSelectedIndex() + 1);
+						verboseLog.println("Set starter 3 to " + pkmn3.name);
+						romHandler.setStarters(Arrays.asList(pkmn1, pkmn2,
+								pkmn3));
+					}
+					verboseLog.println();
+
+				} else if (this.spRandomRB.isSelected()) {
+					// Randomise
+					verboseLog.println("--Random Starters--");
+					int starterCount = 3;
+					if (romHandler.isYellow()) {
+						starterCount = 2;
+					}
+					List<Pokemon> starters = new ArrayList<Pokemon>();
+					for (int i = 0; i < starterCount; i++) {
+						Pokemon pkmn = romHandler.randomPokemon();
+						while (starters.contains(pkmn)) {
+							pkmn = romHandler.randomPokemon();
+						}
+						verboseLog.println("Set starter " + (i + 1) + " to "
+								+ pkmn.name);
+						starters.add(pkmn);
+					}
+					romHandler.setStarters(starters);
+					verboseLog.println();
+				} else if (this.spRandom2EvosRB.isSelected()) {
+					// Randomise
+					verboseLog.println("--Random 2-Evolution Starters--");
+					int starterCount = 3;
+					if (romHandler.isYellow()) {
+						starterCount = 2;
+					}
+					List<Pokemon> starters = new ArrayList<Pokemon>();
+					for (int i = 0; i < starterCount; i++) {
+						Pokemon pkmn = romHandler.random2EvosPokemon();
+						while (starters.contains(pkmn)) {
+							pkmn = romHandler.random2EvosPokemon();
+						}
+						verboseLog.println("Set starter " + (i + 1) + " to "
+								+ pkmn.name);
+						starters.add(pkmn);
+					}
+					romHandler.setStarters(starters);
+					verboseLog.println();
+				}
+				if (this.spHeldItemsCB.isSelected()
+						&& (romHandler instanceof Gen1RomHandler) == false) {
+					romHandler.randomizeStarterHeldItems();
+				}
+			}
+
+			// Movesets
+			boolean noBrokenMoves = this.brokenMovesCB.isSelected();
+			boolean forceFourLv1s = (romHandler instanceof Gen1RomHandler)
+					&& this.pmsGen14MovesCB.isSelected();
+			if (this.pmsRandomTypeRB.isSelected()) {
+				romHandler.randomizeMovesLearnt(true, noBrokenMoves,
+						forceFourLv1s);
+			} else if (this.pmsRandomTotalRB.isSelected()) {
+				romHandler.randomizeMovesLearnt(false, noBrokenMoves,
+						forceFourLv1s);
+			}
+
+			// Show the new movesets if applicable
+			if (this.pmsUnchangedRB.isSelected()) {
+				verboseLog.println("Pokemon Movesets: Unchanged." + nl);
+			} else if (this.pmsMetronomeOnlyRB.isSelected()) {
+				verboseLog.println("Pokemon Movesets: Metronome Only." + nl);
+			} else {
+				verboseLog.println("--Pokemon Movesets--");
+				List<String> movesets = new ArrayList<String>();
+				Map<Pokemon, List<MoveLearnt>> moveData = romHandler
+						.getMovesLearnt();
+				for (Pokemon pkmn : moveData.keySet()) {
+					StringBuilder sb = new StringBuilder();
+					sb.append(String.format("%03d %-10s : ", pkmn.number,
+							pkmn.name));
+					List<MoveLearnt> data = moveData.get(pkmn);
+					boolean first = true;
+					for (MoveLearnt ml : data) {
+						if (!first) {
+							sb.append(", ");
+						}
+
+						sb.append(moves.get(ml.move).name + " at level "
+								+ ml.level);
+						first = false;
+					}
+					movesets.add(sb.toString());
+				}
+				Collections.sort(movesets);
+				for (String moveset : movesets) {
+					verboseLog.println(moveset);
+				}
+				verboseLog.println();
+			}
+
+			// Trainer Pokemon
+			if (this.tpRandomRB.isSelected()) {
+				romHandler.randomizeTrainerPokes(
+						this.tpRivalCarriesStarterCB.isSelected(),
+						this.tpPowerLevelsCB.isSelected(),
+						this.tpNoLegendariesCB.isSelected(),
+						this.tpNoEarlyShedinjaCB.isSelected());
+			} else if (this.tpTypeThemedRB.isSelected()) {
+				romHandler.typeThemeTrainerPokes(
+						this.tpRivalCarriesStarterCB.isSelected(),
+						this.tpPowerLevelsCB.isSelected(),
+						this.tpTypeWeightingCB.isSelected(),
+						this.tpNoLegendariesCB.isSelected(),
+						this.tpNoEarlyShedinjaCB.isSelected());
+			}
+
+			// Trainer names & class names randomization
+			// done before trainer log to add proper names
+
+			if (this.tcnRandomizeCB.isSelected()) {
+				romHandler.randomizeTrainerClassNames(trainerClasses);
+			}
+
+			if (this.tnRandomizeCB.isSelected()) {
+				romHandler.randomizeTrainerNames(trainerNames);
+			}
+
+			if (this.tpUnchangedRB.isSelected()) {
+				verboseLog.println("Trainers: Unchanged." + nl);
+			} else {
+				verboseLog.println("--Trainers Pokemon--");
+				List<Trainer> trainers = romHandler.getTrainers();
+				int idx = 0;
+				for (Trainer t : trainers) {
+					idx++;
+					verboseLog.print("#" + idx + " ");
+					if (t.fullDisplayName != null) {
+						verboseLog.print("(" + t.fullDisplayName + ")");
+					} else if (t.name != null) {
+						verboseLog.print("(" + t.name + ")");
+					}
+					if (t.offset != idx && t.offset != 0) {
+						verboseLog.printf("@%X", t.offset);
+					}
+					verboseLog.print(" - ");
+					boolean first = true;
+					for (TrainerPokemon tpk : t.pokemon) {
+						if (!first) {
+							verboseLog.print(", ");
+						}
+						verboseLog.print(tpk.pokemon.name + " Lv" + tpk.level);
+						first = false;
+					}
+					verboseLog.println();
+				}
+				verboseLog.println();
+			}
+
+			// Apply metronome only mode now that trainers have been dealt with
+			if (pmsMetronomeOnlyRB.isSelected()) {
+				romHandler.metronomeOnlyMode();
+			}
+
+			if (raceMode) {
+				List<Trainer> trainers = romHandler.getTrainers();
+				for (Trainer t : trainers) {
+					for (TrainerPokemon tpk : t.pokemon) {
+						checkValue = addToCV(checkValue, tpk.level,
+								tpk.pokemon.number);
+					}
+				}
+			}
+
+			// Wild Pokemon
+			// actually call this code (Kappa)
+			if (this.wpCatchRateCB.isSelected()) {
+				if (romHandler instanceof Gen5RomHandler) {
+					romHandler.minimumCatchRate(50, 25);
+				} else {
+					romHandler.minimumCatchRate(75, 37);
+				}
+			}
+			if (this.wpRandomRB.isSelected()) {
+				romHandler.randomEncounters(this.wpUseTimeCB.isSelected(),
+						this.wpARCatchEmAllRB.isSelected(),
+						this.wpARTypeThemedRB.isSelected(),
+						this.wpARSimilarStrengthRB.isSelected(),
+						this.wpNoLegendariesCB.isSelected());
+			} else if (this.wpArea11RB.isSelected()) {
+				romHandler.area1to1Encounters(this.wpUseTimeCB.isSelected(),
+						this.wpARCatchEmAllRB.isSelected(),
+						this.wpARTypeThemedRB.isSelected(),
+						this.wpARSimilarStrengthRB.isSelected(),
+						this.wpNoLegendariesCB.isSelected());
+			} else if (this.wpGlobalRB.isSelected()) {
+				romHandler.game1to1Encounters(this.wpUseTimeCB.isSelected(),
+						this.wpARSimilarStrengthRB.isSelected(),
+						this.wpNoLegendariesCB.isSelected());
+			}
+
+			if (this.wpUnchangedRB.isSelected()) {
+				verboseLog.println("Wild Pokemon: Unchanged." + nl);
+			} else {
+				verboseLog.println("--Wild Pokemon--");
+				List<EncounterSet> encounters = romHandler
+						.getEncounters(this.wpUseTimeCB.isSelected());
+				int idx = 0;
+				for (EncounterSet es : encounters) {
+					idx++;
+					verboseLog.print("Set #" + idx + " ");
+					if (es.displayName != null) {
+						verboseLog.print("- " + es.displayName + " ");
+					}
+					verboseLog.print("(rate=" + es.rate + ")");
+					verboseLog.print(" - ");
+					boolean first = true;
+					for (Encounter e : es.encounters) {
+						if (!first) {
+							verboseLog.print(", ");
+						}
+						verboseLog.print(e.pokemon.name + " Lv");
+						if (e.maxLevel > 0 && e.maxLevel != e.level) {
+							verboseLog.print("s " + e.level + "-" + e.maxLevel);
+						} else {
+							verboseLog.print(e.level);
+						}
+						first = false;
+					}
+					verboseLog.println();
+				}
+				verboseLog.println();
+			}
+
+			if (raceMode) {
+				List<EncounterSet> encounters = romHandler
+						.getEncounters(this.wpUseTimeCB.isSelected());
+				for (EncounterSet es : encounters) {
+					for (Encounter e : es.encounters) {
+						checkValue = addToCV(checkValue, e.level,
+								e.pokemon.number);
+					}
+				}
+			}
+
+			// Static Pokemon
+
+			if (romHandler.canChangeStaticPokemon()) {
+				List<Pokemon> oldStatics = romHandler.getStaticPokemon();
+				if (this.stpRandomL4LRB.isSelected()) {
+					romHandler.randomizeStaticPokemon(true);
+				} else if (this.stpRandomTotalRB.isSelected()) {
+					romHandler.randomizeStaticPokemon(false);
+				}
+				List<Pokemon> newStatics = romHandler.getStaticPokemon();
+				if (this.stpUnchangedRB.isSelected()) {
+					verboseLog.println("Static Pokemon: Unchanged." + nl);
+				} else {
+					verboseLog.println("--Static Pokemon--");
+					Map<Pokemon, Integer> seenPokemon = new TreeMap<Pokemon, Integer>();
+					for (int i = 0; i < oldStatics.size(); i++) {
+						Pokemon oldP = oldStatics.get(i);
+						Pokemon newP = newStatics.get(i);
+						if (raceMode) {
+							checkValue = addToCV(checkValue, newP.number);
+						}
+						verboseLog.print(oldP.name);
+						if (seenPokemon.containsKey(oldP)) {
+							int amount = seenPokemon.get(oldP);
+							verboseLog.print("(" + (++amount) + ")");
+							seenPokemon.put(oldP, amount);
+						} else {
+							seenPokemon.put(oldP, 1);
+						}
+						verboseLog.println(" => " + newP.name);
+					}
+					verboseLog.println();
+				}
+			}
+
+			// TMs
+			if (!pmsMetronomeOnlyRB.isSelected()
+					&& this.tmmRandomRB.isSelected()) {
+				romHandler.randomizeTMMoves(noBrokenMoves);
+				verboseLog.println("--TM Moves--");
+				List<Integer> tmMoves = romHandler.getTMMoves();
+				for (int i = 0; i < tmMoves.size(); i++) {
+					verboseLog.printf("TM%02d %s" + nl, i + 1,
+							moves.get(tmMoves.get(i)).name);
+					if (raceMode) {
+						checkValue = addToCV(checkValue, tmMoves.get(i));
+					}
+				}
+				verboseLog.println();
+			} else if (pmsMetronomeOnlyRB.isSelected()) {
+				verboseLog.println("TM Moves: Metronome Only." + nl);
+			} else {
+				verboseLog.println("TM Moves: Unchanged." + nl);
+			}
+
+			// TM/HM compatibility
+			if (this.thcRandomTypeRB.isSelected()) {
+				romHandler.randomizeTMHMCompatibility(true);
+			} else if (this.thcRandomTotalRB.isSelected()) {
+				romHandler.randomizeTMHMCompatibility(false);
+			}
+
+			// Move Tutors (new 1.0.3)
+			if (this.romHandler.hasMoveTutors()) {
+				if (!pmsMetronomeOnlyRB.isSelected()
+						&& this.mtmRandomRB.isSelected()) {
+					List<Integer> oldMtMoves = romHandler.getMoveTutorMoves();
+					romHandler.randomizeMoveTutorMoves(noBrokenMoves);
+					verboseLog.println("--Move Tutor Moves--");
+					List<Integer> newMtMoves = romHandler.getMoveTutorMoves();
+					for (int i = 0; i < newMtMoves.size(); i++) {
+						verboseLog.printf("%s => %s" + nl,
+								moves.get(oldMtMoves.get(i)).name,
+								moves.get(newMtMoves.get(i)).name);
+						if (raceMode) {
+							checkValue = addToCV(checkValue, newMtMoves.get(i));
+						}
+					}
+					verboseLog.println();
+				} else if (pmsMetronomeOnlyRB.isSelected()) {
+					verboseLog
+							.println("Move Tutor Moves: Metronome Only." + nl);
+				} else {
+					verboseLog.println("Move Tutor Moves: Unchanged." + nl);
+				}
+
+				// Compatibility
+				if (this.mtcRandomTypeRB.isSelected()) {
+					romHandler.randomizeMoveTutorCompatibility(true);
+				} else if (this.mtcRandomTotalRB.isSelected()) {
+					romHandler.randomizeMoveTutorCompatibility(false);
+				}
+			}
+
+			// In-game trades
+			List<IngameTrade> oldTrades = romHandler.getIngameTrades();
+			if (this.igtGivenOnlyRB.isSelected()) {
+				romHandler.randomizeIngameTrades(false, nicknames,
+						this.igtRandomNicknameCB.isSelected(), trainerNames,
+						this.igtRandomOTCB.isSelected(),
+						this.igtRandomIVsCB.isSelected(),
+						this.igtRandomItemCB.isSelected());
+			} else if (this.igtBothRB.isSelected()) {
+				romHandler.randomizeIngameTrades(true, nicknames,
+						this.igtRandomNicknameCB.isSelected(), trainerNames,
+						this.igtRandomOTCB.isSelected(),
+						this.igtRandomIVsCB.isSelected(),
+						this.igtRandomItemCB.isSelected());
+			}
+
+			if (!this.igtUnchangedRB.isSelected()) {
+				verboseLog.println("--In-Game Trades--");
+				List<IngameTrade> newTrades = romHandler.getIngameTrades();
+				int size = oldTrades.size();
+				for (int i = 0; i < size; i++) {
+					IngameTrade oldT = oldTrades.get(i);
+					IngameTrade newT = newTrades.get(i);
+					verboseLog.printf(
+							"Trading %s for %s the %s has become trading %s for %s the %s"
+									+ nl, oldT.requestedPokemon.name,
+							oldT.nickname, oldT.givenPokemon.name,
+							newT.requestedPokemon.name, newT.nickname,
+							newT.givenPokemon.name);
+				}
+				verboseLog.println();
+			}
+
+			// Field Items
+			if (this.fiShuffleRB.isSelected()) {
+				romHandler.shuffleFieldItems();
+			} else if (this.fiRandomRB.isSelected()) {
+				romHandler.randomizeFieldItems();
+			}
+
+			// Signature...
+			romHandler.applySignature();
+
+			// Save
+			final int finishedCV = checkValue;
+			opDialog = new OperationDialog(
+					bundle.getString("RandomizerGUI.savingText"), this, true);
+			Thread t = new Thread() {
+				@Override
+				public void run() {
+					SwingUtilities.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							opDialog.setVisible(true);
+						}
+					});
+					try {
+						RandomizerGUI.this.romHandler.saveRom(filename);
+					} catch (Exception ex) {
+						ex.printStackTrace();
+						JOptionPane.showMessageDialog(RandomizerGUI.this,
+								bundle.getString("RandomizerGUI.saveFailedIO"));
+					}
+					SwingUtilities.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							RandomizerGUI.this.opDialog.setVisible(false);
+							// Log tail
+							verboseLog
+									.println("------------------------------------------------------------------");
+							verboseLog.println("Randomization of "
+									+ romHandler.getROMName() + " completed.");
+							verboseLog.println("Time elapsed: "
+									+ (System.currentTimeMillis() - startTime)
+									+ "ms");
+							verboseLog.println("RNG Calls: "
+									+ RandomSource.callsSinceSeed());
+							verboseLog
+									.println("------------------------------------------------------------------");
+
+							// Log?
+							verboseLog.close();
+							byte[] out = baos.toByteArray();
+							verboseLog = System.out;
+
+							if (raceMode) {
+								JOptionPane.showMessageDialog(
+										RandomizerGUI.this,
+										String.format(
+												bundle.getString("RandomizerGUI.raceModeCheckValuePopup"),
+												finishedCV));
+							} else {
+								int response = JOptionPane.showConfirmDialog(
+										RandomizerGUI.this,
+										bundle.getString("RandomizerGUI.saveLogDialog.text"),
+										bundle.getString("RandomizerGUI.saveLogDialog.title"),
+										JOptionPane.YES_NO_OPTION);
+								if (response == JOptionPane.YES_OPTION) {
+									try {
+										FileOutputStream fos = new FileOutputStream(
+												filename + ".log");
+										fos.write(0xEF);
+										fos.write(0xBB);
+										fos.write(0xBF);
+										fos.write(out);
+										fos.close();
+									} catch (IOException e) {
+										JOptionPane.showMessageDialog(
+												RandomizerGUI.this,
+												bundle.getString("RandomizerGUI.logSaveFailed"));
+										return;
+									}
+									JOptionPane.showMessageDialog(
+											RandomizerGUI.this,
+											String.format(
+													bundle.getString("RandomizerGUI.logSaved"),
+													filename));
+								}
+							}
+							if (presetMode) {
+								JOptionPane.showMessageDialog(
+										RandomizerGUI.this,
+										bundle.getString("RandomizerGUI.randomizationDone"));
+								// Done
+								RandomizerGUI.this.romHandler = null;
+								initialFormState();
+							} else {
+								// Compile a config string
+								String configString = getConfigString();
+								// Show the preset maker
+								new PresetMakeDialog(RandomizerGUI.this, seed,
+										configString);
+
+								// Done
+								RandomizerGUI.this.romHandler = null;
+								initialFormState();
+							}
+						}
+					});
+				}
+			};
+			t.start();
+		} catch (Exception ex) {
+			long time = System.currentTimeMillis();
+			try {
+				String errlog = "error_" + time + ".txt";
+				PrintStream ps = new PrintStream(new FileOutputStream(errlog));
+				PrintStream e1 = System.err;
+				System.setErr(ps);
+				ex.printStackTrace();
+				verboseLog.close();
+				byte[] out = baos.toByteArray();
+				System.err.print(new String(out, "UTF-8"));
+				System.setErr(e1);
+				ps.close();
+				JOptionPane.showMessageDialog(this, String.format(
+						bundle.getString("RandomizerGUI.saveFailed"), errlog));
+			} catch (Exception logex) {
+				JOptionPane.showMessageDialog(this,
+						bundle.getString("RandomizerGUI.saveFailedNoLog"));
+				verboseLog.close();
+			}
+		}
+
+	}
+
+	private void presetLoader() {
+		PresetLoadDialog pld = new PresetLoadDialog(this);
+		if (pld.isCompleted()) {
+			// Apply it
+			long seed = pld.getSeed();
+			String config = pld.getConfigString();
+			this.romHandler = pld.getROM();
+			this.romLoaded();
+			this.restoreFrom(config);
+			romSaveChooser.setSelectedFile(null);
+			int returnVal = romSaveChooser.showSaveDialog(this);
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				File fh = romSaveChooser.getSelectedFile();
+				// Fix or add extension
+				List<String> extensions = new ArrayList<String>(Arrays.asList(
+						"sgb", "gbc", "gba", "nds"));
+				extensions.remove(this.romHandler.getDefaultExtension());
+				fh = FileFunctions.fixFilename(fh,
+						this.romHandler.getDefaultExtension(), extensions);
+				// Apply the seed we were given
+				RandomSource.seed(seed);
+				presetMode = true;
+				performRandomization(fh.getAbsolutePath(), seed,
+						pld.getTrainerClasses(), pld.getTrainerNames(),
+						pld.getNicknames());
+
+			} else {
+				this.romHandler = null;
+				initialFormState();
+			}
+		}
+
+	}
+
+	// helper methods
+
+	private boolean checkOtherCRC(byte[] data, int byteIndex, int switchIndex,
+			String filename, int offsetInData) {
+		// If the switch at data[byteIndex].switchIndex is on,
+		// then check that the CRC at
+		// data[offsetInData] ... data[offsetInData+3]
+		// matches the CRC of filename.
+		// If not, return false.
+		// If any other case, return true.
+		int switches = data[byteIndex] & 0xFF;
+		if (((switches >> switchIndex) & 0x01) == 0x01) {
+			// have to check the CRC
+			int crc = readFullInt(data, offsetInData);
+
+			if (getFileChecksum(filename) != crc) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private void restoreSelectedIndex(byte[] data, int offset,
+			JComboBox comboBox) {
+		int selIndex = (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
+		if (comboBox.getModel().getSize() > selIndex) {
+			comboBox.setSelectedIndex(selIndex);
+		} else if (this.spCustomRB.isSelected()) {
+			JOptionPane.showMessageDialog(this,
+					bundle.getString("RandomizerGUI.starterUnavailable"));
+		}
+	}
+
+	private void restoreStates(byte b, AbstractButton... switches) {
+		int value = b & 0xFF;
+		for (int i = 0; i < switches.length; i++) {
+			int realValue = (value >> i) & 0x01;
+			switches[i].setSelected(realValue == 0x01);
+		}
+	}
+
+	private int readFullInt(byte[] data, int offset) {
+		ByteBuffer buf = ByteBuffer.allocate(4).put(data, offset, 4);
+		buf.rewind();
+		return buf.getInt();
+	}
+
+	private void writeFullInt(ByteArrayOutputStream baos, int checksum)
+			throws IOException {
+		byte[] crc = ByteBuffer.allocate(4).putInt(checksum).array();
+		baos.write(crc);
+
+	}
+
+	private void writePokemonIndex(ByteArrayOutputStream baos,
+			JComboBox comboBox) {
+		baos.write(comboBox.getSelectedIndex() & 0xFF);
+		baos.write((comboBox.getSelectedIndex() >> 8) & 0xFF);
+
+	}
+
+	private int makeByteSelected(AbstractButton... switches) {
+		if (switches.length > 8) {
+			// No can do
+			return 0;
+		}
+		int initial = 0;
+		int state = 1;
+		for (AbstractButton b : switches) {
+			initial |= b.isSelected() ? state : 0;
+			state *= 2;
+		}
+		return initial;
+	}
+
+	private int addToCV(int checkValue, int... values) {
+		for (int value : values) {
+			checkValue = Integer.rotateLeft(checkValue, 3);
+			checkValue ^= value;
+		}
+		return checkValue;
+	}
+
+	private void updateCodeTweaksButtonText() {
+		if (currentCodeTweaks == 0 || !codeTweaksCB.isSelected()) {
+			codeTweaksBtn.setText(bundle
+					.getString("RandomizerGUI.codeTweaksBtn.text"));
+		} else {
+			int ctCount = 0;
+			for (int i = 0; i < 32; i++) {
+				if ((currentCodeTweaks & (1 << i)) > 0) {
+					ctCount++;
+				}
+			}
+			codeTweaksBtn.setText(String.format(bundle
+					.getString("RandomizerGUI.codeTweaksBtn.textWithActive"),
+					ctCount));
+		}
+	}
+
+	// public response methods
+
+	public void updateFound(int newVersion, String changelog) {
+		new UpdateFoundDialog(this, newVersion, changelog);
+	}
+
+	public void noUpdateFound() {
+		JOptionPane.showMessageDialog(this,
+				bundle.getString("RandomizerGUI.noUpdates"));
+	}
+
+	public static String getRootPath() {
+		return rootPath;
+	}
+
+	// actions
+
+	private void updateSettingsButtonActionPerformed(
+			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_updateSettingsButtonActionPerformed
+		if (autoUpdateEnabled) {
+			toggleAutoUpdatesMenuItem.setText(bundle
+					.getString("RandomizerGUI.disableAutoUpdate"));
+		} else {
+			toggleAutoUpdatesMenuItem.setText(bundle
+					.getString("RandomizerGUI.enableAutoUpdate"));
+		}
+		updateSettingsMenu.show(updateSettingsButton, 0,
+				updateSettingsButton.getHeight());
+	}// GEN-LAST:event_updateSettingsButtonActionPerformed
+
+	private void toggleAutoUpdatesMenuItemActionPerformed(
+			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_toggleAutoUpdatesMenuItemActionPerformed
+		autoUpdateEnabled = !autoUpdateEnabled;
+		if (autoUpdateEnabled) {
+			JOptionPane.showMessageDialog(this,
+					bundle.getString("RandomizerGUI.autoUpdateEnabled"));
+		} else {
+			JOptionPane.showMessageDialog(this,
+					bundle.getString("RandomizerGUI.autoUpdateDisabled"));
+		}
+		attemptWriteConfig();
+	}// GEN-LAST:event_toggleAutoUpdatesMenuItemActionPerformed
+
+	private void manualUpdateMenuItemActionPerformed(
+			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_manualUpdateMenuItemActionPerformed
+		new UpdateCheckThread(this, true).start();
+	}// GEN-LAST:event_manualUpdateMenuItemActionPerformed
+
+	private void loadQSButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_loadQSButtonActionPerformed
+		if (this.romHandler == null) {
+			return;
+		}
+		qsOpenChooser.setSelectedFile(null);
+		int returnVal = qsOpenChooser.showOpenDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File fh = qsOpenChooser.getSelectedFile();
+			try {
+				FileInputStream fis = new FileInputStream(fh);
+				int version = fis.read();
+				if (version < PRESET_FILE_VERSION) {
+					JOptionPane
+							.showMessageDialog(
+									this,
+									bundle.getString("RandomizerGUI.settingsFileOlder"));
+					fis.close();
+					return;
+				} else if (version > PRESET_FILE_VERSION) {
+					JOptionPane
+							.showMessageDialog(
+									this,
+									bundle.getString("RandomizerGUI.settingsFileNewer"));
+					fis.close();
+					return;
+				}
+				int cslength = fis.read();
+				byte[] csBuf = new byte[cslength];
+				fis.read(csBuf);
+				fis.close();
+				String configString = new String(csBuf, "UTF-8");
+				String romName = getValidRequiredROMName(configString,
+						new byte[] {}, new byte[] {}, new byte[] {});
+				if (romName == null) {
+					JOptionPane.showMessageDialog(this, bundle
+							.getString("RandomizerGUI.invalidSettingsFile"));
+				}
+				// now we just load it
+				initialFormState();
+				romLoaded();
+				restoreFrom(configString);
+				JCheckBox[] checkboxes = new JCheckBox[] { this.brokenMovesCB,
+						this.codeTweaksCB, this.goLowerCaseNamesCheckBox,
+						this.goNationalDexCheckBox,
+						this.goRemoveTradeEvosCheckBox,
+						this.goUpdateMovesCheckBox, this.goUpdateTypesCheckBox,
+						this.spHeldItemsCB, this.paWonderGuardCB,
+						this.raceModeCB, this.randomizeHollowsCB,
+						this.tcnRandomizeCB, this.tnRandomizeCB,
+						this.tpNoEarlyShedinjaCB, this.tpNoLegendariesCB,
+						this.tpPowerLevelsCB, this.tpRivalCarriesStarterCB,
+						this.tpTypeWeightingCB, this.wpCatchRateCB,
+						this.wpNoLegendariesCB, this.wpUseTimeCB,
+						this.igtRandomItemCB, this.igtRandomIVsCB,
+						this.igtRandomNicknameCB, this.igtRandomOTCB };
+				for (JCheckBox cb : checkboxes) {
+					if (!cb.isEnabled() || !cb.isVisible()) {
+						cb.setSelected(false);
+					}
+				}
+
+				if (!this.romHandler.canChangeStaticPokemon()) {
+					this.stpUnchangedRB.setSelected(true);
+				}
+
+				JOptionPane.showMessageDialog(this, String.format(
+						bundle.getString("RandomizerGUI.settingsLoaded"),
+						fh.getName()));
+			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(this,
+						bundle.getString("RandomizerGUI.settingsLoadFailed"));
+			} catch (InvalidSupplementFilesException e) {
+				// not possible
+			}
+		}
+	}// GEN-LAST:event_loadQSButtonActionPerformed
+
+	private void saveQSButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_saveQSButtonActionPerformed
+		if (this.romHandler == null) {
+			return;
+		}
+		qsSaveChooser.setSelectedFile(null);
+		int returnVal = qsSaveChooser.showSaveDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File fh = qsSaveChooser.getSelectedFile();
+			// Fix or add extension
+			fh = FileFunctions.fixFilename(fh, "rnqs");
+			// Save now?
+			try {
+				FileOutputStream fos = new FileOutputStream(fh);
+				fos.write(PRESET_FILE_VERSION);
+				byte[] configString = getConfigString().getBytes("UTF-8");
+				fos.write(configString.length);
+				fos.write(configString);
+				fos.close();
+			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(this,
+						bundle.getString("RandomizerGUI.settingsSaveFailed"));
+			}
+		}
+	}// GEN-LAST:event_saveQSButtonActionPerformed
+
+	private void codeTweaksBtnActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_codeTweaksBtnActionPerformed
+		CodeTweaksDialog ctd = new CodeTweaksDialog(this,
+				this.currentCodeTweaks, this.romHandler.codeTweaksAvailable());
+		if (ctd.pressedOK()) {
+			this.currentCodeTweaks = ctd.getChoice();
+			updateCodeTweaksButtonText();
+		}
+	}// GEN-LAST:event_codeTweaksBtnActionPerformed
+
+	private void pokeLimitBtnActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pokeLimitBtnActionPerformed
+		GenerationLimitDialog gld = new GenerationLimitDialog(this,
+				this.currentRestrictions, this.romHandler.generationOfPokemon());
+		if (gld.pressedOK()) {
+			this.currentRestrictions = gld.getChoice();
+		}
+	}// GEN-LAST:event_pokeLimitBtnActionPerformed
+
+	private void goUpdateMovesCheckBoxActionPerformed(
+			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_goUpdateMovesCheckBoxActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_goUpdateMovesCheckBoxActionPerformed
+
+	private void codeTweaksCBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_codeTweaksCBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_codeTweaksCBActionPerformed
+
+	private void pokeLimitCBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pokeLimitCBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_pokeLimitCBActionPerformed
+
+	private void pmsMetronomeOnlyRBActionPerformed(
+			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsMetronomeOnlyRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_pmsMetronomeOnlyRBActionPerformed
+
+	private void igtUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_igtUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_igtUnchangedRBActionPerformed
+
+	private void igtGivenOnlyRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_igtGivenOnlyRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_igtGivenOnlyRBActionPerformed
+
+	private void igtBothRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_igtBothRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_igtBothRBActionPerformed
+
+	private void wpARNoneRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARNoneRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpARNoneRBActionPerformed
+
+	private void wpARSimilarStrengthRBActionPerformed(
+			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARSimilarStrengthRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpARSimilarStrengthRBActionPerformed
+
+	private void wpARCatchEmAllRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARCatchEmAllRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpARCatchEmAllRBActionPerformed
+
+	private void wpARTypeThemedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARTypeThemedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpARTypeThemedRBActionPerformed
+
+	private void pmsUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_pmsUnchangedRBActionPerformed
+
+	private void pmsRandomTypeRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsRandomTypeRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_pmsRandomTypeRBActionPerformed
+
+	private void pmsRandomTotalRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsRandomTotalRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_pmsRandomTotalRBActionPerformed
+
+	private void mtmUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_mtmUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_mtmUnchangedRBActionPerformed
+
+	private void paUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_paUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_paUnchangedRBActionPerformed
+
+	private void paRandomizeRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_paRandomizeRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_paRandomizeRBActionPerformed
+
+	private void aboutButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_aboutButtonActionPerformed
+		new AboutDialog(this, true).setVisible(true);
+	}// GEN-LAST:event_aboutButtonActionPerformed
+
+	private void openROMButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_openROMButtonActionPerformed
+		loadROM();
+	}// GEN-LAST:event_openROMButtonActionPerformed
+
+	private void saveROMButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_saveROMButtonActionPerformed
+		saveROM();
+	}// GEN-LAST:event_saveROMButtonActionPerformed
+
+	private void usePresetsButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_usePresetsButtonActionPerformed
+		presetLoader();
+	}// GEN-LAST:event_usePresetsButtonActionPerformed
+
+	private void wpUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpUnchangedRBActionPerformed
+
+	private void tpUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_tpUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_tpUnchangedRBActionPerformed
+
+	private void tpRandomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_tpRandomRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_tpRandomRBActionPerformed
+
+	private void tpTypeThemedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_tpTypeThemedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_tpTypeThemedRBActionPerformed
+
+	private void spUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_spUnchangedRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_spUnchangedRBActionPerformed
+
+	private void spCustomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_spCustomRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_spCustomRBActionPerformed
+
+	private void spRandomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_spRandomRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_spRandomRBActionPerformed
+
+	private void wpRandomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpRandomRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpRandomRBActionPerformed
+
+	private void wpArea11RBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpArea11RBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpArea11RBActionPerformed
+
+	private void wpGlobalRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpGlobalRBActionPerformed
+		this.enableOrDisableSubControls();
+	}// GEN-LAST:event_wpGlobalRBActionPerformed
+
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 * WARNING: Do NOT modify this code. The content of this method is always
 	 * regenerated by the Form Editor.
 	 */
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
 	// desc="Generated Code">//GEN-BEGIN:initComponents
@@ -162,23 +2511,29 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		mtCompatibilityButtonGroup = new javax.swing.ButtonGroup();
 		ingameTradesButtonGroup = new javax.swing.ButtonGroup();
 		fieldItemsButtonGroup = new javax.swing.ButtonGroup();
+		updateSettingsMenu = new javax.swing.JPopupMenu();
+		toggleAutoUpdatesMenuItem = new javax.swing.JMenuItem();
+		manualUpdateMenuItem = new javax.swing.JMenuItem();
 		generalOptionsPanel = new javax.swing.JPanel();
 		goUpdateTypesCheckBox = new javax.swing.JCheckBox();
 		goUpdateMovesCheckBox = new javax.swing.JCheckBox();
 		goRemoveTradeEvosCheckBox = new javax.swing.JCheckBox();
 		goLowerCaseNamesCheckBox = new javax.swing.JCheckBox();
 		goNationalDexCheckBox = new javax.swing.JCheckBox();
+		goUpdateMovesLegacyCheckBox = new javax.swing.JCheckBox();
 		romInfoPanel = new javax.swing.JPanel();
 		riRomNameLabel = new javax.swing.JLabel();
 		riRomCodeLabel = new javax.swing.JLabel();
 		riRomSupportLabel = new javax.swing.JLabel();
 		optionsScrollPane = new javax.swing.JScrollPane();
+		optionsScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		optionsContainerPanel = new javax.swing.JPanel();
 		baseStatsPanel = new javax.swing.JPanel();
 		pbsChangesUnchangedRB = new javax.swing.JRadioButton();
 		pbsChangesShuffleRB = new javax.swing.JRadioButton();
 		pbsChangesRandomEvosRB = new javax.swing.JRadioButton();
 		pbsChangesRandomTotalRB = new javax.swing.JRadioButton();
+		pbsStandardEXPCurvesCB = new javax.swing.JCheckBox();
 		pokemonTypesPanel = new javax.swing.JPanel();
 		ptUnchangedRB = new javax.swing.JRadioButton();
 		ptRandomFollowEvosRB = new javax.swing.JRadioButton();
@@ -188,6 +2543,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		pmsRandomTypeRB = new javax.swing.JRadioButton();
 		pmsRandomTotalRB = new javax.swing.JRadioButton();
 		pmsMetronomeOnlyRB = new javax.swing.JRadioButton();
+		pmsGen14MovesCB = new javax.swing.JCheckBox();
 		trainersPokemonPanel = new javax.swing.JPanel();
 		tpUnchangedRB = new javax.swing.JRadioButton();
 		tpRandomRB = new javax.swing.JRadioButton();
@@ -212,6 +2568,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		wpUseTimeCB = new javax.swing.JCheckBox();
 		wpNoLegendariesCB = new javax.swing.JCheckBox();
 		wpCatchRateCB = new javax.swing.JCheckBox();
+		wpHeldItemsCB = new javax.swing.JCheckBox();
 		starterPokemonPanel = new javax.swing.JPanel();
 		spUnchangedRB = new javax.swing.JRadioButton();
 		spCustomRB = new javax.swing.JRadioButton();
@@ -220,6 +2577,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		spCustomPoke3Chooser = new javax.swing.JComboBox();
 		spRandomRB = new javax.swing.JRadioButton();
 		spRandom2EvosRB = new javax.swing.JRadioButton();
+		spHeldItemsCB = new javax.swing.JCheckBox();
 		staticPokemonPanel = new javax.swing.JPanel();
 		stpUnchangedRB = new javax.swing.JRadioButton();
 		stpRandomL4LRB = new javax.swing.JRadioButton();
@@ -262,13 +2620,16 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		usePresetsButton = new javax.swing.JButton();
 		aboutButton = new javax.swing.JButton();
 		otherOptionsPanel = new javax.swing.JPanel();
-		bwEXPPatchCB = new javax.swing.JCheckBox();
+		codeTweaksCB = new javax.swing.JCheckBox();
 		raceModeCB = new javax.swing.JCheckBox();
 		randomizeHollowsCB = new javax.swing.JCheckBox();
 		brokenMovesCB = new javax.swing.JCheckBox();
-		heldItemsCB = new javax.swing.JCheckBox();
+		codeTweaksBtn = new javax.swing.JButton();
+		pokeLimitCB = new javax.swing.JCheckBox();
+		pokeLimitBtn = new javax.swing.JButton();
 		loadQSButton = new javax.swing.JButton();
 		saveQSButton = new javax.swing.JButton();
+		updateSettingsButton = new javax.swing.JButton();
 
 		romOpenChooser.setFileFilter(new ROMFilter());
 
@@ -280,9 +2641,29 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		qsSaveChooser.setDialogType(javax.swing.JFileChooser.SAVE_DIALOG);
 		qsSaveChooser.setFileFilter(new QSFileFilter());
 
-		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		java.util.ResourceBundle bundle = java.util.ResourceBundle
 				.getBundle("com/dabomstew/pkrandom/gui/Bundle"); // NOI18N
+		toggleAutoUpdatesMenuItem.setText(bundle
+				.getString("RandomizerGUI.toggleAutoUpdatesMenuItem.text")); // NOI18N
+		toggleAutoUpdatesMenuItem
+				.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent evt) {
+						toggleAutoUpdatesMenuItemActionPerformed(evt);
+					}
+				});
+		updateSettingsMenu.add(toggleAutoUpdatesMenuItem);
+
+		manualUpdateMenuItem.setText(bundle
+				.getString("RandomizerGUI.manualUpdateMenuItem.text")); // NOI18N
+		manualUpdateMenuItem
+				.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent evt) {
+						manualUpdateMenuItemActionPerformed(evt);
+					}
+				});
+		updateSettingsMenu.add(manualUpdateMenuItem);
+
+		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		setTitle(bundle.getString("RandomizerGUI.title")); // NOI18N
 
 		generalOptionsPanel
@@ -302,6 +2683,12 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				.getString("RandomizerGUI.goUpdateMovesCheckBox.text")); // NOI18N
 		goUpdateMovesCheckBox.setToolTipText(bundle
 				.getString("RandomizerGUI.goUpdateMovesCheckBox.toolTipText")); // NOI18N
+		goUpdateMovesCheckBox
+				.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent evt) {
+						goUpdateMovesCheckBoxActionPerformed(evt);
+					}
+				});
 
 		goRemoveTradeEvosCheckBox.setText(bundle
 				.getString("RandomizerGUI.goRemoveTradeEvosCheckBox.text")); // NOI18N
@@ -320,6 +2707,12 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		goNationalDexCheckBox.setToolTipText(bundle
 				.getString("RandomizerGUI.goNationalDexCheckBox.toolTipText")); // NOI18N
 
+		goUpdateMovesLegacyCheckBox.setText(bundle
+				.getString("RandomizerGUI.goUpdateMovesLegacyCheckBox.text")); // NOI18N
+		goUpdateMovesLegacyCheckBox
+				.setToolTipText(bundle
+						.getString("RandomizerGUI.goUpdateMovesLegacyCheckBox.toolTipText")); // NOI18N
+
 		javax.swing.GroupLayout generalOptionsPanelLayout = new javax.swing.GroupLayout(
 				generalOptionsPanel);
 		generalOptionsPanel.setLayout(generalOptionsPanelLayout);
@@ -335,19 +2728,43 @@ public class RandomizerGUI extends javax.swing.JFrame {
 												generalOptionsPanelLayout
 														.createParallelGroup(
 																javax.swing.GroupLayout.Alignment.LEADING)
-														.addComponent(
-																goUpdateTypesCheckBox)
-														.addComponent(
-																goUpdateMovesCheckBox)
-														.addComponent(
-																goRemoveTradeEvosCheckBox)
-														.addComponent(
-																goLowerCaseNamesCheckBox)
-														.addComponent(
-																goNationalDexCheckBox))
-										.addContainerGap(
-												javax.swing.GroupLayout.DEFAULT_SIZE,
-												Short.MAX_VALUE)));
+														.addGroup(
+																generalOptionsPanelLayout
+																		.createSequentialGroup()
+																		.addGroup(
+																				generalOptionsPanelLayout
+																						.createParallelGroup(
+																								javax.swing.GroupLayout.Alignment.LEADING)
+																						.addComponent(
+																								goUpdateTypesCheckBox)
+																						.addComponent(
+																								goRemoveTradeEvosCheckBox)
+																						.addComponent(
+																								goNationalDexCheckBox))
+																		.addContainerGap(
+																				14,
+																				Short.MAX_VALUE))
+														.addGroup(
+																generalOptionsPanelLayout
+																		.createSequentialGroup()
+																		.addGroup(
+																				generalOptionsPanelLayout
+																						.createParallelGroup(
+																								javax.swing.GroupLayout.Alignment.LEADING)
+																						.addGroup(
+																								generalOptionsPanelLayout
+																										.createSequentialGroup()
+																										.addComponent(
+																												goUpdateMovesCheckBox)
+																										.addPreferredGap(
+																												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																										.addComponent(
+																												goUpdateMovesLegacyCheckBox))
+																						.addComponent(
+																								goLowerCaseNamesCheckBox))
+																		.addGap(0,
+																				0,
+																				Short.MAX_VALUE)))));
 		generalOptionsPanelLayout
 				.setVerticalGroup(generalOptionsPanelLayout
 						.createParallelGroup(
@@ -357,19 +2774,27 @@ public class RandomizerGUI extends javax.swing.JFrame {
 										.createSequentialGroup()
 										.addComponent(goUpdateTypesCheckBox)
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-										.addComponent(goUpdateMovesCheckBox)
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addGroup(
+												generalOptionsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																goUpdateMovesCheckBox)
+														.addComponent(
+																goUpdateMovesLegacyCheckBox))
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 										.addComponent(goRemoveTradeEvosCheckBox)
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-												javax.swing.GroupLayout.DEFAULT_SIZE,
-												Short.MAX_VALUE)
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 										.addComponent(goLowerCaseNamesCheckBox)
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-										.addComponent(goNationalDexCheckBox)));
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addComponent(goNationalDexCheckBox)
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
 
 		romInfoPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(
 				null,
@@ -463,6 +2888,11 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				.setToolTipText(bundle
 						.getString("RandomizerGUI.pbsChangesRandomTotalRB.toolTipText")); // NOI18N
 
+		pbsStandardEXPCurvesCB.setText(bundle
+				.getString("RandomizerGUI.pbsStandardEXPCurvesCB.text")); // NOI18N
+		pbsStandardEXPCurvesCB.setToolTipText(bundle
+				.getString("RandomizerGUI.pbsStandardEXPCurvesCB.toolTipText")); // NOI18N
+
 		javax.swing.GroupLayout baseStatsPanelLayout = new javax.swing.GroupLayout(
 				baseStatsPanel);
 		baseStatsPanel.setLayout(baseStatsPanelLayout);
@@ -478,15 +2908,36 @@ public class RandomizerGUI extends javax.swing.JFrame {
 												baseStatsPanelLayout
 														.createParallelGroup(
 																javax.swing.GroupLayout.Alignment.LEADING)
-														.addComponent(
-																pbsChangesUnchangedRB)
-														.addComponent(
-																pbsChangesShuffleRB)
-														.addComponent(
-																pbsChangesRandomEvosRB)
-														.addComponent(
-																pbsChangesRandomTotalRB))
-										.addContainerGap(196, Short.MAX_VALUE)));
+														.addGroup(
+																baseStatsPanelLayout
+																		.createSequentialGroup()
+																		.addGroup(
+																				baseStatsPanelLayout
+																						.createParallelGroup(
+																								javax.swing.GroupLayout.Alignment.LEADING)
+																						.addComponent(
+																								pbsChangesUnchangedRB)
+																						.addComponent(
+																								pbsChangesRandomEvosRB)
+																						.addComponent(
+																								pbsChangesRandomTotalRB))
+																		.addContainerGap(
+																				javax.swing.GroupLayout.DEFAULT_SIZE,
+																				Short.MAX_VALUE))
+														.addGroup(
+																baseStatsPanelLayout
+																		.createSequentialGroup()
+																		.addComponent(
+																				pbsChangesShuffleRB)
+																		.addPreferredGap(
+																				javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+																				125,
+																				Short.MAX_VALUE)
+																		.addComponent(
+																				pbsStandardEXPCurvesCB)
+																		.addGap(38,
+																				38,
+																				38)))));
 		baseStatsPanelLayout
 				.setVerticalGroup(baseStatsPanelLayout
 						.createParallelGroup(
@@ -498,14 +2949,23 @@ public class RandomizerGUI extends javax.swing.JFrame {
 										.addComponent(pbsChangesUnchangedRB)
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-										.addComponent(pbsChangesShuffleRB)
+										.addGroup(
+												baseStatsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																pbsChangesShuffleRB)
+														.addComponent(
+																pbsStandardEXPCurvesCB))
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(pbsChangesRandomEvosRB)
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(pbsChangesRandomTotalRB)
-										.addGap(27, 27, 27)));
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
 
 		pokemonTypesPanel
 				.setBorder(javax.swing.BorderFactory.createTitledBorder(
@@ -631,6 +3091,11 @@ public class RandomizerGUI extends javax.swing.JFrame {
 					}
 				});
 
+		pmsGen14MovesCB.setText(bundle
+				.getString("RandomizerGUI.pmsGen14MovesCB.text")); // NOI18N
+		pmsGen14MovesCB.setToolTipText(bundle
+				.getString("RandomizerGUI.pmsGen14MovesCB.toolTipText")); // NOI18N
+
 		javax.swing.GroupLayout pokemonMovesetsPanelLayout = new javax.swing.GroupLayout(
 				pokemonMovesetsPanel);
 		pokemonMovesetsPanel.setLayout(pokemonMovesetsPanelLayout);
@@ -648,15 +3113,21 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																javax.swing.GroupLayout.Alignment.LEADING)
 														.addComponent(
 																pmsUnchangedRB)
-														.addComponent(
-																pmsRandomTypeRB)
+														.addGroup(
+																pokemonMovesetsPanelLayout
+																		.createSequentialGroup()
+																		.addComponent(
+																				pmsRandomTypeRB)
+																		.addGap(198,
+																				198,
+																				198)
+																		.addComponent(
+																				pmsGen14MovesCB))
 														.addComponent(
 																pmsRandomTotalRB)
 														.addComponent(
 																pmsMetronomeOnlyRB))
-										.addContainerGap(
-												javax.swing.GroupLayout.DEFAULT_SIZE,
-												Short.MAX_VALUE)));
+										.addContainerGap(134, Short.MAX_VALUE)));
 		pokemonMovesetsPanelLayout
 				.setVerticalGroup(pokemonMovesetsPanelLayout
 						.createParallelGroup(
@@ -670,7 +3141,14 @@ public class RandomizerGUI extends javax.swing.JFrame {
 										.addComponent(pmsUnchangedRB)
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-										.addComponent(pmsRandomTypeRB)
+										.addGroup(
+												pokemonMovesetsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.BASELINE)
+														.addComponent(
+																pmsRandomTypeRB)
+														.addComponent(
+																pmsGen14MovesCB))
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(pmsRandomTotalRB)
@@ -833,7 +3311,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																																tnRandomizeCB)
 																														.addComponent(
 																																tcnRandomizeCB))))))
-										.addContainerGap(129, Short.MAX_VALUE)));
+										.addContainerGap(160, Short.MAX_VALUE)));
 		trainersPokemonPanelLayout
 				.setVerticalGroup(trainersPokemonPanelLayout
 						.createParallelGroup(
@@ -1060,6 +3538,11 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		wpCatchRateCB.setToolTipText(bundle
 				.getString("RandomizerGUI.wpCatchRateCB.toolTipText")); // NOI18N
 
+		wpHeldItemsCB.setText(bundle
+				.getString("RandomizerGUI.wpHeldItemsCB.text")); // NOI18N
+		wpHeldItemsCB.setToolTipText(bundle
+				.getString("RandomizerGUI.wpHeldItemsCB.toolTipText")); // NOI18N
+
 		javax.swing.GroupLayout wildPokemonPanelLayout = new javax.swing.GroupLayout(
 				wildPokemonPanel);
 		wildPokemonPanel.setLayout(wildPokemonPanelLayout);
@@ -1099,7 +3582,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 														.addComponent(
 																wpNoLegendariesCB)
 														.addComponent(
-																wpCatchRateCB))
+																wpCatchRateCB)
+														.addComponent(
+																wpHeldItemsCB))
 										.addContainerGap(
 												javax.swing.GroupLayout.DEFAULT_SIZE,
 												Short.MAX_VALUE)));
@@ -1133,7 +3618,10 @@ public class RandomizerGUI extends javax.swing.JFrame {
 										.addComponent(wpNoLegendariesCB)
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-										.addComponent(wpCatchRateCB))
+										.addComponent(wpCatchRateCB)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+										.addComponent(wpHeldItemsCB))
 						.addGroup(
 								javax.swing.GroupLayout.Alignment.LEADING,
 								wildPokemonPanelLayout
@@ -1203,6 +3691,11 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		spRandom2EvosRB.setToolTipText(bundle
 				.getString("RandomizerGUI.spRandom2EvosRB.toolTipText")); // NOI18N
 
+		spHeldItemsCB.setText(bundle
+				.getString("RandomizerGUI.spHeldItemsCB.text")); // NOI18N
+		spHeldItemsCB.setToolTipText(bundle
+				.getString("RandomizerGUI.spHeldItemsCB.toolTipText")); // NOI18N
+
 		javax.swing.GroupLayout starterPokemonPanelLayout = new javax.swing.GroupLayout(
 				starterPokemonPanel);
 		starterPokemonPanel.setLayout(starterPokemonPanelLayout);
@@ -1246,14 +3739,17 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																				spCustomPoke3Chooser,
 																				javax.swing.GroupLayout.PREFERRED_SIZE,
 																				90,
-																				javax.swing.GroupLayout.PREFERRED_SIZE))
+																				javax.swing.GroupLayout.PREFERRED_SIZE)
+																		.addGap(18,
+																				18,
+																				18)
+																		.addComponent(
+																				spHeldItemsCB))
 														.addComponent(
 																spRandomRB)
 														.addComponent(
 																spRandom2EvosRB))
-										.addContainerGap(
-												javax.swing.GroupLayout.DEFAULT_SIZE,
-												Short.MAX_VALUE)));
+										.addContainerGap(162, Short.MAX_VALUE)));
 		starterPokemonPanelLayout
 				.setVerticalGroup(starterPokemonPanelLayout
 						.createParallelGroup(
@@ -1285,7 +3781,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																spCustomPoke3Chooser,
 																javax.swing.GroupLayout.PREFERRED_SIZE,
 																javax.swing.GroupLayout.DEFAULT_SIZE,
-																javax.swing.GroupLayout.PREFERRED_SIZE))
+																javax.swing.GroupLayout.PREFERRED_SIZE)
+														.addComponent(
+																spHeldItemsCB))
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(spRandomRB)
@@ -1342,7 +3840,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																stpRandomL4LRB)
 														.addComponent(
 																stpRandomTotalRB))
-										.addContainerGap(370, Short.MAX_VALUE)));
+										.addContainerGap(401, Short.MAX_VALUE)));
 		staticPokemonPanelLayout
 				.setVerticalGroup(staticPokemonPanelLayout
 						.createParallelGroup(
@@ -1588,9 +4086,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																paRandomizeRB)
 														.addComponent(
 																paWonderGuardCB))
-										.addContainerGap(
-												javax.swing.GroupLayout.DEFAULT_SIZE,
-												Short.MAX_VALUE)));
+										.addContainerGap(190, Short.MAX_VALUE)));
 		abilitiesPanelLayout
 				.setVerticalGroup(abilitiesPanelLayout
 						.createParallelGroup(
@@ -2057,7 +4553,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 												javax.swing.GroupLayout.DEFAULT_SIZE,
 												javax.swing.GroupLayout.PREFERRED_SIZE)
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(
 												abilitiesPanel,
 												javax.swing.GroupLayout.DEFAULT_SIZE,
@@ -2097,7 +4593,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																javax.swing.GroupLayout.DEFAULT_SIZE,
 																javax.swing.GroupLayout.DEFAULT_SIZE,
 																Short.MAX_VALUE))
-										.addGap(14, 14, 14)
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(
 												starterPokemonPanel,
 												javax.swing.GroupLayout.PREFERRED_SIZE,
@@ -2211,10 +4708,15 @@ public class RandomizerGUI extends javax.swing.JFrame {
 						javax.swing.border.TitledBorder.DEFAULT_POSITION,
 						new java.awt.Font("Tahoma", 1, 11))); // NOI18N
 
-		bwEXPPatchCB.setText(bundle
-				.getString("RandomizerGUI.bwEXPPatchCB.text")); // NOI18N
-		bwEXPPatchCB.setToolTipText(bundle
-				.getString("RandomizerGUI.bwEXPPatchCB.toolTipText")); // NOI18N
+		codeTweaksCB.setText(bundle
+				.getString("RandomizerGUI.codeTweaksCB.text")); // NOI18N
+		codeTweaksCB.setToolTipText(bundle
+				.getString("RandomizerGUI.codeTweaksCB.toolTipText")); // NOI18N
+		codeTweaksCB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				codeTweaksCBActionPerformed(evt);
+			}
+		});
 
 		raceModeCB.setText(bundle.getString("RandomizerGUI.raceModeCB.text")); // NOI18N
 		raceModeCB.setToolTipText(bundle
@@ -2230,9 +4732,30 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		brokenMovesCB.setToolTipText(bundle
 				.getString("RandomizerGUI.brokenMovesCB.toolTipText")); // NOI18N
 
-		heldItemsCB.setText(bundle.getString("RandomizerGUI.heldItemsCB.text")); // NOI18N
-		heldItemsCB.setToolTipText(bundle
-				.getString("RandomizerGUI.heldItemsCB.toolTipText")); // NOI18N
+		codeTweaksBtn.setText(bundle
+				.getString("RandomizerGUI.codeTweaksBtn.text")); // NOI18N
+		codeTweaksBtn.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				codeTweaksBtnActionPerformed(evt);
+			}
+		});
+
+		pokeLimitCB.setText(bundle.getString("RandomizerGUI.pokeLimitCB.text")); // NOI18N
+		pokeLimitCB.setToolTipText(bundle
+				.getString("RandomizerGUI.pokeLimitCB.toolTipText")); // NOI18N
+		pokeLimitCB.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				pokeLimitCBActionPerformed(evt);
+			}
+		});
+
+		pokeLimitBtn.setText(bundle
+				.getString("RandomizerGUI.pokeLimitBtn.text")); // NOI18N
+		pokeLimitBtn.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				pokeLimitBtnActionPerformed(evt);
+			}
+		});
 
 		javax.swing.GroupLayout otherOptionsPanelLayout = new javax.swing.GroupLayout(
 				otherOptionsPanel);
@@ -2250,18 +4773,49 @@ public class RandomizerGUI extends javax.swing.JFrame {
 														.createParallelGroup(
 																javax.swing.GroupLayout.Alignment.LEADING)
 														.addComponent(
-																bwEXPPatchCB)
-														.addComponent(
 																raceModeCB)
 														.addComponent(
-																randomizeHollowsCB)
-														.addComponent(
 																brokenMovesCB)
-														.addComponent(
-																heldItemsCB))
+														.addGroup(
+																otherOptionsPanelLayout
+																		.createParallelGroup(
+																				javax.swing.GroupLayout.Alignment.TRAILING,
+																				false)
+																		.addGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING,
+																				otherOptionsPanelLayout
+																						.createSequentialGroup()
+																						.addComponent(
+																								codeTweaksCB)
+																						.addPreferredGap(
+																								javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																						.addComponent(
+																								codeTweaksBtn,
+																								javax.swing.GroupLayout.DEFAULT_SIZE,
+																								javax.swing.GroupLayout.DEFAULT_SIZE,
+																								Short.MAX_VALUE))
+																		.addGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING,
+																				otherOptionsPanelLayout
+																						.createSequentialGroup()
+																						.addComponent(
+																								pokeLimitCB)
+																						.addPreferredGap(
+																								javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+																						.addComponent(
+																								pokeLimitBtn))))
 										.addContainerGap(
 												javax.swing.GroupLayout.DEFAULT_SIZE,
-												Short.MAX_VALUE)));
+												Short.MAX_VALUE))
+						.addGroup(
+								javax.swing.GroupLayout.Alignment.TRAILING,
+								otherOptionsPanelLayout
+										.createSequentialGroup()
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)
+										.addComponent(randomizeHollowsCB)
+										.addContainerGap()));
 		otherOptionsPanelLayout
 				.setVerticalGroup(otherOptionsPanelLayout
 						.createParallelGroup(
@@ -2269,20 +4823,36 @@ public class RandomizerGUI extends javax.swing.JFrame {
 						.addGroup(
 								otherOptionsPanelLayout
 										.createSequentialGroup()
-										.addComponent(bwEXPPatchCB)
+										.addGroup(
+												otherOptionsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																codeTweaksCB)
+														.addComponent(
+																codeTweaksBtn))
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+										.addGroup(
+												otherOptionsPanelLayout
+														.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING)
+														.addComponent(
+																pokeLimitBtn)
+														.addComponent(
+																pokeLimitCB))
+										.addPreferredGap(
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 										.addComponent(raceModeCB)
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 										.addComponent(randomizeHollowsCB)
 										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+												javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 										.addComponent(brokenMovesCB)
-										.addPreferredGap(
-												javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-												3, Short.MAX_VALUE)
-										.addComponent(heldItemsCB)));
+										.addContainerGap(
+												javax.swing.GroupLayout.DEFAULT_SIZE,
+												Short.MAX_VALUE)));
 
 		loadQSButton.setText(bundle
 				.getString("RandomizerGUI.loadQSButton.text")); // NOI18N
@@ -2304,6 +4874,15 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			}
 		});
 
+		updateSettingsButton.setText(bundle
+				.getString("RandomizerGUI.updateSettingsButton.text")); // NOI18N
+		updateSettingsButton
+				.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent evt) {
+						updateSettingsButtonActionPerformed(evt);
+					}
+				});
+
 		javax.swing.GroupLayout layout = new javax.swing.GroupLayout(
 				getContentPane());
 		getContentPane().setLayout(layout);
@@ -2318,7 +4897,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 												.addComponent(
 														optionsScrollPane,
 														javax.swing.GroupLayout.DEFAULT_SIZE,
-														716, Short.MAX_VALUE)
+														747, Short.MAX_VALUE)
 												.addGroup(
 														layout.createSequentialGroup()
 																.addComponent(
@@ -2337,42 +4916,36 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 																.addGroup(
 																		layout.createParallelGroup(
-																				javax.swing.GroupLayout.Alignment.LEADING)
-																				.addGroup(
-																						layout.createSequentialGroup()
-																								.addComponent(
-																										romInfoPanel,
-																										javax.swing.GroupLayout.DEFAULT_SIZE,
-																										javax.swing.GroupLayout.DEFAULT_SIZE,
-																										Short.MAX_VALUE)
-																								.addGap(18,
-																										18,
-																										18))
-																				.addGroup(
-																						layout.createSequentialGroup()
-																								.addGap(10,
-																										10,
-																										10)
-																								.addComponent(
-																										loadQSButton)
-																								.addGap(29,
-																										29,
-																										29)
-																								.addComponent(
-																										saveQSButton)
-																								.addPreferredGap(
-																										javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-																										javax.swing.GroupLayout.DEFAULT_SIZE,
-																										Short.MAX_VALUE)))
-																.addGroup(
-																		layout.createParallelGroup(
 																				javax.swing.GroupLayout.Alignment.LEADING,
 																				false)
+																				.addGroup(
+																						layout.createSequentialGroup()
+																								.addComponent(
+																										loadQSButton)
+																								.addPreferredGap(
+																										javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																								.addComponent(
+																										saveQSButton))
+																				.addComponent(
+																						romInfoPanel,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						Short.MAX_VALUE))
+																.addGap(18, 18,
+																		18)
+																.addGroup(
+																		layout.createParallelGroup(
+																				javax.swing.GroupLayout.Alignment.LEADING)
 																				.addComponent(
 																						saveROMButton,
 																						javax.swing.GroupLayout.Alignment.TRAILING,
 																						javax.swing.GroupLayout.DEFAULT_SIZE,
-																						123,
+																						147,
+																						Short.MAX_VALUE)
+																				.addComponent(
+																						usePresetsButton,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
+																						javax.swing.GroupLayout.DEFAULT_SIZE,
 																						Short.MAX_VALUE)
 																				.addComponent(
 																						openROMButton,
@@ -2381,7 +4954,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																						javax.swing.GroupLayout.DEFAULT_SIZE,
 																						Short.MAX_VALUE)
 																				.addComponent(
-																						usePresetsButton,
+																						updateSettingsButton,
 																						javax.swing.GroupLayout.DEFAULT_SIZE,
 																						javax.swing.GroupLayout.DEFAULT_SIZE,
 																						Short.MAX_VALUE)
@@ -2398,1967 +4971,73 @@ public class RandomizerGUI extends javax.swing.JFrame {
 								.addContainerGap()
 								.addGroup(
 										layout.createParallelGroup(
-												javax.swing.GroupLayout.Alignment.LEADING,
-												false)
+												javax.swing.GroupLayout.Alignment.LEADING)
+												.addGroup(
+														layout.createParallelGroup(
+																javax.swing.GroupLayout.Alignment.LEADING,
+																false)
+																.addComponent(
+																		generalOptionsPanel,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		Short.MAX_VALUE)
+																.addComponent(
+																		otherOptionsPanel,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		0,
+																		Short.MAX_VALUE))
 												.addGroup(
 														layout.createSequentialGroup()
-																.addGroup(
-																		layout.createParallelGroup(
-																				javax.swing.GroupLayout.Alignment.LEADING)
-																				.addGroup(
-																						layout.createSequentialGroup()
-																								.addComponent(
-																										openROMButton)
-																								.addPreferredGap(
-																										javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-																								.addComponent(
-																										saveROMButton)
-																								.addPreferredGap(
-																										javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-																								.addComponent(
-																										usePresetsButton))
-																				.addComponent(
-																						romInfoPanel,
-																						javax.swing.GroupLayout.PREFERRED_SIZE,
-																						javax.swing.GroupLayout.DEFAULT_SIZE,
-																						javax.swing.GroupLayout.PREFERRED_SIZE))
+																.addComponent(
+																		romInfoPanel,
+																		javax.swing.GroupLayout.PREFERRED_SIZE,
+																		javax.swing.GroupLayout.DEFAULT_SIZE,
+																		javax.swing.GroupLayout.PREFERRED_SIZE)
 																.addPreferredGap(
 																		javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 																.addGroup(
 																		layout.createParallelGroup(
 																				javax.swing.GroupLayout.Alignment.LEADING)
 																				.addComponent(
-																						aboutButton)
-																				.addGroup(
-																						layout.createParallelGroup(
-																								javax.swing.GroupLayout.Alignment.BASELINE)
-																								.addComponent(
-																										loadQSButton)
-																								.addComponent(
-																										saveQSButton))))
-												.addComponent(
-														otherOptionsPanel,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														Short.MAX_VALUE)
-												.addComponent(
-														generalOptionsPanel,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														javax.swing.GroupLayout.DEFAULT_SIZE,
-														Short.MAX_VALUE))
+																						loadQSButton)
+																				.addComponent(
+																						saveQSButton)))
+												.addGroup(
+														layout.createSequentialGroup()
+																.addComponent(
+																		openROMButton)
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																.addComponent(
+																		saveROMButton)
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																.addComponent(
+																		usePresetsButton)
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																.addComponent(
+																		updateSettingsButton)
+																.addPreferredGap(
+																		javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+																.addComponent(
+																		aboutButton)))
 								.addPreferredGap(
 										javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 								.addComponent(optionsScrollPane,
 										javax.swing.GroupLayout.DEFAULT_SIZE,
-										382, Short.MAX_VALUE).addContainerGap()));
+										380, Short.MAX_VALUE).addContainerGap()));
 
 		pack();
 	}// </editor-fold>//GEN-END:initComponents
-
-	private void initialiseState() {
-		this.romHandler = null;
-		initialFormState();
-		this.romOpenChooser.setCurrentDirectory(new File("./"));
-		this.romSaveChooser.setCurrentDirectory(new File("./"));
-		if (new File("./settings/").exists()) {
-			this.qsOpenChooser.setCurrentDirectory(new File("./settings/"));
-			this.qsSaveChooser.setCurrentDirectory(new File("./settings/"));
-		} else {
-			this.qsOpenChooser.setCurrentDirectory(new File("./"));
-			this.qsSaveChooser.setCurrentDirectory(new File("./"));
-		}
-	}
-
-	private void initialFormState() {
-		// Disable all rom components
-		this.goRemoveTradeEvosCheckBox.setEnabled(false);
-		this.goUpdateMovesCheckBox.setEnabled(false);
-		this.goUpdateTypesCheckBox.setEnabled(false);
-		this.goLowerCaseNamesCheckBox.setEnabled(false);
-		this.goNationalDexCheckBox.setEnabled(false);
-
-		this.goRemoveTradeEvosCheckBox.setSelected(false);
-		this.goUpdateMovesCheckBox.setSelected(false);
-		this.goUpdateTypesCheckBox.setSelected(false);
-		this.goLowerCaseNamesCheckBox.setSelected(false);
-		this.goNationalDexCheckBox.setSelected(false);
-
-		this.bwEXPPatchCB.setEnabled(false);
-		this.bwEXPPatchCB.setSelected(false);
-		this.raceModeCB.setEnabled(false);
-		this.raceModeCB.setSelected(false);
-		this.randomizeHollowsCB.setEnabled(false);
-		this.randomizeHollowsCB.setSelected(false);
-		this.brokenMovesCB.setEnabled(false);
-		this.brokenMovesCB.setSelected(false);
-		this.heldItemsCB.setEnabled(false);
-		this.heldItemsCB.setSelected(false);
-
-		this.riRomNameLabel.setText("NO ROM LOADED");
-		this.riRomCodeLabel.setText("");
-		this.riRomSupportLabel.setText("");
-
-		this.loadQSButton.setEnabled(false);
-		this.saveQSButton.setEnabled(false);
-
-		this.pbsChangesUnchangedRB.setEnabled(false);
-		this.pbsChangesRandomEvosRB.setEnabled(false);
-		this.pbsChangesRandomTotalRB.setEnabled(false);
-		this.pbsChangesShuffleRB.setEnabled(false);
-		this.pbsChangesUnchangedRB.setSelected(true);
-
-		this.abilitiesPanel.setVisible(true);
-		this.paUnchangedRB.setEnabled(false);
-		this.paRandomizeRB.setEnabled(false);
-		this.paWonderGuardCB.setEnabled(false);
-		this.paUnchangedRB.setSelected(true);
-		this.paWonderGuardCB.setSelected(false);
-
-		this.spCustomPoke1Chooser.setEnabled(false);
-		this.spCustomPoke2Chooser.setEnabled(false);
-		this.spCustomPoke3Chooser.setEnabled(false);
-		this.spCustomPoke1Chooser.setSelectedIndex(0);
-		this.spCustomPoke1Chooser.setModel(new DefaultComboBoxModel(
-				new String[] { "--" }));
-		this.spCustomPoke2Chooser.setSelectedIndex(0);
-		this.spCustomPoke2Chooser.setModel(new DefaultComboBoxModel(
-				new String[] { "--" }));
-		this.spCustomPoke3Chooser.setSelectedIndex(0);
-		this.spCustomPoke3Chooser.setModel(new DefaultComboBoxModel(
-				new String[] { "--" }));
-		this.spCustomRB.setEnabled(false);
-		this.spRandomRB.setEnabled(false);
-		this.spRandom2EvosRB.setEnabled(false);
-		this.spUnchangedRB.setEnabled(false);
-		this.spUnchangedRB.setSelected(true);
-
-		this.pmsRandomTotalRB.setEnabled(false);
-		this.pmsRandomTypeRB.setEnabled(false);
-		this.pmsUnchangedRB.setEnabled(false);
-		this.pmsUnchangedRB.setSelected(true);
-		this.pmsMetronomeOnlyRB.setEnabled(false);
-
-		this.ptRandomFollowEvosRB.setEnabled(false);
-		this.ptRandomTotalRB.setEnabled(false);
-		this.ptUnchangedRB.setEnabled(false);
-		this.ptUnchangedRB.setSelected(true);
-
-		this.tpPowerLevelsCB.setEnabled(false);
-		this.tpRandomRB.setEnabled(false);
-		this.tpRivalCarriesStarterCB.setEnabled(false);
-		this.tpTypeThemedRB.setEnabled(false);
-		this.tpTypeWeightingCB.setEnabled(false);
-		this.tpNoLegendariesCB.setEnabled(false);
-		this.tpNoEarlyShedinjaCB.setEnabled(false);
-		this.tpNoEarlyShedinjaCB.setVisible(true);
-		this.tpUnchangedRB.setEnabled(false);
-		this.tpUnchangedRB.setSelected(true);
-		this.tpPowerLevelsCB.setSelected(false);
-		this.tpRivalCarriesStarterCB.setSelected(false);
-		this.tpTypeWeightingCB.setSelected(false);
-		this.tpNoLegendariesCB.setSelected(false);
-		this.tpNoEarlyShedinjaCB.setSelected(false);
-
-		this.tnRandomizeCB.setEnabled(false);
-		this.tcnRandomizeCB.setEnabled(false);
-
-		this.tnRandomizeCB.setSelected(false);
-		this.tcnRandomizeCB.setSelected(false);
-
-		this.wpUnchangedRB.setEnabled(false);
-		this.wpRandomRB.setEnabled(false);
-		this.wpArea11RB.setEnabled(false);
-		this.wpGlobalRB.setEnabled(false);
-		this.wpUnchangedRB.setSelected(true);
-
-		this.wpARNoneRB.setEnabled(false);
-		this.wpARCatchEmAllRB.setEnabled(false);
-		this.wpARTypeThemedRB.setEnabled(false);
-		this.wpARSimilarStrengthRB.setEnabled(false);
-		this.wpARNoneRB.setSelected(true);
-
-		this.wpUseTimeCB.setEnabled(false);
-		this.wpUseTimeCB.setVisible(true);
-		this.wpUseTimeCB.setSelected(false);
-
-		this.wpNoLegendariesCB.setEnabled(false);
-		this.wpNoLegendariesCB.setSelected(false);
-
-		this.wpCatchRateCB.setEnabled(false);
-		this.wpCatchRateCB.setSelected(false);
-
-		this.stpRandomL4LRB.setEnabled(false);
-		this.stpRandomTotalRB.setEnabled(false);
-		this.stpUnchangedRB.setEnabled(false);
-		this.stpUnchangedRB.setSelected(true);
-
-		this.tmmRandomRB.setEnabled(false);
-		this.tmmUnchangedRB.setEnabled(false);
-		this.tmmUnchangedRB.setSelected(true);
-
-		this.thcRandomTotalRB.setEnabled(false);
-		this.thcRandomTypeRB.setEnabled(false);
-		this.thcUnchangedRB.setEnabled(false);
-		this.thcUnchangedRB.setSelected(true);
-
-		this.mtmRandomRB.setEnabled(false);
-		this.mtmUnchangedRB.setEnabled(false);
-		this.mtmUnchangedRB.setSelected(true);
-
-		this.mtcRandomTotalRB.setEnabled(false);
-		this.mtcRandomTypeRB.setEnabled(false);
-		this.mtcUnchangedRB.setEnabled(false);
-		this.mtcUnchangedRB.setSelected(true);
-
-		this.mtMovesPanel.setVisible(true);
-		this.mtCompatPanel.setVisible(true);
-		this.mtNoExistLabel.setVisible(false);
-
-		this.igtUnchangedRB.setEnabled(false);
-		this.igtGivenOnlyRB.setEnabled(false);
-		this.igtBothRB.setEnabled(false);
-		this.igtUnchangedRB.setSelected(true);
-
-		this.igtRandomItemCB.setEnabled(false);
-		this.igtRandomItemCB.setSelected(false);
-		this.igtRandomItemCB.setVisible(true);
-
-		this.igtRandomIVsCB.setEnabled(false);
-		this.igtRandomIVsCB.setSelected(false);
-		this.igtRandomIVsCB.setVisible(true);
-
-		this.igtRandomOTCB.setEnabled(false);
-		this.igtRandomOTCB.setSelected(false);
-		this.igtRandomOTCB.setVisible(true);
-
-		this.igtRandomNicknameCB.setEnabled(false);
-		this.igtRandomNicknameCB.setSelected(false);
-
-		this.fiUnchangedRB.setEnabled(false);
-		this.fiShuffleRB.setEnabled(false);
-		this.fiRandomRB.setEnabled(false);
-		this.fiUnchangedRB.setSelected(true);
-
-	}
-
-	private void loadROM() {
-		romOpenChooser.setSelectedFile(null);
-		int returnVal = romOpenChooser.showOpenDialog(this);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			final File fh = romOpenChooser.getSelectedFile();
-			for (RomHandler rh : checkHandlers) {
-				if (rh.detectRom(fh.getAbsolutePath())) {
-					this.romHandler = rh;
-					opDialog = new OperationDialog("Loading...", this, true);
-					Thread t = new Thread() {
-						@Override
-						public void run() {
-							SwingUtilities.invokeLater(new Runnable() {
-								@Override
-								public void run() {
-									opDialog.setVisible(true);
-								}
-							});
-							try {
-								RandomizerGUI.this.romHandler.loadRom(fh
-										.getAbsolutePath());
-							} catch (Exception ex) {
-								long time = System.currentTimeMillis();
-								try {
-									String errlog = "error_" + time + ".txt";
-									PrintStream ps = new PrintStream(new FileOutputStream(errlog));
-									PrintStream e1 = System.err;
-									System.setErr(ps);
-									ex.printStackTrace();
-									verboseLog.close();
-									System.setErr(e1);
-									ps.close();
-									JOptionPane
-											.showMessageDialog(
-													RandomizerGUI.this,
-													"There was an unhandled exception trying to load your ROM.\n"
-															+ "A log file containing some details has been saved to "
-															+ errlog
-															+ ".\n"
-															+ "Please include this file in any bug reports you do.");
-								} catch (Exception logex) {
-									JOptionPane
-											.showMessageDialog(RandomizerGUI.this,
-													"There was an unhandled exception trying to load your ROM.");
-									verboseLog.close();
-								}
-							}
-							SwingUtilities.invokeLater(new Runnable() {
-								@Override
-								public void run() {
-									RandomizerGUI.this.opDialog
-											.setVisible(false);
-									RandomizerGUI.this.initialFormState();
-									RandomizerGUI.this.romLoaded();
-								}
-							});
-						}
-					};
-					t.start();
-
-					return;
-				}
-			}
-			JOptionPane.showMessageDialog(this,
-					"Could not load " + fh.getName()
-							+ " - it's not a supported ROM.");
-		}
-
-	}
-
-	private void romLoaded() {
-		this.riRomNameLabel.setText(this.romHandler.getROMName());
-		this.riRomCodeLabel.setText(this.romHandler.getROMCode());
-		this.riRomSupportLabel.setText("Support: "
-				+ this.romHandler.getSupportLevel());
-
-		if (romHandler instanceof Gen1RomHandler) {
-			this.goUpdateMovesCheckBox.setSelected(false);
-			this.goUpdateTypesCheckBox.setEnabled(true);
-		}
-		if (!(romHandler instanceof Gen5RomHandler)) {
-			this.goUpdateMovesCheckBox.setSelected(false);
-			this.goUpdateMovesCheckBox.setEnabled(true);
-		}
-		this.goRemoveTradeEvosCheckBox.setSelected(false);
-		this.goRemoveTradeEvosCheckBox.setEnabled(true);
-		if (!(romHandler instanceof Gen5RomHandler)
-				&& !(romHandler instanceof Gen4RomHandler)) {
-			this.goLowerCaseNamesCheckBox.setSelected(false);
-			this.goLowerCaseNamesCheckBox.setEnabled(true);
-		}
-		if (romHandler instanceof Gen3RomHandler) {
-			this.goNationalDexCheckBox.setSelected(false);
-			this.goNationalDexCheckBox.setEnabled(true);
-		}
-		this.raceModeCB.setSelected(false);
-		this.raceModeCB.setEnabled(true);
-
-		this.bwEXPPatchCB.setSelected(false);
-		this.bwEXPPatchCB.setEnabled(romHandler.hasBWEXPPatch());
-
-		this.randomizeHollowsCB.setSelected(false);
-		this.randomizeHollowsCB.setEnabled(romHandler.hasHiddenHollowPokemon());
-
-		this.brokenMovesCB.setSelected(false);
-		this.brokenMovesCB.setEnabled(true);
-
-		this.heldItemsCB.setSelected(false);
-		this.heldItemsCB.setEnabled(!(romHandler instanceof Gen1RomHandler));
-
-		this.loadQSButton.setEnabled(true);
-		this.saveQSButton.setEnabled(true);
-
-		this.pbsChangesUnchangedRB.setEnabled(true);
-		this.pbsChangesUnchangedRB.setSelected(true);
-		this.pbsChangesRandomEvosRB.setEnabled(true);
-		this.pbsChangesRandomTotalRB.setEnabled(true);
-		this.pbsChangesShuffleRB.setEnabled(true);
-
-		if (romHandler.abilitiesPerPokemon() > 0) {
-			this.paUnchangedRB.setEnabled(true);
-			this.paUnchangedRB.setSelected(true);
-			this.paRandomizeRB.setEnabled(true);
-			this.paWonderGuardCB.setEnabled(false);
-		} else {
-			this.abilitiesPanel.setVisible(false);
-		}
-
-		this.spUnchangedRB.setEnabled(true);
-		this.spUnchangedRB.setSelected(true);
-
-		this.spCustomPoke3Chooser.setVisible(true);
-		if (romHandler.canChangeStarters()) {
-			this.spCustomRB.setEnabled(true);
-			this.spRandomRB.setEnabled(true);
-			this.spRandom2EvosRB.setEnabled(true);
-			if (romHandler.isYellow()) {
-				this.spCustomPoke3Chooser.setVisible(false);
-			}
-			populateDropdowns();
-		}
-
-		this.pmsRandomTotalRB.setEnabled(true);
-		this.pmsRandomTypeRB.setEnabled(true);
-		this.pmsUnchangedRB.setEnabled(true);
-		this.pmsUnchangedRB.setSelected(true);
-		this.pmsMetronomeOnlyRB.setEnabled(true);
-
-		this.ptRandomFollowEvosRB.setEnabled(true);
-		this.ptRandomTotalRB.setEnabled(true);
-		this.ptUnchangedRB.setEnabled(true);
-		this.ptUnchangedRB.setSelected(true);
-
-		this.tpRandomRB.setEnabled(true);
-		this.tpTypeThemedRB.setEnabled(true);
-		this.tpUnchangedRB.setEnabled(true);
-		this.tpUnchangedRB.setSelected(true);
-		this.tnRandomizeCB.setEnabled(true);
-		this.tcnRandomizeCB.setEnabled(true);
-
-		if (romHandler instanceof Gen1RomHandler
-				|| romHandler instanceof Gen2RomHandler) {
-			this.tpNoEarlyShedinjaCB.setVisible(false);
-		} else {
-			this.tpNoEarlyShedinjaCB.setVisible(true);
-		}
-		this.tpNoEarlyShedinjaCB.setSelected(false);
-
-		this.wpArea11RB.setEnabled(true);
-		this.wpGlobalRB.setEnabled(true);
-		this.wpRandomRB.setEnabled(true);
-		this.wpUnchangedRB.setEnabled(true);
-		this.wpUnchangedRB.setSelected(true);
-		this.wpUseTimeCB.setEnabled(false);
-		this.wpNoLegendariesCB.setEnabled(false);
-		if (!romHandler.hasTimeBasedEncounters()) {
-			this.wpUseTimeCB.setVisible(false);
-		}
-		this.wpCatchRateCB.setEnabled(true);
-
-		this.stpUnchangedRB.setEnabled(true);
-		if (this.romHandler.canChangeStaticPokemon()) {
-			this.stpRandomL4LRB.setEnabled(true);
-			this.stpRandomTotalRB.setEnabled(true);
-
-		}
-
-		this.tmmRandomRB.setEnabled(true);
-		this.tmmUnchangedRB.setEnabled(true);
-
-		this.thcRandomTotalRB.setEnabled(true);
-		this.thcRandomTypeRB.setEnabled(true);
-		this.thcUnchangedRB.setEnabled(true);
-
-		if (this.romHandler.hasMoveTutors()) {
-			this.mtmRandomRB.setEnabled(true);
-			this.mtmUnchangedRB.setEnabled(true);
-
-			this.mtcRandomTotalRB.setEnabled(true);
-			this.mtcRandomTypeRB.setEnabled(true);
-			this.mtcUnchangedRB.setEnabled(true);
-		} else {
-			this.mtCompatPanel.setVisible(false);
-			this.mtMovesPanel.setVisible(false);
-			this.mtNoExistLabel.setVisible(true);
-		}
-
-		this.igtUnchangedRB.setEnabled(true);
-		this.igtBothRB.setEnabled(true);
-		this.igtGivenOnlyRB.setEnabled(true);
-
-		if (this.romHandler instanceof Gen1RomHandler) {
-			this.igtRandomItemCB.setVisible(false);
-			this.igtRandomIVsCB.setVisible(false);
-			this.igtRandomOTCB.setVisible(false);
-		}
-
-		this.fiUnchangedRB.setEnabled(true);
-		this.fiRandomRB.setEnabled(true);
-		this.fiShuffleRB.setEnabled(true);
-
-	}
-
-	private void populateDropdowns() {
-		List<Pokemon> currentStarters = romHandler.getStarters();
-		List<Pokemon> allPokes = romHandler.getPokemon();
-		String[] pokeNames = new String[allPokes.size() - 1];
-		for (int i = 1; i < allPokes.size(); i++) {
-			pokeNames[i - 1] = allPokes.get(i).name;
-		}
-		this.spCustomPoke1Chooser.setModel(new DefaultComboBoxModel(pokeNames));
-		this.spCustomPoke1Chooser
-				.setSelectedIndex(currentStarters.get(0).number - 1);
-		this.spCustomPoke2Chooser.setModel(new DefaultComboBoxModel(pokeNames));
-		this.spCustomPoke2Chooser
-				.setSelectedIndex(currentStarters.get(1).number - 1);
-		if (!romHandler.isYellow()) {
-			this.spCustomPoke3Chooser.setModel(new DefaultComboBoxModel(
-					pokeNames));
-			this.spCustomPoke3Chooser
-					.setSelectedIndex(currentStarters.get(2).number - 1);
-		}
-	}
-
-	private void enableOrDisableSubControls() {
-		// This isn't for a new ROM being loaded (that's romLoaded)
-		// This is just for when a radio button gets selected or state is loaded
-		// and we need to enable/disable secondary controls
-		// e.g. wild pokemon / trainer pokemon "modifier"
-		// and the 3 starter pokemon dropdowns
-		if (this.spCustomRB.isSelected()) {
-			this.spCustomPoke1Chooser.setEnabled(true);
-			this.spCustomPoke2Chooser.setEnabled(true);
-			this.spCustomPoke3Chooser.setEnabled(true);
-		} else {
-			this.spCustomPoke1Chooser.setEnabled(false);
-			this.spCustomPoke2Chooser.setEnabled(false);
-			this.spCustomPoke3Chooser.setEnabled(false);
-		}
-
-		if (this.paRandomizeRB.isSelected()) {
-			this.paWonderGuardCB.setEnabled(true);
-		} else {
-			this.paWonderGuardCB.setEnabled(false);
-			this.paWonderGuardCB.setSelected(false);
-		}
-
-		if (this.tpUnchangedRB.isSelected()) {
-			this.tpPowerLevelsCB.setEnabled(false);
-			this.tpRivalCarriesStarterCB.setEnabled(false);
-			this.tpNoLegendariesCB.setEnabled(false);
-			this.tpNoEarlyShedinjaCB.setEnabled(false);
-			this.tpNoEarlyShedinjaCB.setSelected(false);
-		} else {
-			this.tpPowerLevelsCB.setEnabled(true);
-			this.tpRivalCarriesStarterCB.setEnabled(true);
-			this.tpNoLegendariesCB.setEnabled(true);
-			this.tpNoEarlyShedinjaCB.setEnabled(true);
-		}
-
-		if (this.tpTypeThemedRB.isSelected()) {
-			this.tpTypeWeightingCB.setEnabled(true);
-		} else {
-			this.tpTypeWeightingCB.setEnabled(false);
-		}
-
-		if (this.wpArea11RB.isSelected() || this.wpRandomRB.isSelected()) {
-			this.wpARNoneRB.setEnabled(true);
-			this.wpARSimilarStrengthRB.setEnabled(true);
-			this.wpARCatchEmAllRB.setEnabled(true);
-			this.wpARTypeThemedRB.setEnabled(true);
-		} else if (this.wpGlobalRB.isSelected()) {
-			if (this.wpARCatchEmAllRB.isSelected()
-					|| this.wpARTypeThemedRB.isSelected()) {
-				this.wpARNoneRB.setSelected(true);
-			}
-			this.wpARNoneRB.setEnabled(true);
-			this.wpARSimilarStrengthRB.setEnabled(true);
-			this.wpARCatchEmAllRB.setEnabled(false);
-			this.wpARTypeThemedRB.setEnabled(false);
-		} else {
-			this.wpARNoneRB.setEnabled(false);
-			this.wpARSimilarStrengthRB.setEnabled(false);
-			this.wpARCatchEmAllRB.setEnabled(false);
-			this.wpARTypeThemedRB.setEnabled(false);
-			this.wpARNoneRB.setSelected(true);
-		}
-
-		if (this.wpUnchangedRB.isSelected()) {
-			this.wpUseTimeCB.setEnabled(false);
-			this.wpNoLegendariesCB.setEnabled(false);
-		} else {
-			this.wpUseTimeCB.setEnabled(true);
-			this.wpNoLegendariesCB.setEnabled(true);
-		}
-
-		if (this.igtUnchangedRB.isSelected()) {
-			this.igtRandomItemCB.setEnabled(false);
-			this.igtRandomIVsCB.setEnabled(false);
-			this.igtRandomNicknameCB.setEnabled(false);
-			this.igtRandomOTCB.setEnabled(false);
-		} else {
-			this.igtRandomItemCB.setEnabled(true);
-			this.igtRandomIVsCB.setEnabled(true);
-			this.igtRandomNicknameCB.setEnabled(true);
-			this.igtRandomOTCB.setEnabled(true);
-		}
-
-		if (this.pmsMetronomeOnlyRB.isSelected()) {
-			this.tmmUnchangedRB.setEnabled(false);
-			this.tmmRandomRB.setEnabled(false);
-			this.tmmUnchangedRB.setSelected(true);
-
-			this.mtmUnchangedRB.setEnabled(false);
-			this.mtmRandomRB.setEnabled(false);
-			this.mtmUnchangedRB.setSelected(true);
-		} else {
-			this.tmmUnchangedRB.setEnabled(true);
-			this.tmmRandomRB.setEnabled(true);
-
-			this.mtmUnchangedRB.setEnabled(true);
-			this.mtmRandomRB.setEnabled(true);
-		}
-	}
-
-	private void saveROM() {
-		if (romHandler == null) {
-			return; // none loaded
-		}
-		if (raceModeCB.isSelected() && tpUnchangedRB.isSelected()
-				&& wpUnchangedRB.isSelected()) {
-			JOptionPane
-					.showMessageDialog(
-							this,
-							"You can't use Race Mode without randomizing either the wild Pokemon or the trainer Pokemon.\nReview this and try again.");
-			return;
-		}
-		romSaveChooser.setSelectedFile(null);
-		int returnVal = romSaveChooser.showSaveDialog(this);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File fh = romSaveChooser.getSelectedFile();
-			// Fix or add extension
-			List<String> extensions = new ArrayList<String>(Arrays.asList(
-					"sgb", "gbc", "gba", "nds"));
-			extensions.remove(this.romHandler.getDefaultExtension());
-			fh = FileFunctions.fixFilename(fh,
-					this.romHandler.getDefaultExtension(), extensions);
-			// Get a seed
-			long seed = RandomSource.pickSeed();
-			// Apply it
-			RandomSource.seed(seed);
-			presetMode = false;
-			performRandomization(fh.getAbsolutePath(), seed, null, null, null);
-		}
-	}
-
-	private String getConfigString() {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-		baos.write(makeByteSelected(this.goLowerCaseNamesCheckBox,
-				this.goNationalDexCheckBox, this.goRemoveTradeEvosCheckBox,
-				this.goUpdateMovesCheckBox, this.goUpdateTypesCheckBox,
-				this.tnRandomizeCB, this.tcnRandomizeCB));
-
-		baos.write(makeByteSelected(this.pbsChangesRandomEvosRB,
-				this.pbsChangesRandomTotalRB, this.pbsChangesShuffleRB,
-				this.pbsChangesUnchangedRB, this.paUnchangedRB,
-				this.paRandomizeRB, this.paWonderGuardCB));
-
-		baos.write(makeByteSelected(this.ptRandomFollowEvosRB,
-				this.ptRandomTotalRB, this.ptUnchangedRB, this.bwEXPPatchCB,
-				this.raceModeCB, this.randomizeHollowsCB, this.brokenMovesCB,
-				this.heldItemsCB));
-
-		baos.write(makeByteSelected(this.spCustomRB, this.spRandomRB,
-				this.spUnchangedRB, this.spRandom2EvosRB));
-
-		writePokemonIndex(baos, this.spCustomPoke1Chooser);
-		writePokemonIndex(baos, this.spCustomPoke2Chooser);
-		writePokemonIndex(baos, this.spCustomPoke3Chooser);
-
-		baos.write(makeByteSelected(this.pmsRandomTotalRB,
-				this.pmsRandomTypeRB, this.pmsUnchangedRB,
-				this.pmsMetronomeOnlyRB));
-
-		// Consistent with reading - we include both no legendary boxes
-		// in the trainer byte because the wild byte is already full.
-		baos.write(makeByteSelected(this.tpPowerLevelsCB, this.tpRandomRB,
-				this.tpRivalCarriesStarterCB, this.tpTypeThemedRB,
-				this.tpTypeWeightingCB, this.tpUnchangedRB,
-				this.tpNoLegendariesCB, this.wpNoLegendariesCB));
-
-		baos.write(makeByteSelected(this.wpARCatchEmAllRB, this.wpArea11RB,
-				this.wpARNoneRB, this.wpARTypeThemedRB, this.wpGlobalRB,
-				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB));
-
-		baos.write(makeByteSelected(this.stpUnchangedRB, this.stpRandomL4LRB,
-				this.stpRandomTotalRB, this.wpCatchRateCB,
-				this.tpNoEarlyShedinjaCB));
-
-		baos.write(makeByteSelected(this.thcRandomTotalRB,
-				this.thcRandomTypeRB, this.thcUnchangedRB, this.tmmRandomRB,
-				this.tmmUnchangedRB));
-
-		baos.write(makeByteSelected(this.mtcRandomTotalRB,
-				this.mtcRandomTypeRB, this.mtcUnchangedRB, this.mtmRandomRB,
-				this.mtmUnchangedRB));
-
-		// new 150
-		baos.write(makeByteSelected(this.igtBothRB, this.igtGivenOnlyRB,
-				this.igtRandomItemCB, this.igtRandomIVsCB,
-				this.igtRandomNicknameCB, this.igtRandomOTCB,
-				this.igtUnchangedRB));
-
-		baos.write(makeByteSelected(this.fiRandomRB, this.fiShuffleRB,
-				this.fiUnchangedRB));
-
-		try {
-			byte[] romName = romHandler.getROMName().getBytes("US-ASCII");
-			baos.write(romName.length);
-			baos.write(romName);
-		} catch (UnsupportedEncodingException e) {
-			baos.write(0);
-		} catch (IOException e) {
-			baos.write(0);
-		}
-
-		byte[] current = baos.toByteArray();
-		CRC32 checksum = new CRC32();
-		checksum.update(current);
-
-		try {
-			writeChecksum(baos, (int) checksum.getValue());
-			writeChecksum(baos, getFileChecksum("trainerclasses.txt"));
-			writeChecksum(baos, getFileChecksum("trainernames.txt"));
-			writeChecksum(baos, getFileChecksum("nicknames.txt"));
-		} catch (IOException e) {
-		}
-
-		return DatatypeConverter.printBase64Binary(baos.toByteArray());
-	}
-
-	private static int getFileChecksum(String filename) {
-		try {
-			Scanner sc = new Scanner(FileFunctions.openConfig(filename));
-			CRC32 checksum = new CRC32();
-			while (sc.hasNextLine()) {
-				String line = sc.nextLine().trim();
-				if (!line.isEmpty()) {
-					checksum.update(line.getBytes("UTF-8"));
-				}
-			}
-			sc.close();
-			return (int) checksum.getValue();
-		} catch (IOException e) {
-			return 0;
-		}
-
-	}
-
-	public static String getValidRequiredROMName(String config,
-			byte[] trainerClasses, byte[] trainerNames, byte[] nicknames)
-			throws UnsupportedEncodingException,
-			InvalidSupplementFilesException {
-		byte[] data = DatatypeConverter.parseBase64Binary(config);
-
-		if (data.length < 35) {
-			return null; // too short
-		}
-
-		// Check the checksum
-		ByteBuffer buf = ByteBuffer.allocate(4).put(data, data.length - 16, 4);
-		buf.rewind();
-		int crc = buf.getInt();
-
-		CRC32 checksum = new CRC32();
-		checksum.update(data, 0, data.length - 16);
-		if ((int) checksum.getValue() != crc) {
-			return null; // checksum failure
-		}
-
-		// Check the trainerclass & trainernames crc
-		if (trainerClasses == null
-				&& !checkOtherCRC(data, 0, 6, "trainerclasses.txt",
-						data.length - 12)) {
-			JOptionPane
-					.showMessageDialog(
-							null,
-							"Can't use this preset because you have a different set of random trainer class names to the creator.\nHave them make you a rndp file instead.");
-			throw new InvalidSupplementFilesException();
-		}
-		if (trainerNames == null
-				&& (!checkOtherCRC(data, 0, 5, "trainernames.txt",
-						data.length - 8) || !checkOtherCRC(data, 16, 5,
-						"trainernames.txt", data.length - 8))) {
-			JOptionPane
-					.showMessageDialog(
-							null,
-							"Can't use this preset because you have a different set of random trainer names to the creator.\nHave them make you a rndp file instead.");
-			throw new InvalidSupplementFilesException();
-		}
-		if (nicknames == null
-				&& !checkOtherCRC(data, 16, 4, "nicknames.txt", data.length - 4)) {
-			JOptionPane
-					.showMessageDialog(
-							null,
-							"Can't use this preset because you have a different set of random nicknames to the creator.\nHave them make you a rndp file instead.");
-			throw new InvalidSupplementFilesException();
-		}
-
-		int nameLength = data[18] & 0xFF;
-		if (data.length != 35 + nameLength) {
-			return null; // not valid length
-		}
-		String name = new String(data, 19, nameLength, "US-ASCII");
-		return name;
-	}
-
-	private static boolean checkOtherCRC(byte[] data, int byteIndex,
-			int switchIndex, String filename, int offsetInData) {
-		// If the switch at data[byteIndex].switchIndex is on,
-		// then check that the CRC at
-		// data[offsetInData] ... data[offsetInData+3]
-		// matches the CRC of filename.
-		// If not, return false.
-		// If any other case, return true.
-		int switches = data[byteIndex] & 0xFF;
-		if (((switches >> switchIndex) & 0x01) == 0x01) {
-			// have to check the CRC
-			ByteBuffer buf = ByteBuffer.allocate(4).put(data, offsetInData, 4);
-			buf.rewind();
-			int crc = buf.getInt();
-
-			if (getFileChecksum(filename) != crc) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	private boolean restoreFrom(String config) {
-		// Need to add enables
-		byte[] data = DatatypeConverter.parseBase64Binary(config);
-
-		// Check the checksum
-		ByteBuffer buf = ByteBuffer.allocate(4).put(data, data.length - 16, 4);
-		buf.rewind();
-		int crc = buf.getInt();
-
-		CRC32 checksum = new CRC32();
-		checksum.update(data, 0, data.length - 16);
-
-		if ((int) checksum.getValue() != crc) {
-			return false; // checksum failure
-		}
-
-		// Restore the actual controls
-		restoreStates(data[0], this.goLowerCaseNamesCheckBox,
-				this.goNationalDexCheckBox, this.goRemoveTradeEvosCheckBox,
-				this.goUpdateMovesCheckBox, this.goUpdateTypesCheckBox,
-				this.tnRandomizeCB, this.tcnRandomizeCB);
-
-		restoreStates(data[1], this.pbsChangesRandomEvosRB,
-				this.pbsChangesRandomTotalRB, this.pbsChangesShuffleRB,
-				this.pbsChangesUnchangedRB, this.paUnchangedRB,
-				this.paRandomizeRB, this.paWonderGuardCB);
-
-		restoreStates(data[2], this.ptRandomFollowEvosRB, this.ptRandomTotalRB,
-				this.ptUnchangedRB, this.bwEXPPatchCB, this.raceModeCB,
-				this.randomizeHollowsCB, this.brokenMovesCB, this.heldItemsCB);
-
-		restoreStates(data[3], this.spCustomRB, this.spRandomRB,
-				this.spUnchangedRB, this.spRandom2EvosRB);
-
-		restoreSelectedIndex(data, 4, this.spCustomPoke1Chooser);
-		restoreSelectedIndex(data, 6, this.spCustomPoke2Chooser);
-		restoreSelectedIndex(data, 8, this.spCustomPoke3Chooser);
-
-		restoreStates(data[10], this.pmsRandomTotalRB, this.pmsRandomTypeRB,
-				this.pmsUnchangedRB, this.pmsMetronomeOnlyRB);
-
-		// Read from the trainer byte for wild no legendaries
-		// Because the wild byte is already full.
-		restoreStates(data[11], this.tpPowerLevelsCB, this.tpRandomRB,
-				this.tpRivalCarriesStarterCB, this.tpTypeThemedRB,
-				this.tpTypeWeightingCB, this.tpUnchangedRB,
-				this.tpNoLegendariesCB, this.wpNoLegendariesCB);
-
-		restoreStates(data[12], this.wpARCatchEmAllRB, this.wpArea11RB,
-				this.wpARNoneRB, this.wpARTypeThemedRB, this.wpGlobalRB,
-				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB);
-
-		// Add the catch rate here because wild byte is full
-		// Add trainer no shedinja here too
-
-		restoreStates(data[13], this.stpUnchangedRB, this.stpRandomL4LRB,
-				this.stpRandomTotalRB, this.wpCatchRateCB,
-				this.tpNoEarlyShedinjaCB);
-
-		restoreStates(data[14], this.thcRandomTotalRB, this.thcRandomTypeRB,
-				this.thcUnchangedRB, this.tmmRandomRB, this.tmmUnchangedRB);
-		restoreStates(data[15], this.mtcRandomTotalRB, this.mtcRandomTypeRB,
-				this.mtcUnchangedRB, this.mtmRandomRB, this.mtmUnchangedRB);
-
-		// new 150
-		restoreStates(data[16], this.igtBothRB, this.igtGivenOnlyRB,
-				this.igtRandomItemCB, this.igtRandomIVsCB,
-				this.igtRandomNicknameCB, this.igtRandomOTCB,
-				this.igtUnchangedRB);
-		restoreStates(data[17], this.fiRandomRB, this.fiShuffleRB,
-				this.fiUnchangedRB);
-
-		this.enableOrDisableSubControls();
-
-		// Name data is ignored here - we should've used it earlier.
-		return true;
-	}
-
-	private void restoreSelectedIndex(byte[] data, int offset,
-			JComboBox comboBox) {
-		int selIndex = (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
-		if (comboBox.getModel().getSize() > selIndex) {
-			comboBox.setSelectedIndex(selIndex);
-		} else if (this.spCustomRB.isSelected()) {
-			JOptionPane
-					.showMessageDialog(
-							this,
-							"Could not set one of the custom starters from the settings file because it does not exist in this generation.");
-		}
-	}
-
-	private void restoreStates(byte b, AbstractButton... switches) {
-		int value = b & 0xFF;
-		for (int i = 0; i < switches.length; i++) {
-			int realValue = (value >> i) & 0x01;
-			switches[i].setSelected(realValue == 0x01);
-		}
-	}
-
-	private void writeChecksum(ByteArrayOutputStream baos, int checksum)
-			throws IOException {
-		byte[] crc = ByteBuffer.allocate(4).putInt(checksum).array();
-		baos.write(crc);
-
-	}
-
-	private void writePokemonIndex(ByteArrayOutputStream baos,
-			JComboBox comboBox) {
-		baos.write(comboBox.getSelectedIndex() & 0xFF);
-		baos.write((comboBox.getSelectedIndex() >> 8) & 0xFF);
-
-	}
-
-	private int makeByteSelected(AbstractButton... switches) {
-		if (switches.length > 8) {
-			// No can do
-			return 0;
-		}
-		int initial = 0;
-		int state = 1;
-		for (AbstractButton b : switches) {
-			initial |= b.isSelected() ? state : 0;
-			state *= 2;
-		}
-		return initial;
-	}
-
-	private void performRandomization(final String filename, final long seed,
-			byte[] trainerClasses, byte[] trainerNames, byte[] nicknames) {
-
-		final boolean raceMode = raceModeCB.isSelected();
-		int checkValue = 0;
-		final long startTime = System.currentTimeMillis();
-		// Setup verbose log
-		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		String nl = System.getProperty("line.separator");
-		try {
-			verboseLog = new PrintStream(baos, false, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			verboseLog = new PrintStream(baos);
-		}
-		try {
-			// Update type effectiveness in RBY?
-			if (romHandler instanceof Gen1RomHandler
-					&& this.goUpdateTypesCheckBox.isSelected()) {
-				romHandler.fixTypeEffectiveness();
-			}
-
-			// Move updates
-			if (!(romHandler instanceof Gen5RomHandler)
-					&& this.goUpdateMovesCheckBox.isSelected()) {
-				romHandler.applyMoveUpdates();
-			}
-
-			List<Move> moves = romHandler.getMoves();
-
-			// Trade evolutions removal
-			if (this.goRemoveTradeEvosCheckBox.isSelected()) {
-				romHandler.removeTradeEvolutions();
-			}
-
-			// Camel case?
-			if (!(romHandler instanceof Gen5RomHandler)
-					&& !(romHandler instanceof Gen4RomHandler)
-					&& this.goLowerCaseNamesCheckBox.isSelected()) {
-				romHandler.applyCamelCaseNames();
-			}
-
-			// National dex gen3?
-			if (romHandler instanceof Gen3RomHandler
-					&& this.goNationalDexCheckBox.isSelected()) {
-				romHandler.patchForNationalDex();
-			}
-
-			// BW Exp Patch?
-			if (romHandler.hasBWEXPPatch() && this.bwEXPPatchCB.isSelected()) {
-				romHandler.applyBWEXPPatch();
-			}
-
-			// Hollows?
-			if (romHandler.hasHiddenHollowPokemon()
-					&& this.randomizeHollowsCB.isSelected()) {
-				romHandler.randomizeHiddenHollowPokemon();
-			}
-
-			List<Pokemon> allPokes = romHandler.getPokemon();
-
-			// Base stats changing
-			if (this.pbsChangesShuffleRB.isSelected()) {
-				romHandler.shufflePokemonStats();
-			} else if (this.pbsChangesRandomEvosRB.isSelected()) {
-				romHandler.randomizePokemonStats(true);
-			} else if (this.pbsChangesRandomTotalRB.isSelected()) {
-				romHandler.randomizePokemonStats(false);
-			}
-
-			// Abilities? (new 1.0.2)
-			if (this.romHandler.abilitiesPerPokemon() > 0
-					&& this.paRandomizeRB.isSelected()) {
-				romHandler
-						.randomizeAbilities(this.paWonderGuardCB.isSelected());
-			}
-
-			// Pokemon Types
-			if (this.ptRandomFollowEvosRB.isSelected()) {
-				romHandler.randomizePokemonTypes(true);
-			} else if (this.ptRandomTotalRB.isSelected()) {
-				romHandler.randomizePokemonTypes(false);
-			}
-
-			// Wild Held Items?
-			String[] itemNames = romHandler.getItemNames();
-			if (this.heldItemsCB.isSelected()) {
-				romHandler.randomizeWildHeldItems();
-			}
-
-			// Log base stats & types if changed at all
-			if (this.pbsChangesUnchangedRB.isSelected()
-					&& this.ptUnchangedRB.isSelected()
-					&& this.paUnchangedRB.isSelected()
-					&& this.heldItemsCB.isSelected() == false) {
-				verboseLog.println("Pokemon base stats & type: unchanged" + nl);
-			} else {
-				verboseLog.println("--Pokemon Base Stats & Types--");
-				if (romHandler instanceof Gen1RomHandler) {
-					verboseLog
-							.println("NUM|NAME      |TYPE             |  HP| ATK| DEF| SPE|SPEC");
-					for (Pokemon pkmn : allPokes) {
-						if (pkmn != null) {
-							String typeString = pkmn.primaryType == null ? "NULL"
-									: pkmn.primaryType.toString();
-							if (pkmn.secondaryType != null) {
-								typeString += "/"
-										+ (pkmn.secondaryType == null ? "NULL"
-												: pkmn.secondaryType.toString());
-							}
-							verboseLog.printf(
-									"%3d|%-10s|%-17s|%4d|%4d|%4d|%4d|%4d" + nl,
-									pkmn.number, pkmn.name, typeString,
-									pkmn.hp, pkmn.attack, pkmn.defense,
-									pkmn.speed, pkmn.special);
-						}
-
-					}
-				} else {
-					verboseLog
-							.print("NUM|NAME      |TYPE             |  HP| ATK| DEF| SPE|SATK|SDEF");
-					int abils = romHandler.abilitiesPerPokemon();
-					for (int i = 0; i < abils; i++) {
-						verboseLog.print("|ABILITY" + (i + 1) + "    ");
-					}
-					verboseLog.print("|ITEM");
-					verboseLog.println();
-					for (Pokemon pkmn : allPokes) {
-						if (pkmn != null) {
-							String typeString = pkmn.primaryType.toString();
-							if (pkmn.secondaryType != null) {
-								typeString += "/"
-										+ pkmn.secondaryType.toString();
-							}
-							verboseLog.printf(
-									"%3d|%-10s|%-17s|%4d|%4d|%4d|%4d|%4d|%4d",
-									pkmn.number, pkmn.name, typeString,
-									pkmn.hp, pkmn.attack, pkmn.defense,
-									pkmn.speed, pkmn.spatk, pkmn.spdef);
-							if (abils > 0) {
-								verboseLog.printf("|%-12s|%-12s",
-										romHandler.abilityName(pkmn.ability1),
-										romHandler.abilityName(pkmn.ability2));
-								if (abils > 2) {
-									verboseLog.printf("|%-12s", romHandler
-											.abilityName(pkmn.ability3));
-								}
-							}
-							verboseLog.print("|");
-							if (pkmn.guaranteedHeldItem > 0) {
-								verboseLog
-										.print(itemNames[pkmn.guaranteedHeldItem]
-												+ " (100%)");
-							} else {
-								int itemCount = 0;
-								if (pkmn.commonHeldItem > 0) {
-									itemCount++;
-									verboseLog
-											.print(itemNames[pkmn.commonHeldItem]
-													+ " (common)");
-								}
-								if (pkmn.rareHeldItem > 0) {
-									if (itemCount > 0) {
-										verboseLog.print(", ");
-									}
-									itemCount++;
-									verboseLog
-											.print(itemNames[pkmn.rareHeldItem]
-													+ " (rare)");
-								}
-								if (pkmn.darkGrassHeldItem > 0) {
-									if (itemCount > 0) {
-										verboseLog.print(", ");
-									}
-									itemCount++;
-									verboseLog
-											.print(itemNames[pkmn.darkGrassHeldItem]
-													+ " (dark grass only)");
-								}
-							}
-							verboseLog.println();
-						}
-
-					}
-				}
-				if (raceMode) {
-					for (Pokemon pkmn : allPokes) {
-						if (pkmn != null) {
-							checkValue = addToCV(checkValue, pkmn.hp,
-									pkmn.attack, pkmn.defense, pkmn.speed,
-									pkmn.spatk, pkmn.spdef, pkmn.ability1,
-									pkmn.ability2, pkmn.ability3);
-						}
-					}
-				}
-				verboseLog.println();
-			}
-
-			// Starter Pokemon
-			// Applied after type to update the strings correctly based on new
-			// types
-			if (romHandler.canChangeStarters()) {
-				if (this.spCustomRB.isSelected()) {
-					verboseLog.println("--Custom Starters--");
-					Pokemon pkmn1 = allPokes.get(this.spCustomPoke1Chooser
-							.getSelectedIndex() + 1);
-					verboseLog.println("Set starter 1 to " + pkmn1.name);
-					Pokemon pkmn2 = allPokes.get(this.spCustomPoke2Chooser
-							.getSelectedIndex() + 1);
-					verboseLog.println("Set starter 2 to " + pkmn2.name);
-					if (romHandler.isYellow()) {
-						romHandler.setStarters(Arrays.asList(pkmn1, pkmn2));
-					} else {
-						Pokemon pkmn3 = allPokes.get(this.spCustomPoke3Chooser
-								.getSelectedIndex() + 1);
-						verboseLog.println("Set starter 3 to " + pkmn3.name);
-						romHandler.setStarters(Arrays.asList(pkmn1, pkmn2,
-								pkmn3));
-					}
-					verboseLog.println();
-
-				} else if (this.spRandomRB.isSelected()) {
-					// Randomise
-					verboseLog.println("--Random Starters--");
-					int starterCount = 3;
-					if (romHandler.isYellow()) {
-						starterCount = 2;
-					}
-					List<Pokemon> starters = new ArrayList<Pokemon>();
-					for (int i = 0; i < starterCount; i++) {
-						Pokemon pkmn = romHandler.randomPokemon();
-						while (starters.contains(pkmn)) {
-							pkmn = romHandler.randomPokemon();
-						}
-						verboseLog.println("Set starter " + (i + 1) + " to "
-								+ pkmn.name);
-						starters.add(pkmn);
-					}
-					romHandler.setStarters(starters);
-					verboseLog.println();
-				} else if (this.spRandom2EvosRB.isSelected()) {
-					// Randomise
-					verboseLog.println("--Random 2-Evolution Starters--");
-					int starterCount = 3;
-					if (romHandler.isYellow()) {
-						starterCount = 2;
-					}
-					List<Pokemon> starters = new ArrayList<Pokemon>();
-					for (int i = 0; i < starterCount; i++) {
-						Pokemon pkmn = romHandler.random2EvosPokemon();
-						while (starters.contains(pkmn)) {
-							pkmn = romHandler.random2EvosPokemon();
-						}
-						verboseLog.println("Set starter " + (i + 1) + " to "
-								+ pkmn.name);
-						starters.add(pkmn);
-					}
-					romHandler.setStarters(starters);
-					verboseLog.println();
-				}
-				if (this.heldItemsCB.isSelected()
-						&& (romHandler instanceof Gen1RomHandler) == false) {
-					romHandler.randomizeStarterHeldItems();
-				}
-			}
-
-			// Movesets
-			boolean noBrokenMoves = this.brokenMovesCB.isSelected();
-			if (this.pmsRandomTypeRB.isSelected()) {
-				romHandler.randomizeMovesLearnt(true, noBrokenMoves);
-			} else if (this.pmsRandomTotalRB.isSelected()) {
-				romHandler.randomizeMovesLearnt(false, noBrokenMoves);
-			}
-
-			// Show the new movesets if applicable
-			if (this.pmsUnchangedRB.isSelected()) {
-				verboseLog.println("Pokemon Movesets: Unchanged." + nl);
-			} else if (this.pmsMetronomeOnlyRB.isSelected()) {
-				verboseLog.println("Pokemon Movesets: Metronome Only." + nl);
-			} else {
-				verboseLog.println("--Pokemon Movesets--");
-				List<String> movesets = new ArrayList<String>();
-				Map<Pokemon, List<MoveLearnt>> moveData = romHandler
-						.getMovesLearnt();
-				for (Pokemon pkmn : moveData.keySet()) {
-					StringBuilder sb = new StringBuilder();
-					sb.append(String.format("%03d %-10s : ", pkmn.number,
-							pkmn.name));
-					List<MoveLearnt> data = moveData.get(pkmn);
-					boolean first = true;
-					for (MoveLearnt ml : data) {
-						if (!first) {
-							sb.append(", ");
-						}
-
-						sb.append(moves.get(ml.move).name + " at level "
-								+ ml.level);
-						first = false;
-					}
-					movesets.add(sb.toString());
-				}
-				Collections.sort(movesets);
-				for (String moveset : movesets) {
-					verboseLog.println(moveset);
-				}
-				verboseLog.println();
-			}
-
-			// Trainer Pokemon
-			if (this.tpRandomRB.isSelected()) {
-				romHandler.randomizeTrainerPokes(
-						this.tpRivalCarriesStarterCB.isSelected(),
-						this.tpPowerLevelsCB.isSelected(),
-						this.tpNoLegendariesCB.isSelected(),
-						this.tpNoEarlyShedinjaCB.isSelected());
-			} else if (this.tpTypeThemedRB.isSelected()) {
-				romHandler.typeThemeTrainerPokes(
-						this.tpRivalCarriesStarterCB.isSelected(),
-						this.tpPowerLevelsCB.isSelected(),
-						this.tpTypeWeightingCB.isSelected(),
-						this.tpNoLegendariesCB.isSelected(),
-						this.tpNoEarlyShedinjaCB.isSelected());
-			}
-
-			// Trainer names & class names randomization
-			// done before trainer log to add proper names
-
-			if (this.tcnRandomizeCB.isSelected()) {
-				romHandler.randomizeTrainerClassNames(trainerClasses);
-			}
-
-			if (this.tnRandomizeCB.isSelected()) {
-				romHandler.randomizeTrainerNames(trainerNames);
-			}
-
-			if (this.tpUnchangedRB.isSelected()) {
-				verboseLog.println("Trainers: Unchanged." + nl);
-			} else {
-				verboseLog.println("--Trainers Pokemon--");
-				List<Trainer> trainers = romHandler.getTrainers();
-				int idx = 0;
-				for (Trainer t : trainers) {
-					idx++;
-					verboseLog.print("#" + idx + " ");
-					if (t.fullDisplayName != null) {
-						verboseLog.print("(" + t.fullDisplayName + ")");
-					} else if (t.name != null) {
-						verboseLog.print("(" + t.name + ")");
-					}
-					if (t.offset != idx && t.offset != 0) {
-						verboseLog.printf("@%X", t.offset);
-					}
-					verboseLog.print(" - ");
-					boolean first = true;
-					for (TrainerPokemon tpk : t.pokemon) {
-						if (!first) {
-							verboseLog.print(", ");
-						}
-						verboseLog.print(tpk.pokemon.name + " Lv" + tpk.level);
-						first = false;
-					}
-					verboseLog.println();
-				}
-				verboseLog.println();
-			}
-
-			// Apply metronome only mode now that trainers have been dealt with
-			if (pmsMetronomeOnlyRB.isSelected()) {
-				romHandler.metronomeOnlyMode();
-			}
-
-			if (raceMode) {
-				List<Trainer> trainers = romHandler.getTrainers();
-				for (Trainer t : trainers) {
-					for (TrainerPokemon tpk : t.pokemon) {
-						checkValue = addToCV(checkValue, tpk.level,
-								tpk.pokemon.number);
-					}
-				}
-			}
-
-			// Wild Pokemon
-			// actually call this code (Kappa)
-			if (this.wpCatchRateCB.isSelected()) {
-				romHandler.minimumCatchRate(45);
-			}
-			if (this.wpRandomRB.isSelected()) {
-				romHandler.randomEncounters(this.wpUseTimeCB.isSelected(),
-						this.wpARCatchEmAllRB.isSelected(),
-						this.wpARTypeThemedRB.isSelected(),
-						this.wpARSimilarStrengthRB.isSelected(),
-						this.wpNoLegendariesCB.isSelected());
-			} else if (this.wpArea11RB.isSelected()) {
-				romHandler.area1to1Encounters(this.wpUseTimeCB.isSelected(),
-						this.wpARCatchEmAllRB.isSelected(),
-						this.wpARTypeThemedRB.isSelected(),
-						this.wpARSimilarStrengthRB.isSelected(),
-						this.wpNoLegendariesCB.isSelected());
-			} else if (this.wpGlobalRB.isSelected()) {
-				romHandler.game1to1Encounters(this.wpUseTimeCB.isSelected(),
-						this.wpARSimilarStrengthRB.isSelected(),
-						this.wpNoLegendariesCB.isSelected());
-			}
-
-			if (this.wpUnchangedRB.isSelected()) {
-				verboseLog.println("Wild Pokemon: Unchanged." + nl);
-			} else {
-				verboseLog.println("--Wild Pokemon--");
-				List<EncounterSet> encounters = romHandler
-						.getEncounters(this.wpUseTimeCB.isSelected());
-				int idx = 0;
-				for (EncounterSet es : encounters) {
-					idx++;
-					verboseLog.print("Set #" + idx + " ");
-					if (es.displayName != null) {
-						verboseLog.print("- " + es.displayName + " ");
-					}
-					verboseLog.print("(rate=" + es.rate + ")");
-					verboseLog.print(" - ");
-					boolean first = true;
-					for (Encounter e : es.encounters) {
-						if (!first) {
-							verboseLog.print(", ");
-						}
-						verboseLog.print(e.pokemon.name + " Lv");
-						if (e.maxLevel > 0 && e.maxLevel != e.level) {
-							verboseLog.print("s " + e.level + "-" + e.maxLevel);
-						} else {
-							verboseLog.print(e.level);
-						}
-						first = false;
-					}
-					verboseLog.println();
-				}
-				verboseLog.println();
-			}
-
-			if (raceMode) {
-				List<EncounterSet> encounters = romHandler
-						.getEncounters(this.wpUseTimeCB.isSelected());
-				for (EncounterSet es : encounters) {
-					for (Encounter e : es.encounters) {
-						checkValue = addToCV(checkValue, e.level,
-								e.pokemon.number);
-					}
-				}
-			}
-
-			// Static Pokemon
-
-			if (romHandler.canChangeStaticPokemon()) {
-				List<Pokemon> oldStatics = romHandler.getStaticPokemon();
-				if (this.stpRandomL4LRB.isSelected()) {
-					romHandler.randomizeStaticPokemon(true);
-				} else if (this.stpRandomTotalRB.isSelected()) {
-					romHandler.randomizeStaticPokemon(false);
-				}
-				List<Pokemon> newStatics = romHandler.getStaticPokemon();
-				if (this.stpUnchangedRB.isSelected()) {
-					verboseLog.println("Static Pokemon: Unchanged." + nl);
-				} else {
-					verboseLog.println("--Static Pokemon--");
-					Map<Pokemon, Integer> seenPokemon = new TreeMap<Pokemon, Integer>();
-					for (int i = 0; i < oldStatics.size(); i++) {
-						Pokemon oldP = oldStatics.get(i);
-						Pokemon newP = newStatics.get(i);
-						if (raceMode) {
-							checkValue = addToCV(checkValue, newP.number);
-						}
-						verboseLog.print(oldP.name);
-						if (seenPokemon.containsKey(oldP)) {
-							int amount = seenPokemon.get(oldP);
-							verboseLog.print("(" + (++amount) + ")");
-							seenPokemon.put(oldP, amount);
-						} else {
-							seenPokemon.put(oldP, 1);
-						}
-						verboseLog.println(" => " + newP.name);
-					}
-					verboseLog.println();
-				}
-			}
-
-			// TMs
-			if (!pmsMetronomeOnlyRB.isSelected()
-					&& this.tmmRandomRB.isSelected()) {
-				romHandler.randomizeTMMoves(noBrokenMoves);
-				verboseLog.println("--TM Moves--");
-				List<Integer> tmMoves = romHandler.getTMMoves();
-				for (int i = 0; i < tmMoves.size(); i++) {
-					verboseLog.printf("TM%02d %s" + nl, i + 1,
-							moves.get(tmMoves.get(i)).name);
-					if (raceMode) {
-						checkValue = addToCV(checkValue, tmMoves.get(i));
-					}
-				}
-				verboseLog.println();
-			} else if (pmsMetronomeOnlyRB.isSelected()) {
-				verboseLog.println("TM Moves: Metronome Only." + nl);
-			} else {
-				verboseLog.println("TM Moves: Unchanged." + nl);
-			}
-
-			// TM/HM compatibility
-			if (this.thcRandomTypeRB.isSelected()) {
-				romHandler.randomizeTMHMCompatibility(true);
-			} else if (this.thcRandomTotalRB.isSelected()) {
-				romHandler.randomizeTMHMCompatibility(false);
-			}
-
-			// Move Tutors (new 1.0.3)
-			if (this.romHandler.hasMoveTutors()) {
-				if (!pmsMetronomeOnlyRB.isSelected()
-						&& this.mtmRandomRB.isSelected()) {
-					List<Integer> oldMtMoves = romHandler.getMoveTutorMoves();
-					romHandler.randomizeMoveTutorMoves(noBrokenMoves);
-					verboseLog.println("--Move Tutor Moves--");
-					List<Integer> newMtMoves = romHandler.getMoveTutorMoves();
-					for (int i = 0; i < newMtMoves.size(); i++) {
-						verboseLog.printf("%s => %s" + nl,
-								moves.get(oldMtMoves.get(i)).name,
-								moves.get(newMtMoves.get(i)).name);
-						if (raceMode) {
-							checkValue = addToCV(checkValue, newMtMoves.get(i));
-						}
-					}
-					verboseLog.println();
-				} else if (pmsMetronomeOnlyRB.isSelected()) {
-					verboseLog
-							.println("Move Tutor Moves: Metronome Only." + nl);
-				} else {
-					verboseLog.println("Move Tutor Moves: Unchanged." + nl);
-				}
-
-				// Compatibility
-				if (this.mtcRandomTypeRB.isSelected()) {
-					romHandler.randomizeMoveTutorCompatibility(true);
-				} else if (this.mtcRandomTotalRB.isSelected()) {
-					romHandler.randomizeMoveTutorCompatibility(false);
-				}
-			}
-
-			// In-game trades
-			List<IngameTrade> oldTrades = romHandler.getIngameTrades();
-			if (this.igtGivenOnlyRB.isSelected()) {
-				romHandler.randomizeIngameTrades(false, nicknames,
-						this.igtRandomNicknameCB.isSelected(), trainerNames,
-						this.igtRandomOTCB.isSelected(),
-						this.igtRandomIVsCB.isSelected(),
-						this.igtRandomItemCB.isSelected());
-			} else if (this.igtBothRB.isSelected()) {
-				romHandler.randomizeIngameTrades(true, nicknames,
-						this.igtRandomNicknameCB.isSelected(), trainerNames,
-						this.igtRandomOTCB.isSelected(),
-						this.igtRandomIVsCB.isSelected(),
-						this.igtRandomItemCB.isSelected());
-			}
-
-			if (!this.igtUnchangedRB.isSelected()) {
-				verboseLog.println("--In-Game Trades--");
-				List<IngameTrade> newTrades = romHandler.getIngameTrades();
-				int size = oldTrades.size();
-				for (int i = 0; i < size; i++) {
-					IngameTrade oldT = oldTrades.get(i);
-					IngameTrade newT = newTrades.get(i);
-					verboseLog.printf(
-							"Trading %s for %s the %s has become trading %s for %s the %s"
-									+ nl, oldT.requestedPokemon.name,
-							oldT.nickname, oldT.givenPokemon.name,
-							newT.requestedPokemon.name, newT.nickname,
-							newT.givenPokemon.name);
-				}
-				verboseLog.println();
-			}
-
-			// Field Items
-			if (this.fiShuffleRB.isSelected()) {
-				romHandler.shuffleFieldItems();
-			} else if (this.fiRandomRB.isSelected()) {
-				romHandler.randomizeFieldItems();
-			}
-
-			// Signature...
-			romHandler.applySignature();
-
-			// Save
-			final int finishedCV = checkValue;
-			opDialog = new OperationDialog("Saving...", this, true);
-			Thread t = new Thread() {
-				@Override
-				public void run() {
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							opDialog.setVisible(true);
-						}
-					});
-					try {
-						RandomizerGUI.this.romHandler.saveRom(filename);
-					} catch (Exception ex) {
-						ex.printStackTrace();
-						JOptionPane.showMessageDialog(RandomizerGUI.this,
-								"ROM save failed.");
-					}
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							RandomizerGUI.this.opDialog.setVisible(false);
-							// Log tail
-							verboseLog
-									.println("------------------------------------------------------------------");
-							verboseLog.println("Randomization of "
-									+ romHandler.getROMName() + " completed.");
-							verboseLog.println("Time elapsed: "
-									+ (System.currentTimeMillis() - startTime)
-									+ "ms");
-							verboseLog.println("RNG Calls: "
-									+ RandomSource.callsSinceSeed());
-							verboseLog
-									.println("------------------------------------------------------------------");
-
-							// Log?
-							verboseLog.close();
-							byte[] out = baos.toByteArray();
-							verboseLog = System.out;
-
-							if (raceMode) {
-								JOptionPane
-										.showMessageDialog(
-												RandomizerGUI.this,
-												"Your check value for the race is:\n"
-														+ String.format("%08X",
-																finishedCV)
-														+ "\nDistribute this along with the preset file, if you're the race maker!\n"
-														+ "If you received this in a race, compare it to the value the race maker gave.");
-							} else {
-								int response = JOptionPane
-										.showConfirmDialog(
-												RandomizerGUI.this,
-												"Do you want to save a log file of the randomization performed?\nThis may allow you to gain an unfair advantage, do not do so if you are doing something like a race.",
-												"Save Log?",
-												JOptionPane.YES_NO_OPTION);
-								if (response == JOptionPane.YES_OPTION) {
-									try {
-										FileOutputStream fos = new FileOutputStream(
-												filename + ".log");
-										fos.write(0xEF);
-										fos.write(0xBB);
-										fos.write(0xBF);
-										fos.write(out);
-										fos.close();
-									} catch (IOException e) {
-										JOptionPane.showMessageDialog(
-												RandomizerGUI.this,
-												"Could not save log file!");
-										return;
-									}
-									JOptionPane.showMessageDialog(
-											RandomizerGUI.this,
-											"Log file saved to\n" + filename
-													+ ".log");
-								}
-							}
-							if (presetMode) {
-								JOptionPane
-										.showMessageDialog(RandomizerGUI.this,
-												"Randomization Complete. You can now play!");
-								// Done
-								RandomizerGUI.this.romHandler = null;
-								initialFormState();
-							} else {
-								// Compile a config string
-								String configString = getConfigString();
-								// Show the preset maker
-								new PresetMakeDialog(RandomizerGUI.this, seed,
-										configString);
-
-								// Done
-								RandomizerGUI.this.romHandler = null;
-								initialFormState();
-							}
-						}
-					});
-				}
-			};
-			t.start();
-		} catch (Exception ex) {
-			long time = System.currentTimeMillis();
-			try {
-				String errlog = "error_" + time + ".txt";
-				PrintStream ps = new PrintStream(new FileOutputStream(errlog));
-				PrintStream e1 = System.err;
-				System.setErr(ps);
-				ex.printStackTrace();
-				verboseLog.close();
-				byte[] out = baos.toByteArray();
-				System.err.print(new String(out, "UTF-8"));
-				System.setErr(e1);
-				ps.close();
-				JOptionPane
-						.showMessageDialog(
-								this,
-								"There was an unhandled exception trying to save your ROM.\n"
-										+ "A log file containing some details has been saved to "
-										+ errlog
-										+ ".\n"
-										+ "Please include this file in any bug reports you do.");
-			} catch (Exception logex) {
-				JOptionPane
-						.showMessageDialog(this,
-								"There was an unhandled exception trying to save your ROM.");
-				verboseLog.close();
-			}
-
-			// byte[] out = baos.toByteArray();
-			// try {
-			// System.err.print(new String(out, "UTF-8"));
-			// } catch (UnsupportedEncodingException e) {
-			// }
-		}
-
-	}
-
-	private int addToCV(int checkValue, int... values) {
-		for (int value : values) {
-			checkValue = Integer.rotateLeft(checkValue, 3);
-			checkValue ^= value;
-		}
-		return checkValue;
-	}
-
-	private void presetLoader() {
-		PresetLoadDialog pld = new PresetLoadDialog(this);
-		if (pld.isCompleted()) {
-			// Apply it
-			long seed = pld.getSeed();
-			String config = pld.getConfigString();
-			this.romHandler = pld.getROM();
-			this.romLoaded();
-			this.restoreFrom(config);
-			romSaveChooser.setSelectedFile(null);
-			int returnVal = romSaveChooser.showSaveDialog(this);
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File fh = romSaveChooser.getSelectedFile();
-				// Fix or add extension
-				List<String> extensions = new ArrayList<String>(Arrays.asList(
-						"sgb", "gbc", "gba", "nds"));
-				extensions.remove(this.romHandler.getDefaultExtension());
-				fh = FileFunctions.fixFilename(fh,
-						this.romHandler.getDefaultExtension(), extensions);
-				// Apply the seed we were given
-				RandomSource.seed(seed);
-				presetMode = true;
-				performRandomization(fh.getAbsolutePath(), seed,
-						pld.getTrainerClasses(), pld.getTrainerNames(),
-						pld.getNicknames());
-
-			} else {
-				this.romHandler = null;
-				initialFormState();
-			}
-		}
-
-	}
-
-	public void updateFound(int newVersion, String changelog) {
-		new UpdateFoundDialog(this, newVersion, changelog);
-	}
-
-	public void noUpdateFound() {
-		JOptionPane.showMessageDialog(this, "No new updates found.");
-	}
-
-	private void loadQSButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_loadQSButtonActionPerformed
-		if (this.romHandler == null) {
-			return;
-		}
-		qsOpenChooser.setSelectedFile(null);
-		int returnVal = qsOpenChooser.showOpenDialog(this);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File fh = qsOpenChooser.getSelectedFile();
-			try {
-				FileInputStream fis = new FileInputStream(fh);
-				int version = fis.read();
-				if (version < PRESET_FILE_VERSION) {
-					JOptionPane
-							.showMessageDialog(
-									this,
-									"This quick settings file is for an old randomizer version.\nYou should make a new file.");
-					fis.close();
-					return;
-				} else if (version > PRESET_FILE_VERSION) {
-					JOptionPane
-							.showMessageDialog(
-									this,
-									"This quick settings file is for a newer randomizer version.\nYou should upgrade your randomizer.");
-					fis.close();
-					return;
-				}
-				int cslength = fis.read();
-				byte[] csBuf = new byte[cslength];
-				fis.read(csBuf);
-				fis.close();
-				String configString = new String(csBuf, "UTF-8");
-				String romName = getValidRequiredROMName(configString,
-						new byte[] {}, new byte[] {}, new byte[] {});
-				if (romName == null) {
-					JOptionPane.showMessageDialog(this,
-							"Settings file is not valid.");
-				}
-				// now we just load it
-				initialFormState();
-				romLoaded();
-				restoreFrom(configString);
-				JCheckBox[] checkboxes = new JCheckBox[] { this.brokenMovesCB,
-						this.bwEXPPatchCB, this.goLowerCaseNamesCheckBox,
-						this.goNationalDexCheckBox,
-						this.goRemoveTradeEvosCheckBox,
-						this.goUpdateMovesCheckBox, this.goUpdateTypesCheckBox,
-						this.heldItemsCB, this.paWonderGuardCB,
-						this.raceModeCB, this.randomizeHollowsCB,
-						this.tcnRandomizeCB, this.tnRandomizeCB,
-						this.tpNoEarlyShedinjaCB, this.tpNoLegendariesCB,
-						this.tpPowerLevelsCB, this.tpRivalCarriesStarterCB,
-						this.tpTypeWeightingCB, this.wpCatchRateCB,
-						this.wpNoLegendariesCB, this.wpUseTimeCB,
-						this.igtRandomItemCB, this.igtRandomIVsCB,
-						this.igtRandomNicknameCB, this.igtRandomOTCB };
-				for (JCheckBox cb : checkboxes) {
-					if (!cb.isEnabled() || !cb.isVisible()) {
-						cb.setSelected(false);
-					}
-				}
-
-				if (!this.romHandler.canChangeStaticPokemon()) {
-					this.stpUnchangedRB.setSelected(true);
-				}
-
-				JOptionPane.showMessageDialog(this, "Settings loaded from "
-						+ fh.getName());
-			} catch (IOException ex) {
-				JOptionPane.showMessageDialog(this,
-						"Settings file load failed. Please try again.");
-			} catch (InvalidSupplementFilesException e) {
-				// not possible
-			}
-		}
-	}// GEN-LAST:event_loadQSButtonActionPerformed
-
-	private void saveQSButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_saveQSButtonActionPerformed
-		if (this.romHandler == null) {
-			return;
-		}
-		qsSaveChooser.setSelectedFile(null);
-		int returnVal = qsSaveChooser.showSaveDialog(this);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File fh = qsSaveChooser.getSelectedFile();
-			// Fix or add extension
-			fh = FileFunctions.fixFilename(fh, "rnqs");
-			// Save now?
-			try {
-				FileOutputStream fos = new FileOutputStream(fh);
-				fos.write(PRESET_FILE_VERSION);
-				byte[] configString = getConfigString().getBytes("UTF-8");
-				fos.write(configString.length);
-				fos.write(configString);
-				fos.close();
-			} catch (IOException ex) {
-				JOptionPane.showMessageDialog(this,
-						"Settings file save failed. Please try again.");
-			}
-		}
-	}// GEN-LAST:event_saveQSButtonActionPerformed
-
-	private void pmsMetronomeOnlyRBActionPerformed(
-			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsMetronomeOnlyRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_pmsMetronomeOnlyRBActionPerformed
-
-	private void igtUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_igtUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_igtUnchangedRBActionPerformed
-
-	private void igtGivenOnlyRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_igtGivenOnlyRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_igtGivenOnlyRBActionPerformed
-
-	private void igtBothRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_igtBothRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_igtBothRBActionPerformed
-
-	private void wpARNoneRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARNoneRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpARNoneRBActionPerformed
-
-	private void wpARSimilarStrengthRBActionPerformed(
-			java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARSimilarStrengthRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpARSimilarStrengthRBActionPerformed
-
-	private void wpARCatchEmAllRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARCatchEmAllRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpARCatchEmAllRBActionPerformed
-
-	private void wpARTypeThemedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpARTypeThemedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpARTypeThemedRBActionPerformed
-
-	private void pmsUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_pmsUnchangedRBActionPerformed
-
-	private void pmsRandomTypeRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsRandomTypeRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_pmsRandomTypeRBActionPerformed
-
-	private void pmsRandomTotalRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_pmsRandomTotalRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_pmsRandomTotalRBActionPerformed
-
-	private void mtmUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_mtmUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_mtmUnchangedRBActionPerformed
-
-	private void paUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_paUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_paUnchangedRBActionPerformed
-
-	private void paRandomizeRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_paRandomizeRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_paRandomizeRBActionPerformed
-
-	private void aboutButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_aboutButtonActionPerformed
-		new AboutDialog(this, true).setVisible(true);
-	}// GEN-LAST:event_aboutButtonActionPerformed
-
-	private void openROMButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_openROMButtonActionPerformed
-		loadROM();
-	}// GEN-LAST:event_openROMButtonActionPerformed
-
-	private void saveROMButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_saveROMButtonActionPerformed
-		saveROM();
-	}// GEN-LAST:event_saveROMButtonActionPerformed
-
-	private void usePresetsButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_usePresetsButtonActionPerformed
-		presetLoader();
-	}// GEN-LAST:event_usePresetsButtonActionPerformed
-
-	private void wpUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpUnchangedRBActionPerformed
-
-	private void tpUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_tpUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_tpUnchangedRBActionPerformed
-
-	private void tpRandomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_tpRandomRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_tpRandomRBActionPerformed
-
-	private void tpTypeThemedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_tpTypeThemedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_tpTypeThemedRBActionPerformed
-
-	private void spUnchangedRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_spUnchangedRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_spUnchangedRBActionPerformed
-
-	private void spCustomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_spCustomRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_spCustomRBActionPerformed
-
-	private void spRandomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_spRandomRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_spRandomRBActionPerformed
-
-	private void wpRandomRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpRandomRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpRandomRBActionPerformed
-
-	private void wpArea11RBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpArea11RBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpArea11RBActionPerformed
-
-	private void wpGlobalRBActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_wpGlobalRBActionPerformed
-		this.enableOrDisableSubControls();
-	}// GEN-LAST:event_wpGlobalRBActionPerformed
-
-	/**
-	 * @param args
-	 *            the command line arguments
-	 */
-	public static void main(String args[]) {
-		boolean autoupdate = true;
-		for (String arg : args) {
-			if (arg.equalsIgnoreCase("--noupdate")) {
-				autoupdate = false;
-				break;
-			}
-		}
-		final boolean au = autoupdate;
-		try {
-			javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager
-					.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException ex) {
-			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
-					.log(java.util.logging.Level.SEVERE, null, ex);
-		} catch (InstantiationException ex) {
-			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
-					.log(java.util.logging.Level.SEVERE, null, ex);
-		} catch (IllegalAccessException ex) {
-			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
-					.log(java.util.logging.Level.SEVERE, null, ex);
-		} catch (javax.swing.UnsupportedLookAndFeelException ex) {
-			java.util.logging.Logger.getLogger(RandomizerGUI.class.getName())
-					.log(java.util.logging.Level.SEVERE, null, ex);
-		}
-
-		/* Create and display the form */
-		java.awt.EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				new RandomizerGUI(au).setVisible(true);
-			}
-		});
-	}
 
 	// Variables declaration - do not modify//GEN-BEGIN:variables
 	private javax.swing.JPanel abilitiesPanel;
 	private javax.swing.JButton aboutButton;
 	private javax.swing.JPanel baseStatsPanel;
 	private javax.swing.JCheckBox brokenMovesCB;
-	private javax.swing.JCheckBox bwEXPPatchCB;
+	private javax.swing.JButton codeTweaksBtn;
+	private javax.swing.JCheckBox codeTweaksCB;
 	private javax.swing.JRadioButton fiRandomRB;
 	private javax.swing.JRadioButton fiShuffleRB;
 	private javax.swing.JRadioButton fiUnchangedRB;
@@ -4369,8 +5048,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JCheckBox goNationalDexCheckBox;
 	private javax.swing.JCheckBox goRemoveTradeEvosCheckBox;
 	private javax.swing.JCheckBox goUpdateMovesCheckBox;
+	private javax.swing.JCheckBox goUpdateMovesLegacyCheckBox;
 	private javax.swing.JCheckBox goUpdateTypesCheckBox;
-	private javax.swing.JCheckBox heldItemsCB;
 	private javax.swing.JRadioButton igtBothRB;
 	private javax.swing.JRadioButton igtGivenOnlyRB;
 	private javax.swing.JCheckBox igtRandomIVsCB;
@@ -4381,6 +5060,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JPanel inGameTradesPanel;
 	private javax.swing.ButtonGroup ingameTradesButtonGroup;
 	private javax.swing.JButton loadQSButton;
+	private javax.swing.JMenuItem manualUpdateMenuItem;
 	private javax.swing.JPanel moveTutorsPanel;
 	private javax.swing.JPanel mtCompatPanel;
 	private javax.swing.ButtonGroup mtCompatibilityButtonGroup;
@@ -4403,11 +5083,15 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JRadioButton pbsChangesRandomTotalRB;
 	private javax.swing.JRadioButton pbsChangesShuffleRB;
 	private javax.swing.JRadioButton pbsChangesUnchangedRB;
+	private javax.swing.JCheckBox pbsStandardEXPCurvesCB;
+	private javax.swing.JCheckBox pmsGen14MovesCB;
 	private javax.swing.JRadioButton pmsMetronomeOnlyRB;
 	private javax.swing.JRadioButton pmsRandomTotalRB;
 	private javax.swing.JRadioButton pmsRandomTypeRB;
 	private javax.swing.JRadioButton pmsUnchangedRB;
 	private javax.swing.ButtonGroup pokeAbilitiesButtonGroup;
+	private javax.swing.JButton pokeLimitBtn;
+	private javax.swing.JCheckBox pokeLimitCB;
 	private javax.swing.ButtonGroup pokeMovesetsButtonGroup;
 	private javax.swing.ButtonGroup pokeStatChangesButtonGroup;
 	private javax.swing.ButtonGroup pokeTypesButtonGroup;
@@ -4432,6 +5116,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JComboBox spCustomPoke2Chooser;
 	private javax.swing.JComboBox spCustomPoke3Chooser;
 	private javax.swing.JRadioButton spCustomRB;
+	private javax.swing.JCheckBox spHeldItemsCB;
 	private javax.swing.JRadioButton spRandom2EvosRB;
 	private javax.swing.JRadioButton spRandomRB;
 	private javax.swing.JRadioButton spUnchangedRB;
@@ -4454,6 +5139,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JRadioButton tmmRandomRB;
 	private javax.swing.JRadioButton tmmUnchangedRB;
 	private javax.swing.JCheckBox tnRandomizeCB;
+	private javax.swing.JMenuItem toggleAutoUpdatesMenuItem;
 	private javax.swing.JCheckBox tpNoEarlyShedinjaCB;
 	private javax.swing.JCheckBox tpNoLegendariesCB;
 	private javax.swing.JCheckBox tpPowerLevelsCB;
@@ -4464,6 +5150,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JRadioButton tpUnchangedRB;
 	private javax.swing.ButtonGroup trainerPokesButtonGroup;
 	private javax.swing.JPanel trainersPokemonPanel;
+	private javax.swing.JButton updateSettingsButton;
+	private javax.swing.JPopupMenu updateSettingsMenu;
 	private javax.swing.JButton usePresetsButton;
 	private javax.swing.JPanel wildPokemonARulePanel;
 	private javax.swing.JPanel wildPokemonPanel;
@@ -4476,6 +5164,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JRadioButton wpArea11RB;
 	private javax.swing.JCheckBox wpCatchRateCB;
 	private javax.swing.JRadioButton wpGlobalRB;
+	private javax.swing.JCheckBox wpHeldItemsCB;
 	private javax.swing.JCheckBox wpNoLegendariesCB;
 	private javax.swing.JRadioButton wpRandomRB;
 	private javax.swing.JRadioButton wpUnchangedRB;
