@@ -47,7 +47,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 			String ndsCode = new String(sig, "US-ASCII");
 			return detectNDSRom(ndsCode);
 		} catch (Exception e) {
-			e.printStackTrace();
 			return false;
 		}
 	}
@@ -64,8 +63,7 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		try {
 			baseRom = new NDSRom(filename);
 		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
+			throw new RuntimeException(e);
 		}
 		loadedROM();
 		return true;
@@ -91,8 +89,7 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		try {
 			baseRom.saveTo(filename);
 		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
+			throw new RuntimeException(e);
 		}
 		return true;
 	}
