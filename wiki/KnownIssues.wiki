@@ -2,21 +2,26 @@
 
 = General =
   * The randomiser may not function at all on Windows systems with certain custom themes installed.
+  * (1.5.0/1.6.0) You cannot correctly make a Quick Settings file or Preset file with the "Similar Strength" option for Wild Pokemon enabled - it will revert to Unchanged on load.
+
+= General Gameboy Games =
+  * Nothing right now.
 
 = Generation One Games =
-  * (oddity) The people who give you Magikarp and Lapras still say Magikarp/Lapras even if you randomize them.
-  * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
+  * Nothing right now.
 
 = Generation Two Games =
-  * (oddity) Brock says ROCK-type Pokemon no matter what he has, etc.
+  * Nothing right now.
 
 = Generation Three Games =
-  * When "Remove Trade Evolutions" is checked, Pokemon that have their trade evolutions apparently changed to levelups are instead changed to "levelup with high happiness".
+  * Nothing right now.
+
+= General DS Games =
+  * (1.6.0) When you try to save a DS ROM and overwrite the original, the resulting ROM will be corrupt.
 
 = Generation Four Games =
-  * When "Remove Trade Evolutions" is checked, Pokemon that have their trade evolutions apparently changed to levelups are instead changed to "levelup with high happiness".
+  * Nothing right now.
 
 = Generation Five Games =
   * A battle with Zinzolin isn't consistent with his other battles.
   * At least in Black 2/White 2, Habitat List is not updated if you randomize Wild Pokemon. For now, this cannot be fixed.
-  * When "Remove Trade Evolutions" is checked, Pokemon that have their trade evolutions apparently changed to levelups are instead changed to "levelup with high happiness".
