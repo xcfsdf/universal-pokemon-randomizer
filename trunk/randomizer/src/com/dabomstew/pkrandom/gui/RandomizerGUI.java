@@ -90,7 +90,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private RomHandler romHandler;
 	protected RomHandler[] checkHandlers;
 	public static final int PRESET_FILE_VERSION = 160;
-	public static final int UPDATE_VERSION = 1600;
+	public static final int UPDATE_VERSION = 1610;
 
 	public static PrintStream verboseLog = System.out;
 
@@ -1052,7 +1052,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				this.wpARNoneRB, this.wpARTypeThemedRB, this.wpGlobalRB,
 				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB));
 
-		baos.write(makeByteSelected(this.wpCatchRateCB, this.wpNoLegendariesCB));
+		// bugfix 161
+		baos.write(makeByteSelected(this.wpCatchRateCB, this.wpNoLegendariesCB,
+				this.wpARSimilarStrengthRB));
 
 		baos.write(makeByteSelected(this.stpUnchangedRB, this.stpRandomL4LRB,
 				this.stpRandomTotalRB));
@@ -1256,7 +1258,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				this.wpARNoneRB, this.wpARTypeThemedRB, this.wpGlobalRB,
 				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB);
 
-		restoreStates(data[13], this.wpCatchRateCB, this.wpNoLegendariesCB);
+		restoreStates(data[13], this.wpCatchRateCB, this.wpNoLegendariesCB,
+				this.wpARSimilarStrengthRB);
 
 		restoreStates(data[14], this.stpUnchangedRB, this.stpRandomL4LRB,
 				this.stpRandomTotalRB);
@@ -1935,89 +1938,125 @@ public class RandomizerGUI extends javax.swing.JFrame {
 							opDialog.setVisible(true);
 						}
 					});
+					boolean succeededSave = false;
 					try {
 						RandomizerGUI.this.romHandler.saveRom(filename);
+						succeededSave = true;
 					} catch (Exception ex) {
-						ex.printStackTrace();
-						JOptionPane.showMessageDialog(RandomizerGUI.this,
-								bundle.getString("RandomizerGUI.saveFailedIO"));
-					}
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							RandomizerGUI.this.opDialog.setVisible(false);
-							// Log tail
-							verboseLog
-									.println("------------------------------------------------------------------");
-							verboseLog.println("Randomization of "
-									+ romHandler.getROMName() + " completed.");
-							verboseLog.println("Time elapsed: "
-									+ (System.currentTimeMillis() - startTime)
-									+ "ms");
-							verboseLog.println("RNG Calls: "
-									+ RandomSource.callsSinceSeed());
-							verboseLog
-									.println("------------------------------------------------------------------");
-
-							// Log?
+						long time = System.currentTimeMillis();
+						try {
+							String errlog = "error_" + time + ".txt";
+							PrintStream ps = new PrintStream(
+									new FileOutputStream(errlog));
+							PrintStream e1 = System.err;
+							System.setErr(ps);
+							ex.printStackTrace();
 							verboseLog.close();
-							byte[] out = baos.toByteArray();
-							verboseLog = System.out;
+							System.setErr(e1);
+							ps.close();
+							JOptionPane
+									.showMessageDialog(
+											RandomizerGUI.this,
+											String.format(
+													bundle.getString("RandomizerGUI.saveFailedIO"),
+													errlog));
+						} catch (Exception logex) {
+							JOptionPane
+									.showMessageDialog(
+											RandomizerGUI.this,
+											bundle.getString("RandomizerGUI.saveFailedIONoLog"));
+							verboseLog.close();
+						}
+					}
+					if (succeededSave) {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								RandomizerGUI.this.opDialog.setVisible(false);
+								// Log tail
+								verboseLog
+										.println("------------------------------------------------------------------");
+								verboseLog.println("Randomization of "
+										+ romHandler.getROMName()
+										+ " completed.");
+								verboseLog.println("Time elapsed: "
+										+ (System.currentTimeMillis() - startTime)
+										+ "ms");
+								verboseLog.println("RNG Calls: "
+										+ RandomSource.callsSinceSeed());
+								verboseLog
+										.println("------------------------------------------------------------------");
 
-							if (raceMode) {
-								JOptionPane.showMessageDialog(
-										RandomizerGUI.this,
-										String.format(
-												bundle.getString("RandomizerGUI.raceModeCheckValuePopup"),
-												finishedCV));
-							} else {
-								int response = JOptionPane.showConfirmDialog(
-										RandomizerGUI.this,
-										bundle.getString("RandomizerGUI.saveLogDialog.text"),
-										bundle.getString("RandomizerGUI.saveLogDialog.title"),
-										JOptionPane.YES_NO_OPTION);
-								if (response == JOptionPane.YES_OPTION) {
-									try {
-										FileOutputStream fos = new FileOutputStream(
-												filename + ".log");
-										fos.write(0xEF);
-										fos.write(0xBB);
-										fos.write(0xBF);
-										fos.write(out);
-										fos.close();
-									} catch (IOException e) {
-										JOptionPane.showMessageDialog(
-												RandomizerGUI.this,
-												bundle.getString("RandomizerGUI.logSaveFailed"));
-										return;
-									}
+								// Log?
+								verboseLog.close();
+								byte[] out = baos.toByteArray();
+								verboseLog = System.out;
+
+								if (raceMode) {
 									JOptionPane.showMessageDialog(
 											RandomizerGUI.this,
 											String.format(
-													bundle.getString("RandomizerGUI.logSaved"),
-													filename));
+													bundle.getString("RandomizerGUI.raceModeCheckValuePopup"),
+													finishedCV));
+								} else {
+									int response = JOptionPane.showConfirmDialog(
+											RandomizerGUI.this,
+											bundle.getString("RandomizerGUI.saveLogDialog.text"),
+											bundle.getString("RandomizerGUI.saveLogDialog.title"),
+											JOptionPane.YES_NO_OPTION);
+									if (response == JOptionPane.YES_OPTION) {
+										try {
+											FileOutputStream fos = new FileOutputStream(
+													filename + ".log");
+											fos.write(0xEF);
+											fos.write(0xBB);
+											fos.write(0xBF);
+											fos.write(out);
+											fos.close();
+										} catch (IOException e) {
+											JOptionPane.showMessageDialog(
+													RandomizerGUI.this,
+													bundle.getString("RandomizerGUI.logSaveFailed"));
+											return;
+										}
+										JOptionPane.showMessageDialog(
+												RandomizerGUI.this,
+												String.format(
+														bundle.getString("RandomizerGUI.logSaved"),
+														filename));
+									}
+								}
+								if (presetMode) {
+									JOptionPane.showMessageDialog(
+											RandomizerGUI.this,
+											bundle.getString("RandomizerGUI.randomizationDone"));
+									// Done
+									RandomizerGUI.this.romHandler = null;
+									initialFormState();
+								} else {
+									// Compile a config string
+									String configString = getConfigString();
+									// Show the preset maker
+									new PresetMakeDialog(RandomizerGUI.this,
+											seed, configString);
+
+									// Done
+									RandomizerGUI.this.romHandler = null;
+									initialFormState();
 								}
 							}
-							if (presetMode) {
-								JOptionPane.showMessageDialog(
-										RandomizerGUI.this,
-										bundle.getString("RandomizerGUI.randomizationDone"));
-								// Done
-								RandomizerGUI.this.romHandler = null;
-								initialFormState();
-							} else {
-								// Compile a config string
-								String configString = getConfigString();
-								// Show the preset maker
-								new PresetMakeDialog(RandomizerGUI.this, seed,
-										configString);
-
-								// Done
+						});
+					} else {
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								RandomizerGUI.this.opDialog.setVisible(false);
+								verboseLog = System.out;
 								RandomizerGUI.this.romHandler = null;
 								initialFormState();
 							}
-						}
-					});
+						});
+					}
 				}
 			};
 			t.start();
