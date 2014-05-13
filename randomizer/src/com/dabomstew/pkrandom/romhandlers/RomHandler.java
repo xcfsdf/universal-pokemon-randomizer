@@ -49,6 +49,8 @@ public interface RomHandler {
 	public boolean loadRom(String filename);
 
 	public boolean saveRom(String filename);
+	
+	public String loadedFilename();
 
 	// Functionality
 	public boolean isInGame(Pokemon pkmn);

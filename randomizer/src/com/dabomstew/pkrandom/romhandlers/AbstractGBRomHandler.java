@@ -32,13 +32,14 @@ import java.io.IOException;
 public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 
 	protected byte[] rom;
+	private String loadedFN;
 
 	public boolean detectRom(String filename) {
 		if (new File(filename).length() > 32 * 1024 * 1024) {
 			return false;
 		}
 		byte[] loaded = loadFile(filename);
-		if(loaded.length == 0) {
+		if (loaded.length == 0) {
 			// nope
 			return false;
 		}
@@ -52,8 +53,14 @@ public abstract class AbstractGBRomHandler extends AbstractRomHandler {
 			return false;
 		}
 		this.rom = loaded;
+		loadedFN = filename;
 		loadedRom();
 		return true;
+	}
+
+	@Override
+	public String loadedFilename() {
+		return loadedFN;
 	}
 
 	@Override
