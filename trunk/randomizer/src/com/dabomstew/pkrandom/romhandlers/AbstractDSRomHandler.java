@@ -35,6 +35,7 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 
 	protected String dataFolder;
 	private NDSRom baseRom;
+	private String loadedFN;
 
 	@Override
 	public boolean detectRom(String filename) {
@@ -53,7 +54,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 
 	protected abstract boolean detectNDSRom(String ndsCode);
 
-
 	@Override
 	public boolean loadRom(String filename) {
 		if (!detectRom(filename)) {
@@ -65,10 +65,15 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		loadedFN = filename;
 		loadedROM();
 		return true;
 	}
 
+	@Override
+	public String loadedFilename() {
+		return loadedFN;
+	}
 
 	protected byte[] get3byte(int amount) {
 		byte[] ret = new byte[3];
@@ -77,7 +82,6 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		ret[2] = (byte) ((amount >> 16) & 0xFF);
 		return ret;
 	}
-
 
 	protected abstract void loadedROM();
 
@@ -93,7 +97,7 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 		}
 		return true;
 	}
-	
+
 	public void closeInnerRom() throws IOException {
 		baseRom.closeROM();
 	}
@@ -316,26 +320,26 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
 
 	protected void writeFile(String location, byte[] data, int offset,
 			int length) throws IOException {
-		if(offset != 0 || length != data.length){
+		if (offset != 0 || length != data.length) {
 			byte[] newData = new byte[length];
 			System.arraycopy(data, offset, newData, 0, length);
 			data = newData;
 		}
 		baseRom.writeFile(location, data);
 	}
-	
+
 	protected byte[] readARM9() throws IOException {
 		return baseRom.getARM9();
 	}
-	
+
 	protected void writeARM9(byte[] data) throws IOException {
 		baseRom.writeARM9(data);
 	}
-	
+
 	protected byte[] readOverlay(int number) throws IOException {
 		return baseRom.getOverlay(number);
 	}
-	
+
 	protected void writeOverlay(int number, byte[] data) throws IOException {
 		baseRom.writeOverlay(number, data);
 	}

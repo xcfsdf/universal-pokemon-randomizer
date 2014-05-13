@@ -30,6 +30,9 @@
           <Connection code="new ROMFilter()" type="code"/>
         </Property>
       </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JFileChooser() {&#xd;&#xa;&#xd;&#xa;        private static final long serialVersionUID = 3244234325234511L;&#xd;&#xa;        public void approveSelection() {&#xd;&#xa;            File fh = getSelectedFile();&#xd;&#xa;            // Fix or add extension&#xd;&#xa;&#x9;    List&lt;String&gt; extensions = new ArrayList&lt;String&gt;(Arrays.asList(&quot;sgb&quot;, &quot;gbc&quot;, &quot;gba&quot;, &quot;nds&quot;));&#xd;&#xa;&#x9;    extensions.remove(RandomizerGUI.this.romHandler.getDefaultExtension());&#xd;&#xa;&#x9;    fh = FileFunctions.fixFilename(fh, RandomizerGUI.this.romHandler.getDefaultExtension(), extensions);&#xd;&#xa;            if (fh.exists() &amp;&amp; getDialogType() == SAVE_DIALOG) {&#xd;&#xa;                int result = JOptionPane.showConfirmDialog(this,&#xd;&#xa;                        &quot;The file exists, overwrite?&quot;, &quot;Existing file&quot;,&#xd;&#xa;                        JOptionPane.YES_NO_CANCEL_OPTION);&#xd;&#xa;                switch (result) {&#xd;&#xa;                case JOptionPane.YES_OPTION:&#xd;&#xa;                    super.approveSelection();&#xd;&#xa;                    return;&#xd;&#xa;                case JOptionPane.CANCEL_OPTION:&#xd;&#xa;                    cancelSelection();&#xd;&#xa;                    return;&#xd;&#xa;                default:&#xd;&#xa;                    return;&#xd;&#xa;                }&#xd;&#xa;            }&#xd;&#xa;            super.approveSelection();&#xd;&#xa;        }&#xd;&#xa;    };"/>
+      </AuxValues>
     </Component>
     <Component class="javax.swing.JFileChooser" name="qsOpenChooser">
       <Properties>

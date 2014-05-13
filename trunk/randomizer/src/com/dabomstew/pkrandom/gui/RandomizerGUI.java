@@ -90,7 +90,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private RomHandler romHandler;
 	protected RomHandler[] checkHandlers;
 	public static final int PRESET_FILE_VERSION = 160;
-	public static final int UPDATE_VERSION = 1610;
+	public static final int UPDATE_VERSION = 1601;
 
 	public static PrintStream verboseLog = System.out;
 
@@ -201,10 +201,11 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		boolean foundCustom = false;
 		for (int file = 0; file < 3; file++) {
-			File fh = new File("./config/" + cnamefiles[file]);
-			if (fh.exists() && fh.canRead()) {
+			File oldFile = new File(rootPath + "/config/" + cnamefiles[file]);
+			File currentFile = new File(rootPath + cnamefiles[file]);
+			if (oldFile.exists() && oldFile.canRead() && !currentFile.exists()) {
 				try {
-					int crc = getFileChecksum(new FileInputStream(fh));
+					int crc = getFileChecksum(new FileInputStream(oldFile));
 					if (crc != defaultcsums[file]) {
 						foundCustom = true;
 						break;
@@ -224,7 +225,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			boolean onefailed = false;
 			if (response == JOptionPane.YES_OPTION) {
 				for (String filename : cnamefiles) {
-					if (new File("./config/" + filename).canRead()) {
+					if (new File(rootPath + "/config/" + filename).canRead()) {
 						try {
 							FileInputStream fis = new FileInputStream(new File(
 									rootPath + "config/" + filename));
@@ -1000,12 +1001,24 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			extensions.remove(this.romHandler.getDefaultExtension());
 			fh = FileFunctions.fixFilename(fh,
 					this.romHandler.getDefaultExtension(), extensions);
-			// Get a seed
-			long seed = RandomSource.pickSeed();
-			// Apply it
-			RandomSource.seed(seed);
-			presetMode = false;
-			performRandomization(fh.getAbsolutePath(), seed, null, null, null);
+			boolean allowed = true;
+			if (this.romHandler instanceof AbstractDSRomHandler) {
+				String currentFN = this.romHandler.loadedFilename();
+				if (currentFN.equals(fh.getAbsolutePath())) {
+					JOptionPane.showMessageDialog(this,
+							bundle.getString("RandomizerGUI.cantOverwriteDS"));
+					allowed = false;
+				}
+			}
+			if (allowed) {
+				// Get a seed
+				long seed = RandomSource.pickSeed();
+				// Apply it
+				RandomSource.seed(seed);
+				presetMode = false;
+				performRandomization(fh.getAbsolutePath(), seed, null, null,
+						null);
+			}
 		}
 	}
 
@@ -1054,7 +1067,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		// bugfix 161
 		baos.write(makeByteSelected(this.wpCatchRateCB, this.wpNoLegendariesCB,
-				this.wpARSimilarStrengthRB));
+				this.wpARSimilarStrengthRB, this.wpHeldItemsCB));
 
 		baos.write(makeByteSelected(this.stpUnchangedRB, this.stpRandomL4LRB,
 				this.stpRandomTotalRB));
@@ -1259,7 +1272,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				this.wpRandomRB, this.wpUnchangedRB, this.wpUseTimeCB);
 
 		restoreStates(data[13], this.wpCatchRateCB, this.wpNoLegendariesCB,
-				this.wpARSimilarStrengthRB);
+				this.wpARSimilarStrengthRB, this.wpHeldItemsCB);
 
 		restoreStates(data[14], this.stpUnchangedRB, this.stpRandomL4LRB,
 				this.stpRandomTotalRB);
@@ -2103,12 +2116,26 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				extensions.remove(this.romHandler.getDefaultExtension());
 				fh = FileFunctions.fixFilename(fh,
 						this.romHandler.getDefaultExtension(), extensions);
-				// Apply the seed we were given
-				RandomSource.seed(seed);
-				presetMode = true;
-				performRandomization(fh.getAbsolutePath(), seed,
-						pld.getTrainerClasses(), pld.getTrainerNames(),
-						pld.getNicknames());
+				boolean allowed = true;
+				if (this.romHandler instanceof AbstractDSRomHandler) {
+					String currentFN = this.romHandler.loadedFilename();
+					if (currentFN.equals(fh.getAbsolutePath())) {
+						JOptionPane.showMessageDialog(this, bundle
+								.getString("RandomizerGUI.cantOverwriteDS"));
+						allowed = false;
+					}
+				}
+				if (allowed) {
+					// Apply the seed we were given
+					RandomSource.seed(seed);
+					presetMode = true;
+					performRandomization(fh.getAbsolutePath(), seed,
+							pld.getTrainerClasses(), pld.getTrainerNames(),
+							pld.getNicknames());
+				} else {
+					this.romHandler = null;
+					initialFormState();
+				}
 
 			} else {
 				this.romHandler = null;
@@ -2528,6 +2555,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
 	// desc="Generated Code">//GEN-BEGIN:initComponents
 	private void initComponents() {
 
@@ -2539,7 +2567,38 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		wildPokesARuleButtonGroup = new javax.swing.ButtonGroup();
 		starterPokemonButtonGroup = new javax.swing.ButtonGroup();
 		romOpenChooser = new javax.swing.JFileChooser();
-		romSaveChooser = new javax.swing.JFileChooser();
+		romSaveChooser = new JFileChooser() {
+
+			private static final long serialVersionUID = 3244234325234511L;
+
+			public void approveSelection() {
+				File fh = getSelectedFile();
+				// Fix or add extension
+				List<String> extensions = new ArrayList<String>(Arrays.asList(
+						"sgb", "gbc", "gba", "nds"));
+				extensions.remove(RandomizerGUI.this.romHandler
+						.getDefaultExtension());
+				fh = FileFunctions.fixFilename(fh,
+						RandomizerGUI.this.romHandler.getDefaultExtension(),
+						extensions);
+				if (fh.exists() && getDialogType() == SAVE_DIALOG) {
+					int result = JOptionPane.showConfirmDialog(this,
+							"The file exists, overwrite?", "Existing file",
+							JOptionPane.YES_NO_CANCEL_OPTION);
+					switch (result) {
+					case JOptionPane.YES_OPTION:
+						super.approveSelection();
+						return;
+					case JOptionPane.CANCEL_OPTION:
+						cancelSelection();
+						return;
+					default:
+						return;
+					}
+				}
+				super.approveSelection();
+			}
+		};
 		qsOpenChooser = new javax.swing.JFileChooser();
 		qsSaveChooser = new javax.swing.JFileChooser();
 		staticPokemonButtonGroup = new javax.swing.ButtonGroup();
