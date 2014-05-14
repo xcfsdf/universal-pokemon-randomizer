@@ -2,7 +2,6 @@
 
 = General =
   * The randomiser may not function at all on Windows systems with certain custom themes installed.
-  * (1.5.0/1.6.0) You cannot correctly make a Quick Settings file or Preset file with the "Similar Strength" option for Wild Pokemon enabled - it will revert to Unchanged on load.
 
 = General Gameboy Games =
   * Nothing right now.
@@ -17,10 +16,11 @@
   * Nothing right now.
 
 = General DS Games =
-  * (1.6.0) When you try to save a DS ROM and overwrite the original, the resulting ROM will be corrupt.
+  * The sprites, names or cries of the starter Pokemon shown when you pick one may not be updated when they are randomized or manually set in the randomizer. This is due to a lack of knowledge on appropriate code offsets etc and not a bug.
+
 
 = Generation Four Games =
-  * Nothing right now.
+  * (1.5.0/1.6.0/1.6.0a) Support for non-English Generation 4 games is broken quite badly, though they should still work if you avoid options such as Ingame Trades and Move Tutors.
 
 = Generation Five Games =
   * A battle with Zinzolin isn't consistent with his other battles.
