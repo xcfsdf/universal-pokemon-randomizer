@@ -2,7 +2,7 @@
 
 = General =
   * The randomiser may not function at all on Windows systems with certain custom themes installed.
-  * Using the "Static Pokemon > Legendary <-> Legendary & Normal <-> Normal" option at the same time as the "Limit Pokemon" can cause an infinite loop if not enough legendaries exist in your chosen Pokemon set to replace all the legendaries in the game you are randomizing.
+  * Using the "Static Pokemon > Legendary &lt;-&gt; Legendary & Normal &lt;-&gt; Normal" option at the same time as the "Limit Pokemon" can cause an infinite loop if not enough legendaries exist in your chosen Pokemon set to replace all the legendaries in the game you are randomizing.
 
 = General Gameboy Games =
   * Nothing right now.
