@@ -43,6 +43,7 @@ import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.EvolutionType;
 import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
@@ -1889,13 +1890,13 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	public List<Integer> getTMMoves() {
 		String tmDataPrefix;
 		if (romEntry.romType == Type_DP || romEntry.romType == Type_Plat) {
-			tmDataPrefix = "D300D400";
+			tmDataPrefix = "D100D200D300D400";
 		} else {
 			tmDataPrefix = "1E003200";
 		}
 		int offset = find(arm9, tmDataPrefix);
 		if (offset > 0) {
-			offset += 4; // because it was a prefix
+			offset += tmDataPrefix.length()/2; // because it was a prefix
 			List<Integer> tms = new ArrayList<Integer>();
 			for (int i = 0; i < 92; i++) {
 				tms.add(readWord(arm9, offset + i * 2));
@@ -1910,13 +1911,13 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	public List<Integer> getHMMoves() {
 		String tmDataPrefix;
 		if (romEntry.romType == Type_DP || romEntry.romType == Type_Plat) {
-			tmDataPrefix = "D300D400";
+			tmDataPrefix = "D100D200D300D400";
 		} else {
 			tmDataPrefix = "1E003200";
 		}
 		int offset = find(arm9, tmDataPrefix);
 		if (offset > 0) {
-			offset += 4; // because it was a prefix
+			offset += tmDataPrefix.length()/2; // because it was a prefix
 			offset += 184; // TM data
 			List<Integer> hms = new ArrayList<Integer>();
 			for (int i = 0; i < 8; i++) {
@@ -1932,13 +1933,13 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	public void setTMMoves(List<Integer> moveIndexes) {
 		String tmDataPrefix;
 		if (romEntry.romType == Type_DP || romEntry.romType == Type_Plat) {
-			tmDataPrefix = "D300D400";
+			tmDataPrefix = "D100D200D300D400";
 		} else {
 			tmDataPrefix = "1E003200";
 		}
 		int offset = find(arm9, tmDataPrefix);
 		if (offset > 0) {
-			offset += 4; // because it was a prefix
+			offset += tmDataPrefix.length()/2; // because it was a prefix
 			for (int i = 0; i < 92; i++) {
 				writeWord(arm9, offset + i * 2, moveIndexes.get(i));
 			}
@@ -2231,7 +2232,10 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 					int method = readWord(evoEntry, evo * 6);
 					int species = readWord(evoEntry, evo * 6 + 4);
 					if (method >= 1 && method <= 26 && species >= 1) {
-						Evolution evol = new Evolution(i, species, true);
+						EvolutionType et = EvolutionType.fromIndex(4, method);
+						int extraInfo = readWord(evoEntry, evo * 6 + 2);
+						Evolution evol = new Evolution(i, species, true, et,
+								extraInfo);
 						if (!evos.contains(evol)) {
 							evos.add(evol);
 							evosForThisPoke.add(evol);
@@ -2299,23 +2303,23 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 									pokes[evolvingTo].name, itemNames.get(109));
 						}
 					}
-					if(changeMoveEvos && evoType == 20) {
+					if (changeMoveEvos && evoType == 20) {
 						// read move
-						int move = readWord(evoEntry, evo*6+2);
+						int move = readWord(evoEntry, evo * 6 + 2);
 						int levelLearntAt = 1;
-						for(MoveLearnt ml : movesets.get(pokes[i])) {
-							if(ml.move == move) {
+						for (MoveLearnt ml : movesets.get(pokes[i])) {
+							if (ml.move == move) {
 								levelLearntAt = ml.level;
 								break;
 							}
 						}
-						if(levelLearntAt == 1) {
+						if (levelLearntAt == 1) {
 							// override for piloswine
 							levelLearntAt = 45;
 						}
 						// change to pure level evo
-						writeWord(evoEntry, evo*6, 4);
-						writeWord(evoEntry, evo*6+2, levelLearntAt);
+						writeWord(evoEntry, evo * 6, 4);
+						writeWord(evoEntry, evo * 6 + 2, levelLearntAt);
 						logEvoChangeLevel(pokes[i].name,
 								pokes[evolvingTo].name, levelLearntAt);
 					}
@@ -2762,7 +2766,10 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 							writeWord(evoEntry, evo * 6 + 2, 0);
 							writeWord(evoEntry, evo * 6 + 4, 0);
 						} else {
-							Evolution evol = new Evolution(i, species, true);
+							EvolutionType et = EvolutionType.fromIndex(4, method);
+							int extraInfo = readWord(evoEntry, evo * 6 + 2);
+							Evolution evol = new Evolution(i, species, true, et,
+									extraInfo);
 							evolsIncluded.add(evol);
 						}
 					}
@@ -2793,5 +2800,9 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 			// can't do anything
 		}
 	}
-
+	
+	@Override
+	public boolean supportsFourStartingMoves() {
+		return true;
+	}
 }

@@ -665,7 +665,7 @@
                               <Group type="102" alignment="0" attributes="0">
                                   <Component id="pmsRandomTypeRB" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace min="-2" pref="198" max="-2" attributes="0"/>
-                                  <Component id="pmsGen14MovesCB" min="-2" max="-2" attributes="0"/>
+                                  <Component id="pms4MovesCB" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <Component id="pmsRandomTotalRB" alignment="0" min="-2" max="-2" attributes="0"/>
                               <Component id="pmsMetronomeOnlyRB" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -682,7 +682,7 @@
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="3" attributes="0">
                               <Component id="pmsRandomTypeRB" alignment="3" min="-2" max="-2" attributes="0"/>
-                              <Component id="pmsGen14MovesCB" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="pms4MovesCB" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
                           <Component id="pmsRandomTotalRB" min="-2" max="-2" attributes="0"/>
@@ -758,13 +758,13 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="pmsMetronomeOnlyRBActionPerformed"/>
                   </Events>
                 </Component>
-                <Component class="javax.swing.JCheckBox" name="pmsGen14MovesCB">
+                <Component class="javax.swing.JCheckBox" name="pms4MovesCB">
                   <Properties>
                     <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                      <ResourceString bundle="com/dabomstew/pkrandom/gui/Bundle.properties" key="RandomizerGUI.pmsGen14MovesCB.text" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                      <ResourceString bundle="com/dabomstew/pkrandom/gui/Bundle.properties" key="RandomizerGUI.pms4MovesCB.text" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                     </Property>
                     <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                      <ResourceString bundle="com/dabomstew/pkrandom/gui/Bundle.properties" key="RandomizerGUI.pmsGen14MovesCB.toolTipText" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
+                      <ResourceString bundle="com/dabomstew/pkrandom/gui/Bundle.properties" key="RandomizerGUI.pms4MovesCB.toolTipText" replaceFormat="java.util.ResourceBundle.getBundle(&quot;{bundleNameSlashes}&quot;).getString(&quot;{key}&quot;)"/>
                     </Property>
                   </Properties>
                 </Component>

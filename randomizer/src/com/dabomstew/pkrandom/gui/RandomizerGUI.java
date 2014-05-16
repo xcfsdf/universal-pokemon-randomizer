@@ -89,8 +89,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private static final long serialVersionUID = 637989089525556154L;
 	private RomHandler romHandler;
 	protected RomHandler[] checkHandlers;
-	public static final int PRESET_FILE_VERSION = 160;
-	public static final int UPDATE_VERSION = 1601;
+	public static final int PRESET_FILE_VERSION = 161;
+	public static final int UPDATE_VERSION = 1610;
 
 	public static PrintStream verboseLog = System.out;
 
@@ -431,9 +431,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		this.pmsUnchangedRB.setEnabled(false);
 		this.pmsUnchangedRB.setSelected(true);
 		this.pmsMetronomeOnlyRB.setEnabled(false);
-		this.pmsGen14MovesCB.setEnabled(false);
-		this.pmsGen14MovesCB.setSelected(false);
-		this.pmsGen14MovesCB.setVisible(true);
+		this.pms4MovesCB.setEnabled(false);
+		this.pms4MovesCB.setSelected(false);
+		this.pms4MovesCB.setVisible(true);
 
 		this.ptRandomFollowEvosRB.setEnabled(false);
 		this.ptRandomTotalRB.setEnabled(false);
@@ -549,6 +549,47 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		int returnVal = romOpenChooser.showOpenDialog(this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			final File fh = romOpenChooser.getSelectedFile();
+			// first, check for common filetypes that aren't ROMs
+			// read first 10 bytes of the file to do this
+			try {
+				FileInputStream fis = new FileInputStream(fh);
+				byte[] sig = new byte[10];
+				int siglen = fis.read(sig);
+				fis.close();
+				if (siglen < 10) {
+					JOptionPane.showMessageDialog(this, String.format(
+							bundle.getString("RandomizerGUI.tooShortToBeARom"),
+							fh.getName()));
+					return;
+				}
+				if (sig[0] == 0x50 && sig[1] == 0x4b && sig[2] == 0x03
+						&& sig[3] == 0x04) {
+					JOptionPane.showMessageDialog(this, String.format(
+							bundle.getString("RandomizerGUI.openedZIPfile"),
+							fh.getName()));
+					return;
+				}
+				if (sig[0] == 0x52 && sig[1] == 0x61 && sig[2] == 0x72
+						&& sig[3] == 0x21 && sig[4] == 0x1A && sig[5] == 0x07) {
+					JOptionPane.showMessageDialog(this, String.format(
+							bundle.getString("RandomizerGUI.openedRARfile"),
+							fh.getName()));
+					return;
+				}
+				if (sig[0] == 'P' && sig[1] == 'A' && sig[2] == 'T'
+						&& sig[3] == 'C' && sig[4] == 'H') {
+					JOptionPane.showMessageDialog(this, String.format(
+							bundle.getString("RandomizerGUI.openedIPSfile"),
+							fh.getName()));
+					return;
+				}
+				// none of these? let's see if it's a valid ROM, then
+			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(this, String.format(
+						bundle.getString("RandomizerGUI.unreadableRom"),
+						fh.getName()));
+				return;
+			}
 			for (RomHandler rh : checkHandlers) {
 				if (rh.detectRom(fh.getAbsolutePath())) {
 					this.romHandler = rh;
@@ -720,11 +761,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			this.pmsUnchangedRB.setSelected(true);
 			this.pmsMetronomeOnlyRB.setEnabled(true);
 
-			if (romHandler instanceof Gen1RomHandler) {
-				this.pmsGen14MovesCB.setVisible(true);
-			} else {
-				this.pmsGen14MovesCB.setVisible(false);
-			}
+			this.pms4MovesCB.setVisible(romHandler.supportsFourStartingMoves());
 
 			this.ptRandomFollowEvosRB.setEnabled(true);
 			this.ptRandomTotalRB.setEnabled(true);
@@ -967,10 +1004,10 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 		if (this.pmsMetronomeOnlyRB.isSelected()
 				|| this.pmsUnchangedRB.isSelected()) {
-			this.pmsGen14MovesCB.setEnabled(false);
-			this.pmsGen14MovesCB.setSelected(false);
+			this.pms4MovesCB.setEnabled(false);
+			this.pms4MovesCB.setSelected(false);
 		} else {
-			this.pmsGen14MovesCB.setEnabled(true);
+			this.pms4MovesCB.setEnabled(true);
 		}
 	}
 
@@ -1053,7 +1090,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		// 10
 		baos.write(makeByteSelected(this.pmsRandomTotalRB,
 				this.pmsRandomTypeRB, this.pmsUnchangedRB,
-				this.pmsMetronomeOnlyRB, this.pmsGen14MovesCB));
+				this.pmsMetronomeOnlyRB, this.pms4MovesCB));
 
 		// changed 160
 		baos.write(makeByteSelected(this.tpPowerLevelsCB, this.tpRandomRB,
@@ -1258,8 +1295,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		restoreSelectedIndex(data, 8, this.spCustomPoke3Chooser);
 
 		restoreStates(data[10], this.pmsRandomTotalRB, this.pmsRandomTypeRB,
-				this.pmsUnchangedRB, this.pmsMetronomeOnlyRB,
-				this.pmsGen14MovesCB);
+				this.pmsUnchangedRB, this.pmsMetronomeOnlyRB, this.pms4MovesCB);
 
 		// changed 160
 		restoreStates(data[11], this.tpPowerLevelsCB, this.tpRandomRB,
@@ -1613,8 +1649,8 @@ public class RandomizerGUI extends javax.swing.JFrame {
 
 			// Movesets
 			boolean noBrokenMoves = this.brokenMovesCB.isSelected();
-			boolean forceFourLv1s = (romHandler instanceof Gen1RomHandler)
-					&& this.pmsGen14MovesCB.isSelected();
+			boolean forceFourLv1s = romHandler.supportsFourStartingMoves()
+					&& this.pms4MovesCB.isSelected();
 			if (this.pmsRandomTypeRB.isSelected()) {
 				romHandler.randomizeMovesLearnt(true, noBrokenMoves,
 						forceFourLv1s);
@@ -2304,14 +2340,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 			try {
 				FileInputStream fis = new FileInputStream(fh);
 				int version = fis.read();
-				if (version < PRESET_FILE_VERSION) {
-					JOptionPane
-							.showMessageDialog(
-									this,
-									bundle.getString("RandomizerGUI.settingsFileOlder"));
-					fis.close();
-					return;
-				} else if (version > PRESET_FILE_VERSION) {
+				if (version > PRESET_FILE_VERSION) {
 					JOptionPane
 							.showMessageDialog(
 									this,
@@ -2324,6 +2353,15 @@ public class RandomizerGUI extends javax.swing.JFrame {
 				fis.read(csBuf);
 				fis.close();
 				String configString = new String(csBuf, "UTF-8");
+				if (version < PRESET_FILE_VERSION) {
+					// show a warning dialog, but load it
+					JOptionPane
+							.showMessageDialog(
+									this,
+									bundle.getString("RandomizerGUI.settingsFileOlder"));
+					configString = new QuickSettingsUpdater().update(version,
+							configString);
+				}
 				String romName = getValidRequiredROMName(configString,
 						new byte[] {}, new byte[] {}, new byte[] {});
 				if (romName == null) {
@@ -2556,6 +2594,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
 	// <editor-fold defaultstate="collapsed"
+	// <editor-fold defaultstate="collapsed"
 	// desc="Generated Code">//GEN-BEGIN:initComponents
 	private void initComponents() {
 
@@ -2641,7 +2680,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 		pmsRandomTypeRB = new javax.swing.JRadioButton();
 		pmsRandomTotalRB = new javax.swing.JRadioButton();
 		pmsMetronomeOnlyRB = new javax.swing.JRadioButton();
-		pmsGen14MovesCB = new javax.swing.JCheckBox();
+		pms4MovesCB = new javax.swing.JCheckBox();
 		trainersPokemonPanel = new javax.swing.JPanel();
 		tpUnchangedRB = new javax.swing.JRadioButton();
 		tpRandomRB = new javax.swing.JRadioButton();
@@ -3189,10 +3228,9 @@ public class RandomizerGUI extends javax.swing.JFrame {
 					}
 				});
 
-		pmsGen14MovesCB.setText(bundle
-				.getString("RandomizerGUI.pmsGen14MovesCB.text")); // NOI18N
-		pmsGen14MovesCB.setToolTipText(bundle
-				.getString("RandomizerGUI.pmsGen14MovesCB.toolTipText")); // NOI18N
+		pms4MovesCB.setText(bundle.getString("RandomizerGUI.pms4MovesCB.text")); // NOI18N
+		pms4MovesCB.setToolTipText(bundle
+				.getString("RandomizerGUI.pms4MovesCB.toolTipText")); // NOI18N
 
 		javax.swing.GroupLayout pokemonMovesetsPanelLayout = new javax.swing.GroupLayout(
 				pokemonMovesetsPanel);
@@ -3220,7 +3258,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 																				198,
 																				198)
 																		.addComponent(
-																				pmsGen14MovesCB))
+																				pms4MovesCB))
 														.addComponent(
 																pmsRandomTotalRB)
 														.addComponent(
@@ -3246,7 +3284,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 														.addComponent(
 																pmsRandomTypeRB)
 														.addComponent(
-																pmsGen14MovesCB))
+																pms4MovesCB))
 										.addPreferredGap(
 												javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
 										.addComponent(pmsRandomTotalRB)
@@ -5182,7 +5220,7 @@ public class RandomizerGUI extends javax.swing.JFrame {
 	private javax.swing.JRadioButton pbsChangesShuffleRB;
 	private javax.swing.JRadioButton pbsChangesUnchangedRB;
 	private javax.swing.JCheckBox pbsStandardEXPCurvesCB;
-	private javax.swing.JCheckBox pmsGen14MovesCB;
+	private javax.swing.JCheckBox pms4MovesCB;
 	private javax.swing.JRadioButton pmsMetronomeOnlyRB;
 	private javax.swing.JRadioButton pmsRandomTotalRB;
 	private javax.swing.JRadioButton pmsRandomTypeRB;

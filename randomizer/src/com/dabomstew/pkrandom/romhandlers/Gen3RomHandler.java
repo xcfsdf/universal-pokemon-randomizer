@@ -42,6 +42,7 @@ import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.EvolutionType;
 import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
@@ -1512,6 +1513,7 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 	@Override
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets) {
 		int baseOffset = romEntry.getValue("PokemonMovesets");
+		int fso = romEntry.getValue("FreeSpace");
 		for (int i = 1; i <= 411; i++) {
 			int offsToPtr = baseOffset + (i - 1) * 4;
 			int moveDataLoc = readPointer(offsToPtr);
@@ -1526,21 +1528,50 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 			}
 			int currentMoveCount = (mloc - moveDataLoc);
 			int newMoveCount = moves.size();
-			int looplimit = Math.min(currentMoveCount, newMoveCount);
-			for (int mv = 0; mv < looplimit; mv++) {
-				MoveLearnt ml = moves.get(mv);
-				rom[moveDataLoc] = (byte) (ml.move & 0xFF);
-				int levelPart = (ml.level << 1) & 0xFE;
-				if (ml.move > 255) {
-					levelPart++;
+			if (currentMoveCount <= newMoveCount) {
+				int looplimit = Math.min(currentMoveCount, newMoveCount);
+				for (int mv = 0; mv < looplimit; mv++) {
+					MoveLearnt ml = moves.get(mv);
+					rom[moveDataLoc] = (byte) (ml.move & 0xFF);
+					int levelPart = (ml.level << 1) & 0xFE;
+					if (ml.move > 255) {
+						levelPart++;
+					}
+					rom[moveDataLoc + 1] = (byte) levelPart;
+					moveDataLoc += 2;
 				}
-				rom[moveDataLoc + 1] = (byte) levelPart;
-				moveDataLoc += 2;
-			}
-			if (looplimit < currentMoveCount) {
+				if (looplimit < currentMoveCount) {
+					// need a new terminator
+					rom[moveDataLoc] = (byte) 0xFF;
+					rom[moveDataLoc + 1] = (byte) 0xFF;
+				}
+			} else {
+				// repoint!
+				int newBytesNeeded = newMoveCount * 2 + 4;
+				int writeSpace = RomFunctions.freeSpaceFinder(rom, (byte) 0xFF,
+						newBytesNeeded, fso);
+				if (writeSpace < fso) {
+					throw new RuntimeException("ROM is full");
+				}
+				writePointer(offsToPtr, writeSpace);
+				moveDataLoc = writeSpace;
+				for (int mv = 0; mv < newMoveCount; mv++) {
+					MoveLearnt ml = moves.get(mv);
+					rom[moveDataLoc] = (byte) (ml.move & 0xFF);
+					int levelPart = (ml.level << 1) & 0xFE;
+					if (ml.move > 255) {
+						levelPart++;
+					}
+					rom[moveDataLoc + 1] = (byte) levelPart;
+					moveDataLoc += 2;
+				}
 				// need a new terminator
 				rom[moveDataLoc] = (byte) 0xFF;
 				rom[moveDataLoc + 1] = (byte) 0xFF;
+				// for safety (the freespace finder should prevent the
+				// terminator being overwritten but...)
+				rom[moveDataLoc + 2] = 0x00;
+				rom[moveDataLoc + 3] = 0x00;
 			}
 		}
 
@@ -2026,7 +2057,10 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 				if (method >= 1 && method <= 15 && evolvingTo >= 1
 						&& evolvingTo <= 411) {
 					evolvingTo = poke3GIndexToNum(evolvingTo);
-					Evolution evo = new Evolution(i, evolvingTo, true);
+					int extraInfo = readWord(evoOffset + j * 8 + 2);
+					EvolutionType et = EvolutionType.fromIndex(3, method);
+					Evolution evo = new Evolution(i, evolvingTo, true, et,
+							extraInfo);
 					if (!evos.contains(evo)) {
 						evos.add(evo);
 						evosForThisPoke.add(evo);
@@ -2633,4 +2667,8 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
 		}
 	}
 
+	@Override
+	public boolean supportsFourStartingMoves() {
+		return true;
+	}
 }

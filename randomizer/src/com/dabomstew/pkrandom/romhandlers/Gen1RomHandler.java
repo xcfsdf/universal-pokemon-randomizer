@@ -41,6 +41,7 @@ import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.EvolutionType;
 import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
@@ -1854,14 +1855,17 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 				int thisPoke = pokeRBYToNumTable[i];
 				while (rom[realPointer] != 0) {
 					int method = rom[realPointer];
+					EvolutionType type = EvolutionType.fromIndex(1, method);
 					int otherPoke = pokeRBYToNumTable[rom[realPointer + 2
-							+ (method == 2 ? 1 : 0)] & 0xFF];
-					Evolution evo = new Evolution(thisPoke, otherPoke, true);
+							+ (type == EvolutionType.STONE ? 1 : 0)] & 0xFF];
+					int extraInfo = rom[realPointer + 1] & 0xFF;
+					Evolution evo = new Evolution(thisPoke, otherPoke, true,
+							type, extraInfo);
 					if (!evos.contains(evo)) {
 						evos.add(evo);
 						evosForThisPoke.add(evo);
 					}
-					realPointer += (method == 2 ? 4 : 3);
+					realPointer += (type == EvolutionType.STONE ? 4 : 3);
 				}
 				// split evos don't carry stats
 				if (evosForThisPoke.size() > 1) {
@@ -2530,5 +2534,10 @@ public class Gen1RomHandler extends AbstractGBRomHandler {
 	@Override
 	public void removeEvosForPokemonPool() {
 		// gen1 doesn't have this functionality anyway
+	}
+
+	@Override
+	public boolean supportsFourStartingMoves() {
+		return true;
 	}
 }

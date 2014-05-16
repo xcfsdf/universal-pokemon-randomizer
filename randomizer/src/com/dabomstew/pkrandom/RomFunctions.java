@@ -164,22 +164,24 @@ public class RomFunctions {
 	public static int freeSpaceFinder(byte[] rom, byte freeSpace, int amount,
 			int offset, boolean longAligned) {
 		if (!longAligned) {
-			// Find 1 more than necessary and return 1 into it,
+			// Find 2 more than necessary and return 2 into it,
 			// to preserve stuff like FF terminators for strings
-			byte[] searchNeedle = new byte[amount + 1];
-			for (int i = 0; i < amount + 1; i++) {
+			// 161: and FFFF terminators for movesets 
+			byte[] searchNeedle = new byte[amount + 2];
+			for (int i = 0; i < amount + 2; i++) {
 				searchNeedle[i] = freeSpace;
 			}
-			return searchForFirst(rom, offset, searchNeedle) + 1;
+			return searchForFirst(rom, offset, searchNeedle) + 2;
 		} else {
-			// Find 4 more than necessary and return into it as necessary for
+			// Find 5 more than necessary and return into it as necessary for
 			// 4-alignment,
 			// to preserve stuff like FF terminators for strings
-			byte[] searchNeedle = new byte[amount + 4];
-			for (int i = 0; i < amount + 4; i++) {
+			// 161: and FFFF terminators for movesets 
+			byte[] searchNeedle = new byte[amount + 5];
+			for (int i = 0; i < amount + 5; i++) {
 				searchNeedle[i] = freeSpace;
 			}
-			return (searchForFirst(rom, offset, searchNeedle) + 4) & ~3;
+			return (searchForFirst(rom, offset, searchNeedle) + 5) & ~3;
 		}
 	}
 
