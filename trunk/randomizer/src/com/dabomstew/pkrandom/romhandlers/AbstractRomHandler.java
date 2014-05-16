@@ -1127,21 +1127,40 @@ public abstract class AbstractRomHandler implements RomHandler {
 		List<Pokemon> banned = this.bannedForStaticPokemon();
 
 		if (legendForLegend) {
+			List<Pokemon> legendariesLeft = new ArrayList<Pokemon>(
+					onlyLegendaryList);
+			List<Pokemon> nonlegsLeft = new ArrayList<Pokemon>(noLegendaryList);
+			legendariesLeft.removeAll(banned);
+			nonlegsLeft.removeAll(banned);
 			for (int i = 0; i < currentStaticPokemon.size(); i++) {
 				Pokemon old = currentStaticPokemon.get(i);
-				Pokemon newPK = old.isLegendary() ? randomLegendaryPokemon()
-						: randomNonLegendaryPokemon();
-				while (replacements.contains(newPK) || banned.contains(newPK)) {
-					newPK = old.isLegendary() ? randomLegendaryPokemon()
-							: randomNonLegendaryPokemon();
+				Pokemon newPK;
+				if (old.isLegendary()) {
+					newPK = legendariesLeft.remove(RandomSource
+							.nextInt(legendariesLeft.size()));
+					if (legendariesLeft.size() == 0) {
+						legendariesLeft.addAll(onlyLegendaryList);
+						legendariesLeft.removeAll(banned);
+					}
+				} else {
+					newPK = nonlegsLeft.remove(RandomSource.nextInt(nonlegsLeft
+							.size()));
+					if (nonlegsLeft.size() == 0) {
+						nonlegsLeft.addAll(onlyLegendaryList);
+						nonlegsLeft.removeAll(banned);
+					}
 				}
 				replacements.add(newPK);
 			}
 		} else {
+			List<Pokemon> pokemonLeft = new ArrayList<Pokemon>(mainPokemonList);
+			pokemonLeft.removeAll(banned);
 			for (int i = 0; i < currentStaticPokemon.size(); i++) {
-				Pokemon newPK = randomPokemon();
-				while (replacements.contains(newPK) || banned.contains(newPK)) {
-					newPK = randomPokemon();
+				Pokemon newPK = pokemonLeft.remove(RandomSource
+						.nextInt(pokemonLeft.size()));
+				if (pokemonLeft.size() == 0) {
+					pokemonLeft.addAll(mainPokemonList);
+					pokemonLeft.removeAll(banned);
 				}
 				replacements.add(newPK);
 			}

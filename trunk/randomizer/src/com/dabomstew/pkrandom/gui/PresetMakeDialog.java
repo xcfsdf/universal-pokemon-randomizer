@@ -29,6 +29,8 @@ package com.dabomstew.pkrandom.gui;
 /*--  along with this program. If not, see <http://www.gnu.org/licenses/>.  --*/
 /*----------------------------------------------------------------------------*/
 
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,6 +39,8 @@ import java.io.InputStream;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import com.dabomstew.pkrandom.FileFunctions;
 
@@ -45,7 +49,6 @@ import com.dabomstew.pkrandom.FileFunctions;
  * @author Stewart
  */
 public class PresetMakeDialog extends javax.swing.JDialog {
-
 	/**
 	 * 
 	 */
@@ -61,10 +64,15 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 		super(parent, true);
 		initComponents();
 		randomSeedField.setText(Long.toString(seed));
-		configStringField.setText(configString);
+		configStringField.setText(RandomizerGUI.PRESET_FILE_VERSION + ""
+				+ configString);
 		this.seed = seed;
 		this.configString = configString;
 		presetFileChooser.setCurrentDirectory(new File("./"));
+		this.randomSeedField.addMouseListener(new SelectTextListener(
+				this.randomSeedField));
+		this.configStringField.addMouseListener(new SelectTextListener(
+				this.configStringField));
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
@@ -79,13 +87,13 @@ public class PresetMakeDialog extends javax.swing.JDialog {
     private void initComponents() {
 
         presetFileChooser = new javax.swing.JFileChooser();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
+        gameRandomizedLabel = new javax.swing.JLabel();
+        settingsToGiveLabel = new javax.swing.JLabel();
+        seedFieldLabel = new javax.swing.JLabel();
         randomSeedField = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
+        configStringFieldLabel = new javax.swing.JLabel();
         configStringField = new javax.swing.JTextField();
-        jLabel5 = new javax.swing.JLabel();
+        canProduceFileLabel = new javax.swing.JLabel();
         produceFileButton = new javax.swing.JButton();
         doneButton = new javax.swing.JButton();
 
@@ -97,22 +105,22 @@ public class PresetMakeDialog extends javax.swing.JDialog {
         setModal(true);
         setResizable(false);
 
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText(bundle.getString("PresetMakeDialog.jLabel1.text")); // NOI18N
+        gameRandomizedLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        gameRandomizedLabel.setText(bundle.getString("PresetMakeDialog.gameRandomizedLabel.text")); // NOI18N
 
-        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText(bundle.getString("PresetMakeDialog.jLabel2.text")); // NOI18N
+        settingsToGiveLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        settingsToGiveLabel.setText(bundle.getString("PresetMakeDialog.settingsToGiveLabel.text")); // NOI18N
 
-        jLabel3.setText(bundle.getString("PresetMakeDialog.jLabel3.text")); // NOI18N
+        seedFieldLabel.setText(bundle.getString("PresetMakeDialog.seedFieldLabel.text")); // NOI18N
 
         randomSeedField.setEditable(false);
 
-        jLabel4.setText(bundle.getString("PresetMakeDialog.jLabel4.text")); // NOI18N
+        configStringFieldLabel.setText(bundle.getString("PresetMakeDialog.configStringFieldLabel.text")); // NOI18N
 
         configStringField.setEditable(false);
 
-        jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel5.setText(bundle.getString("PresetMakeDialog.jLabel5.text")); // NOI18N
+        canProduceFileLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        canProduceFileLabel.setText(bundle.getString("PresetMakeDialog.canProduceFileLabel.text")); // NOI18N
 
         produceFileButton.setText(bundle.getString("PresetMakeDialog.produceFileButton.text")); // NOI18N
         produceFileButton.addActionListener(new java.awt.event.ActionListener() {
@@ -132,19 +140,19 @@ public class PresetMakeDialog extends javax.swing.JDialog {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 599, Short.MAX_VALUE)
+            .addComponent(gameRandomizedLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(settingsToGiveLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 599, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel4))
+                    .addComponent(seedFieldLabel)
+                    .addComponent(configStringFieldLabel))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(randomSeedField)
                     .addComponent(configStringField))
                 .addContainerGap())
-            .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(canProduceFileLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(layout.createSequentialGroup()
                 .addGap(67, 67, 67)
                 .addComponent(produceFileButton)
@@ -155,19 +163,19 @@ public class PresetMakeDialog extends javax.swing.JDialog {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jLabel1)
+                .addComponent(gameRandomizedLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
+                .addComponent(settingsToGiveLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
+                    .addComponent(seedFieldLabel)
                     .addComponent(randomSeedField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
+                    .addComponent(configStringFieldLabel)
                     .addComponent(configStringField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jLabel5)
+                .addComponent(canProduceFileLabel)
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(produceFileButton)
@@ -188,7 +196,7 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 			try {
 				DataOutputStream dos = new DataOutputStream(
 						new FileOutputStream(fh));
-				dos.writeByte((byte)RandomizerGUI.PRESET_FILE_VERSION);
+				dos.writeByte((byte) RandomizerGUI.PRESET_FILE_VERSION);
 				dos.writeLong(seed);
 				dos.writeUTF(configString);
 				byte[] trainerclasses = readFile(FileFunctions
@@ -225,15 +233,60 @@ public class PresetMakeDialog extends javax.swing.JDialog {
 	}// GEN-LAST:event_doneButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel canProduceFileLabel;
     private javax.swing.JTextField configStringField;
+    private javax.swing.JLabel configStringFieldLabel;
     private javax.swing.JButton doneButton;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel gameRandomizedLabel;
     private javax.swing.JFileChooser presetFileChooser;
     private javax.swing.JButton produceFileButton;
     private javax.swing.JTextField randomSeedField;
+    private javax.swing.JLabel seedFieldLabel;
+    private javax.swing.JLabel settingsToGiveLabel;
     // End of variables declaration//GEN-END:variables
+	
+	public class SelectTextListener implements MouseListener {
+
+		private JTextField fieldFor;
+
+		public SelectTextListener(JTextField fieldFor) {
+			this.fieldFor = fieldFor;
+		}
+
+		@Override
+		public void mouseClicked(MouseEvent arg0) {
+			// select all text
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					fieldFor.selectAll();
+				}
+			});
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent arg0) {
+			// do nothing
+
+		}
+
+		@Override
+		public void mouseExited(MouseEvent arg0) {
+			// do nothing
+
+		}
+
+		@Override
+		public void mousePressed(MouseEvent arg0) {
+			// do nothing
+
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent arg0) {
+			// do nothing
+
+		}
+
+	}
 }

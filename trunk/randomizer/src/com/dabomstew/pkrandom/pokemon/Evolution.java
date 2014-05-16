@@ -28,12 +28,15 @@ public class Evolution implements Comparable<Evolution> {
 	public int from;
 	public int to;
 	public boolean carryStats;
+	public EvolutionType type;
+	public int extraInfo;
 
-	public Evolution(int from, int to, boolean carryStats) {
-		super();
+	public Evolution(int from, int to, boolean carryStats, EvolutionType type, int extra) {
 		this.from = from;
 		this.to = to;
 		this.carryStats = carryStats;
+		this.type = type;
+		this.extraInfo = extra;
 	}
 
 	@Override

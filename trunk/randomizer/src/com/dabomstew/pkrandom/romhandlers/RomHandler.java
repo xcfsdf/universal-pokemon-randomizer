@@ -181,6 +181,8 @@ public interface RomHandler {
 			boolean forceFourStartingMoves);
 
 	public void metronomeOnlyMode();
+	
+	public boolean supportsFourStartingMoves();
 
 	// Randomizer: static pokemon (except starters)
 

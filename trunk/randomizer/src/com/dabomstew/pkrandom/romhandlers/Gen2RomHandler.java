@@ -43,6 +43,7 @@ import com.dabomstew.pkrandom.RomFunctions;
 import com.dabomstew.pkrandom.pokemon.Encounter;
 import com.dabomstew.pkrandom.pokemon.EncounterSet;
 import com.dabomstew.pkrandom.pokemon.Evolution;
+import com.dabomstew.pkrandom.pokemon.EvolutionType;
 import com.dabomstew.pkrandom.pokemon.ExpCurve;
 import com.dabomstew.pkrandom.pokemon.IngameTrade;
 import com.dabomstew.pkrandom.pokemon.ItemList;
@@ -558,7 +559,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 		pkmn.rareHeldItem = rom[offset + 12] & 0xFF;
 		pkmn.darkGrassHeldItem = -1;
 		pkmn.growthCurve = ExpCurve.fromByte(rom[offset + 22]);
-		
+
 	}
 
 	private void saveBasicPokeStats(Pokemon pkmn, int offset) {
@@ -1441,31 +1442,7 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 
 	@Override
 	public void setMovesLearnt(Map<Pokemon, List<MoveLearnt>> movesets) {
-		int pointersOffset = romEntry.getValue("PokemonMovesetsTableOffset");
-		for (int i = 1; i <= 251; i++) {
-			int pointer = readWord(pointersOffset + (i - 1) * 2);
-			int realPointer = calculateOffset(bankOf(pointersOffset), pointer);
-			Pokemon pkmn = pokes[i];
-			List<MoveLearnt> ourMoves = movesets.get(pkmn);
-			int movenum = 0;
-			// Skip over evolution data
-			while (rom[realPointer] != 0) {
-				if (rom[realPointer] == 5) {
-					realPointer += 4;
-				} else {
-					realPointer += 3;
-				}
-			}
-			realPointer++;
-			while (rom[realPointer] != 0 && movenum < ourMoves.size()) {
-				rom[realPointer] = (byte) (ourMoves.get(movenum).level);
-				rom[realPointer + 1] = (byte) (ourMoves.get(movenum).move);
-				realPointer += 2;
-				movenum++;
-			}
-			// Make sure we finish off the moveset
-			rom[realPointer] = 0;
-		}
+		writeEvosAndMovesLearnt(null, movesets);
 	}
 
 	@Override
@@ -1755,9 +1732,36 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 			evosForThisPoke.clear();
 			int thisPoke = i;
 			while (rom[realPointer] != 0) {
-				int method = rom[realPointer];
+				int method = rom[realPointer] & 0xFF;
 				int otherPoke = rom[realPointer + 2 + (method == 5 ? 1 : 0)] & 0xFF;
-				Evolution evo = new Evolution(thisPoke, otherPoke, true);
+				EvolutionType type = EvolutionType.fromIndex(2, method);
+				int extraInfo = 0;
+				if (type == EvolutionType.TRADE) {
+					int itemNeeded = rom[realPointer + 1] & 0xFF;
+					if (itemNeeded != 0xFF) {
+						type = EvolutionType.TRADE_ITEM;
+						extraInfo = itemNeeded;
+					}
+				} else if (type == EvolutionType.LEVEL_ATTACK_HIGHER) {
+					int tyrogueCond = rom[realPointer + 2] & 0xFF;
+					if (tyrogueCond == 2) {
+						type = EvolutionType.LEVEL_DEFENSE_HIGHER;
+					} else if (tyrogueCond == 3) {
+						type = EvolutionType.LEVEL_ATK_DEF_SAME;
+					}
+					extraInfo = rom[realPointer + 1] & 0xFF;
+				} else if (type == EvolutionType.HAPPINESS) {
+					int happCond = rom[realPointer + 1] & 0xFF;
+					if (happCond == 2) {
+						type = EvolutionType.HAPPINESS_DAY;
+					} else if (happCond == 3) {
+						type = EvolutionType.HAPPINESS_NIGHT;
+					}
+				} else {
+					extraInfo = rom[realPointer + 1] & 0xFF;
+				}
+				Evolution evo = new Evolution(thisPoke, otherPoke, true, type,
+						extraInfo);
 				if (!evos.contains(evo)) {
 					evos.add(evo);
 					evosForThisPoke.add(evo);
@@ -1776,63 +1780,43 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 
 	@Override
 	public void removeTradeEvolutions(boolean changeMoveEvos) {
-		// Evolution data is stored before learnmoves.
 		// no move evos, so no need to check for those
-		int pointersOffset = romEntry.getValue("PokemonMovesetsTableOffset");
 		log("--Removing Trade Evolutions--");
-		for (int i = 1; i <= 251; i++) {
-			int pointer = readWord(pointersOffset + (i - 1) * 2);
-			int realPointer = calculateOffset(bankOf(pointersOffset), pointer);
-			// Evolution data
-			// Type 1: 01 LV PK
-			// Type 2: 02 ITEM PK
-			// Type 3: 03 ITEM/FF PK (trade, FF for no item reqd)
-			// Type 4: 04 HAPPCOND PK
-			// Type 5: 05 LV TYROGUECOND PK
-			// HAPPCOND: 01 none 02 day only 03 night only
-			// TYROGUECOND: 01 Attack>Defense 02 Attack<Defense
-			// 03 Attack=Defense
-
-			while (rom[realPointer] != 0) {
-				if (rom[realPointer] == 5) {
-					realPointer += 4;
-				} else if (rom[realPointer] == 3) {
-					int evolvingTo = rom[realPointer + 2] & 0xFF;
-					// What to do?
-					if (i == 79) {
-						// Slowpoke: Make water stone => Slowking
-						rom[realPointer] = 2;
-						rom[realPointer + 1] = 24;
-						logEvoChangeStone(pokes[i].name,
-								pokes[evolvingTo].name, itemNames[24]);
-					} else if (i == 117) {
-						// Seadra: level 40
-						rom[realPointer] = 1;
-						rom[realPointer + 1] = 40;
-						logEvoChangeLevel(pokes[i].name,
-								pokes[evolvingTo].name, 40);
-					} else if (i == 61 || (rom[realPointer + 1] & 0xFF) == 0xFF) {
-						// Poliwhirl or any of the original 4 trade evos
-						// Level 37
-						rom[realPointer] = 1;
-						rom[realPointer + 1] = 37;
-						logEvoChangeLevel(pokes[i].name,
-								pokes[evolvingTo].name, 37);
-					} else {
-						// A new trade evo of a single stage Pokemon
-						// level 30
-						rom[realPointer] = 1;
-						rom[realPointer + 1] = 30;
-						logEvoChangeLevel(pokes[i].name,
-								pokes[evolvingTo].name, 30);
-					}
-					// Regardless of whatever we did, advance past it
-					realPointer += 3;
+		List<Evolution> evos = this.getEvolutions();
+		for (Evolution evol : evos) {
+			if (evol.type == EvolutionType.TRADE
+					|| evol.type == EvolutionType.TRADE_ITEM) {
+				// change
+				if (evol.from == 79) {
+					// Slowpoke: Make water stone => Slowking
+					evol.type = EvolutionType.STONE;
+					evol.extraInfo = 24; // water stone
+					logEvoChangeStone(pokes[evol.from].name,
+							pokes[evol.to].name, itemNames[24]);
+				} else if (evol.from == 117) {
+					// Seadra: level 40
+					evol.type = EvolutionType.LEVEL;
+					evol.extraInfo = 40; // level
+					logEvoChangeLevel(pokes[evol.from].name,
+							pokes[evol.to].name, 40);
+				} else if (evol.from == 61 || evol.type == EvolutionType.TRADE) {
+					// Poliwhirl or any of the original 4 trade evos
+					// Level 37
+					evol.type = EvolutionType.LEVEL;
+					evol.extraInfo = 37; // level
+					logEvoChangeLevel(pokes[evol.from].name,
+							pokes[evol.to].name, 37);
 				} else {
-					realPointer += 3;
+					// A new trade evo of a single stage Pokemon
+					// level 30
+					evol.type = EvolutionType.LEVEL;
+					evol.extraInfo = 30; // level
+					logEvoChangeLevel(pokes[evol.from].name,
+							pokes[evol.to].name, 30);
 				}
 			}
 		}
+		writeEvosAndMovesLearnt(evos, null);
 		logBlankLine();
 
 	}
@@ -2403,43 +2387,131 @@ public class Gen2RomHandler extends AbstractGBRomHandler {
 	@Override
 	public void removeEvosForPokemonPool() {
 		List<Pokemon> pokemonIncluded = this.mainPokemonList;
-		int pointersOffset = romEntry.getValue("PokemonMovesetsTableOffset");
-		for (int i = 1; i <= 251; i++) {
-			int pointer = readWord(pointersOffset + (i - 1) * 2);
-			int msPointer = calculateOffset(bankOf(pointersOffset), pointer);
-			int realPointer = msPointer;
-			Pokemon pkmn = pokes[i];
-			boolean includedPkmn = pokemonIncluded.contains(pkmn);
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			// Process evolution data
-			while (rom[realPointer] != 0) {
-				int method = rom[realPointer];
-				Pokemon otherPoke = pokes[rom[realPointer + 2
-						+ (method == 5 ? 1 : 0)] & 0xFF];
-				if (includedPkmn && pokemonIncluded.contains(otherPoke)) {
-					// keep this evolution
-					baos.write(rom, realPointer, (method == 5) ? 4 : 3);
-				}
-				if (method == 5) {
-					realPointer += 4;
-				} else {
-					realPointer += 3;
-				}
+		List<Evolution> currentEvos = this.getEvolutions();
+		List<Evolution> keepEvos = new ArrayList<Evolution>();
+		for (Evolution evol : currentEvos) {
+			if (pokemonIncluded.contains(pokes[evol.from])
+					&& pokemonIncluded.contains(pokes[evol.to])) {
+				keepEvos.add(evol);
 			}
-			int moveCount = 0;
-			// write an end to the new data as well
-			baos.write(0);
-			realPointer++;
-			int startOfMoves = realPointer;
-			while (rom[realPointer] != 0) {
-				moveCount++;
-				realPointer += 2;
-			}
-			baos.write(rom, startOfMoves, moveCount * 2);
-			baos.write(0);
-			// now we have the adjusted data, write it back
-			byte[] adjusted = baos.toByteArray();
-			System.arraycopy(adjusted, 0, rom, msPointer, adjusted.length);
 		}
+		writeEvosAndMovesLearnt(keepEvos, null);
+	}
+
+	private void writeEvosAndMovesLearnt(List<Evolution> evos,
+			Map<Pokemon, List<MoveLearnt>> movesets) {
+		// this assumes that the evo/attack pointers & data
+		// are at the end of the bank
+		// which, in every clean G/S/C rom supported, they are
+		// specify null to either argument to copy old values
+		int movesEvosStart = romEntry.getValue("PokemonMovesetsTableOffset");
+		int movesEvosBank = bankOf(movesEvosStart);
+		byte[] pointerTable = new byte[251 * 2];
+		int startOfNextBank = ((movesEvosStart / 0x4000) + 1) * 0x4000;
+		int dataBlockSize = startOfNextBank
+				- (movesEvosStart + pointerTable.length);
+		int dataBlockOffset = movesEvosStart + pointerTable.length;
+		byte[] dataBlock = new byte[dataBlockSize];
+		int offsetInData = 0;
+		for (int i = 1; i <= 251; i++) {
+			// determine pointer
+			int oldDataOffset = calculateOffset(movesEvosBank,
+					readWord(movesEvosStart + (i - 1) * 2));
+			int offsetStart = dataBlockOffset + offsetInData;
+			boolean evoWritten = false;
+			if (evos == null) {
+				// copy old
+				int evoOffset = oldDataOffset;
+				while (rom[evoOffset] != 0x00) {
+					int method = rom[evoOffset] & 0xFF;
+					int limiter = (method == 5) ? 4 : 3;
+					for (int b = 0; b < limiter; b++) {
+						dataBlock[offsetInData++] = rom[evoOffset++];
+					}
+					evoWritten = true;
+				}
+			} else {
+				for (Evolution evo : evos) {
+					// write evos
+					if (evo.from == i) {
+						// write this one
+						dataBlock[offsetInData++] = (byte) evo.type.toIndex(2);
+						if (evo.type == EvolutionType.LEVEL
+								|| evo.type == EvolutionType.STONE
+								|| evo.type == EvolutionType.TRADE_ITEM) {
+							// simple types
+							dataBlock[offsetInData++] = (byte) evo.extraInfo;
+						} else if (evo.type == EvolutionType.TRADE) {
+							// non-item trade
+							dataBlock[offsetInData++] = (byte) 0xFF;
+						} else if (evo.type == EvolutionType.HAPPINESS) {
+							// cond 01
+							dataBlock[offsetInData++] = 0x01;
+						} else if (evo.type == EvolutionType.HAPPINESS_DAY) {
+							// cond 02
+							dataBlock[offsetInData++] = 0x02;
+						} else if (evo.type == EvolutionType.HAPPINESS_NIGHT) {
+							// cond 03
+							dataBlock[offsetInData++] = 0x03;
+						} else if (evo.type == EvolutionType.LEVEL_ATTACK_HIGHER) {
+							dataBlock[offsetInData++] = (byte) evo.extraInfo;
+							dataBlock[offsetInData++] = 0x01;
+						} else if (evo.type == EvolutionType.LEVEL_DEFENSE_HIGHER) {
+							dataBlock[offsetInData++] = (byte) evo.extraInfo;
+							dataBlock[offsetInData++] = 0x02;
+						} else if (evo.type == EvolutionType.LEVEL_ATK_DEF_SAME) {
+							dataBlock[offsetInData++] = (byte) evo.extraInfo;
+							dataBlock[offsetInData++] = 0x03;
+						}
+						dataBlock[offsetInData++] = (byte) evo.to;
+						evoWritten = true;
+					}
+				}
+			}
+			// can we reuse a terminator?
+			if (!evoWritten && offsetStart != dataBlockOffset) {
+				// reuse last pokemon's move terminator for our evos
+				offsetStart -= 1;
+			} else {
+				// write a terminator
+				dataBlock[offsetInData++] = 0x00;
+			}
+			// write table entry now that we're sure of its location
+			int pointerNow = makeGBPointer(offsetStart);
+			writeWord(pointerTable, (i - 1) * 2, pointerNow);
+			// moveset
+			if (movesets == null) {
+				// copy old
+				int movesOffset = oldDataOffset;
+				// move past evos
+				while (rom[movesOffset] != 0x00) {
+					int method = rom[movesOffset] & 0xFF;
+					movesOffset += (method == 5) ? 4 : 3;
+				}
+				movesOffset++;
+				// copy moves
+				while (rom[movesOffset] != 0x00) {
+					dataBlock[offsetInData++] = rom[movesOffset++];
+					dataBlock[offsetInData++] = rom[movesOffset++];
+				}
+			} else {
+				List<MoveLearnt> moves = movesets.get(pokes[i]);
+				for (MoveLearnt ml : moves) {
+					dataBlock[offsetInData++] = (byte) ml.level;
+					dataBlock[offsetInData++] = (byte) ml.move;
+				}
+			}
+			// terminator
+			dataBlock[offsetInData++] = 0x00;
+		}
+		// write new data
+		System.arraycopy(pointerTable, 0, rom, movesEvosStart,
+				pointerTable.length);
+		System.arraycopy(dataBlock, 0, rom, dataBlockOffset, dataBlock.length);
+	}
+
+	@Override
+	public boolean supportsFourStartingMoves() {
+		return (romEntry.getValue("SupportsFourStartingMoves") > 0);
 	}
 }
